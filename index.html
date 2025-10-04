@@ -28,10 +28,14 @@
 <body class="bg-slate-50">
     <div id="root"></div>
     <script>
+        // --- IMPORTANT: FACEBOOK CONFIGURATION ---
+        // Replace 'YOUR_FACEBOOK_APP_ID' with the App ID from your Meta Developer Dashboard.
+        window.FB_APP_ID = 'YOUR_FACEBOOK_APP_ID';
+        // -----------------------------------------
+
         window.fbAsyncInit = function() {
           FB.init({
-            // IMPORTANT: Replace with your own Facebook App ID
-            appId      : 'YOUR_FACEBOOK_APP_ID', 
+            appId      : window.FB_APP_ID, 
             cookie     : true,
             xfbml      : true,
             version    : 'v18.0'

@@ -7,6 +7,7 @@ declare global {
     interface Window {
         google?: any;
         FB?: any;
+        FB_APP_ID?: string;
     }
 }
 
@@ -27,18 +28,19 @@ interface AuthModalProps {
 
 const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLoginSuccess }) => {
     const [isFbSdkReady, setIsFbSdkReady] = useState(false);
+    const [isFbConfigured, setIsFbConfigured] = useState(false);
     const [isHttps, setIsHttps] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
+    const [isLoading, setIsLoading] = useState<null | 'google' | 'facebook'>(null);
     const [error, setError] = useState<string | null>(null);
 
     const handleClose = () => {
         setError(null);
-        setIsLoading(false);
+        setIsLoading(null);
         onClose();
     };
 
     const handleGoogleCredentialResponse = useCallback((response: any) => {
-        setIsLoading(true);
+        setIsLoading('google');
         setError(null);
         const credential = response.credential;
         if (credential) {
@@ -51,11 +53,11 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLoginSuccess }
                 onLoginSuccess(user);
             } else {
                 setError('Could not process Google credential. Please try again.');
-                setIsLoading(false);
+                setIsLoading(null);
             }
         } else {
             setError('Google sign-in failed. Please try again.');
-            setIsLoading(false);
+            setIsLoading(null);
         }
     }, [onLoginSuccess]);
 
@@ -78,8 +80,11 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLoginSuccess }
     
     useEffect(() => {
         setIsHttps(window.location.protocol === 'https:');
+        setIsFbConfigured(!!window.FB_APP_ID && window.FB_APP_ID !== 'YOUR_FACEBOOK_APP_ID');
+
         const setSdkReady = () => setIsFbSdkReady(true);
         window.addEventListener('fbAsyncInit', setSdkReady);
+        // Check if SDK might already be loaded
         if (window.FB && (window.FB as any).XFBML) {
             setSdkReady();
         }
@@ -99,7 +104,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLoginSuccess }
                     onLoginSuccess(user);
                 } else {
                     setError("Failed to fetch your Facebook profile. Please try again.");
-                    setIsLoading(false);
+                    setIsLoading(null);
                     console.error("Facebook API error:", apiResponse ? apiResponse.error : 'Unknown error');
                 }
             });
@@ -107,11 +112,11 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLoginSuccess }
     }, [onLoginSuccess]);
     
     const handleFacebookLogin = () => {
-        if (!isFbSdkReady || !isHttps || !window.FB || isLoading) {
+        if (!isFbSdkReady || !isHttps || !isFbConfigured || isLoading) {
              return;
         }
         
-        setIsLoading(true);
+        setIsLoading('facebook');
         setError(null);
         
         window.FB.getLoginStatus(function(response: any) {
@@ -123,7 +128,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLoginSuccess }
                         fetchFacebookUserInfo();
                     } else {
                         setError('Facebook login was cancelled or not fully authorized.');
-                        setIsLoading(false);
+                        setIsLoading(null);
                     }
                 }, { scope: 'public_profile,email' });
             }
@@ -132,9 +137,11 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLoginSuccess }
 
     if (!isOpen) return null;
 
-    const isFacebookLoginDisabled = !isFbSdkReady || !isHttps;
+    const isFacebookLoginDisabled = !isFbSdkReady || !isHttps || !isFbConfigured;
     let facebookButtonTooltip = '';
-    if (!isHttps) {
+    if (!isFbConfigured) {
+        facebookButtonTooltip = "Facebook App ID is not configured. Please see tip below.";
+    } else if (!isHttps) {
         facebookButtonTooltip = "Facebook login requires a secure (HTTPS) connection.";
     } else if (!isFbSdkReady) {
         facebookButtonTooltip = "Initializing Facebook login...";
@@ -153,13 +160,18 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLoginSuccess }
                 <h2 className="text-2xl font-bold text-slate-800 dark:text-white mb-2">Create an Account</h2>
                 <p className="text-slate-500 dark:text-slate-400 mb-6">Sign up to save your progress and learn faster!</p>
                 
-                <div className="mb-4 p-3 bg-slate-100 dark:bg-slate-700/50 rounded-lg text-xs text-slate-500 dark:text-slate-400">
-                    <p className="font-semibold mb-1">Developer Tip:</p>
-                    <p>For Google Sign-In, add this origin to your authorized list:</p>
-                    <code className="select-all font-mono bg-slate-200 dark:bg-slate-600 p-1 rounded text-teal-600 dark:text-teal-400 block mt-1">
-                        {window.location.origin}
-                    </code>
-                </div>
+                {!isFbConfigured && (
+                     <div className="mb-4 p-3 bg-blue-100 dark:bg-blue-900/50 rounded-lg text-xs text-slate-600 dark:text-slate-300 text-left space-y-2">
+                        <p className="font-bold text-blue-800 dark:text-blue-300">Developer Tip: Setup Facebook Login</p>
+                        <p>1. Go to <a href="https://developers.facebook.com/apps/" target="_blank" rel="noopener noreferrer" className="font-semibold text-blue-600 dark:text-blue-400 underline">Meta for Developers</a> and create a new "Consumer" app.</p>
+                        <p>2. In your app's "Facebook Login for Web" settings, add this URL to "Valid OAuth Redirect URIs":</p>
+                        <code className="select-all font-mono bg-slate-200 dark:bg-slate-600 p-1 rounded text-teal-600 dark:text-teal-400 block mt-1">
+                            {window.location.origin}
+                        </code>
+                        <p>3. Copy your App ID and paste it into `index.html`.</p>
+                    </div>
+                )}
+
 
                 {error && (
                     <div className="mb-4 p-3 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-lg text-sm font-semibold" role="alert">
@@ -173,11 +185,11 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLoginSuccess }
                     <div className="relative">
                         <button
                             onClick={handleFacebookLogin}
-                            disabled={isFacebookLoginDisabled || isLoading}
-                            aria-busy={isLoading}
+                            disabled={isFacebookLoginDisabled || !!isLoading}
+                            aria-busy={isLoading === 'facebook'}
                             className="w-full flex items-center justify-center px-4 py-3 text-lg font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition disabled:bg-slate-400 disabled:cursor-not-allowed"
                         >
-                            {isLoading ? (
+                            {isLoading === 'facebook' ? (
                                 <>
                                     <SpinnerIcon className="animate-spin w-5 h-5 mr-3" />
                                     <span>Signing in...</span>
@@ -201,7 +213,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLoginSuccess }
                     onClick={handleClose}
                     className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
                     aria-label="Close modal"
-                    disabled={isLoading}
+                    disabled={!!isLoading}
                 >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

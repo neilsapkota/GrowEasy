@@ -1,0 +1,186 @@
+import React, { useState, useEffect, useCallback } from 'react';
+import { Language, LessonTopic, LessonContent, Feedback } from '../types';
+import { XP_PER_CORRECT_ANSWER } from '../constants';
+import { generateLesson, getFeedback } from '../services/geminiService';
+import Loader from './Loader';
+import { CheckCircleIcon, XCircleIcon } from './icons';
+
+interface LessonPageProps {
+    language: Language;
+    topic: LessonTopic;
+    onComplete: (xpGained: number) => void;
+    onBack: () => void;
+}
+
+const LessonPage: React.FC<LessonPageProps> = ({ language, topic, onComplete, onBack }) => {
+    const [lessonContent, setLessonContent] = useState<LessonContent | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
+    const [feedback, setFeedback] = useState<Feedback | null>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isCompleted, setIsCompleted] = useState(false);
+    
+    useEffect(() => {
+        const fetchLesson = async () => {
+            try {
+                setIsLoading(true);
+                setError(null);
+                const content = await generateLesson(language, topic.title);
+                setLessonContent(content);
+            } catch (err) {
+                setError('Failed to generate the lesson. Please try again.');
+                console.error(err);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchLesson();
+    }, [language, topic]);
+
+    const handleAnswerSelect = async (answer: string) => {
+        if (!lessonContent) return;
+        
+        setSelectedAnswer(answer);
+        setIsSubmitting(true);
+        setFeedback(null);
+        try {
+            const result = await getFeedback(language, lessonContent.quiz.question, answer, lessonContent.quiz.correctAnswer);
+            setFeedback(result);
+            if(result.isCorrect) {
+                setIsCompleted(true);
+            }
+        } catch (err) {
+            setError('Failed to get feedback. Please try again.');
+            console.error(err);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    if (isLoading) {
+        return <Loader message={`Building your ${topic.title} lesson...`} />;
+    }
+
+    if (error) {
+        return (
+            <div className="text-center p-8 bg-red-100 dark:bg-red-900/50 rounded-lg">
+                <p className="text-red-600 dark:text-red-300 font-semibold">{error}</p>
+                <button onClick={onBack} className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+                    Back to Dashboard
+                </button>
+            </div>
+        );
+    }
+
+    if (!lessonContent) {
+        return null;
+    }
+
+    return (
+        <div className="p-6 sm:p-8 bg-white dark:bg-slate-800 rounded-2xl shadow-xl">
+            <div className="flex justify-between items-start mb-6">
+                 <div>
+                    <h1 className="text-3xl font-extrabold text-slate-800 dark:text-white">{topic.icon} {topic.title} Lesson</h1>
+                    <p className="text-slate-500 dark:text-slate-400">Time to learn something new in {language.name}!</p>
+                </div>
+                 <button onClick={onBack} className="text-sm font-semibold text-slate-600 dark:text-slate-400 hover:underline">
+                    &larr; Back
+                </button>
+            </div>
+
+            <div className="space-y-8">
+                {/* Vocabulary Section */}
+                <div>
+                    <h2 className="text-2xl font-bold mb-4 border-b-2 border-teal-500 pb-2">Vocabulary</h2>
+                    <ul className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {lessonContent.vocabulary.map((item, index) => (
+                            <li key={index} className="p-4 bg-slate-100 dark:bg-slate-700 rounded-lg">
+                                <span className="font-bold text-lg text-teal-600 dark:text-teal-400">{item.word}</span>
+                                <span className="text-slate-500 dark:text-slate-400"> &rarr; {item.translation}</span>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+
+                {/* Examples Section */}
+                <div>
+                    <h2 className="text-2xl font-bold mb-4 border-b-2 border-teal-500 pb-2">Examples</h2>
+                    <ul className="space-y-3">
+                        {lessonContent.examples.map((example, index) => (
+                            <li key={index} className="italic text-slate-600 dark:text-slate-300 p-3 bg-slate-50 dark:bg-slate-700/50 rounded-md">
+                                "{example}"
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+
+                {/* Quiz Section */}
+                <div>
+                    <h2 className="text-2xl font-bold mb-4 border-b-2 border-teal-500 pb-2">Quiz Time!</h2>
+                    <p className="text-lg mb-4 p-4 bg-blue-100 dark:bg-blue-900/50 rounded-lg">{lessonContent.quiz.question}</p>
+                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {lessonContent.quiz.options.map((option) => {
+                            const isSelected = selectedAnswer === option;
+                            const isCorrect = lessonContent.quiz.correctAnswer === option;
+                            
+                            let buttonClass = "w-full text-left p-4 rounded-lg font-semibold text-lg transition-all duration-300 border-2 ";
+
+                            if (selectedAnswer) {
+                                if (isCorrect) {
+                                    buttonClass += 'bg-green-500 border-green-600 text-white scale-105';
+                                } else if (isSelected && !isCorrect) {
+                                    buttonClass += 'bg-red-500 border-red-600 text-white';
+                                } else {
+                                    buttonClass += 'bg-slate-200 dark:bg-slate-700 border-transparent text-slate-500 cursor-not-allowed opacity-70';
+                                }
+                            } else {
+                                buttonClass += 'bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-600 hover:border-teal-500';
+                            }
+                            
+                            return (
+                                <button
+                                    key={option}
+                                    onClick={() => handleAnswerSelect(option)}
+                                    disabled={selectedAnswer !== null || isSubmitting}
+                                    className={buttonClass}
+                                >
+                                    {option}
+                                </button>
+                            )
+                        })}
+                    </div>
+                </div>
+                
+                {feedback && (
+                    <div className={`p-4 rounded-lg transition-all duration-300 mt-4 ${feedback.isCorrect ? 'bg-green-100 dark:bg-green-900/50' : 'bg-red-100 dark:bg-red-900/50'}`}>
+                        <div className="flex items-start">
+                            {feedback.isCorrect ? <CheckCircleIcon className="w-8 h-8 mr-3 text-green-500" /> : <XCircleIcon className="w-8 h-8 mr-3 text-red-500" />}
+                            <div>
+                                <h3 className={`text-xl font-bold ${feedback.isCorrect ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300'}`}>
+                                    {feedback.isCorrect ? 'Correct!' : 'Not Quite'}
+                                </h3>
+                                <p className="mt-1 text-slate-700 dark:text-slate-300">{feedback.explanation}</p>
+                                {!feedback.isCorrect && feedback.suggestion && (
+                                     <p className="mt-2 text-slate-700 dark:text-slate-300">Suggestion: <em className="font-semibold">{feedback.suggestion}</em></p>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {isCompleted && (
+                    <div className="text-center p-6 bg-teal-100 dark:bg-teal-900/50 rounded-lg">
+                        <h3 className="text-2xl font-bold text-teal-700 dark:text-teal-300">Lesson Complete!</h3>
+                        <p className="text-lg text-slate-600 dark:text-slate-400">You've earned {XP_PER_CORRECT_ANSWER} XP!</p>
+                        <button onClick={() => onComplete(XP_PER_CORRECT_ANSWER)} className="mt-4 px-6 py-3 font-bold text-white bg-teal-600 rounded-lg hover:bg-teal-700 transition-transform transform hover:scale-105">
+                            Finish & Continue
+                        </button>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
+
+export default LessonPage;

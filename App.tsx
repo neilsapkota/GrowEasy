@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import HomePage from './components/HomePage';
 import LanguageSelectionPage from './components/LanguageSelectionPage';
 import DashboardPage from './components/DashboardPage';
 import LessonPage from './components/LessonPage';
@@ -7,50 +8,38 @@ import PracticeSessionPage from './components/PracticeSessionPage';
 import DictionaryPage from './components/DictionaryPage';
 import AuthModal from './components/AuthModal';
 import ProgressBar from './components/ProgressBar';
-import { Page, User, Language, LessonTopic, UserProgress, MistakeItem, VocabularyItem, PracticeMode, QuestProgress, Quest } from './types';
-import { LANGUAGES, DAILY_QUESTS } from './constants';
-import { HomeIcon, UserCircleIcon, ChartBarIcon, LogoutIcon, StarIcon, FireIcon, PracticeIcon, ChestIcon, ClockIcon, BookOpenIcon } from './components/icons';
+import AchievementToast from './components/AchievementToast';
+import { Page, User, Language, LessonTopic, UserProgress, MistakeItem, VocabularyItem, PracticeMode, QuestProgress, Quest, LeagueTier, Achievement, AchievementTier, RegisteredUser } from './types';
+import { LANGUAGES, DAILY_QUESTS, ACHIEVEMENTS } from './constants';
+import { HomeIcon, UserCircleIcon, ChartBarIcon, LogoutIcon, StarIcon, FireIcon, PracticeIcon, ChestIcon, ClockIcon, BookOpenIcon, CheckCircleIcon, ShieldCheckIcon, ArrowUpIcon, ArrowDownIcon, TrophyIcon } from './components/icons';
 
 const QUESTS_MAP = new Map(DAILY_QUESTS.map(q => [q.id, q]));
-
-interface RegisteredUser {
-    user: User;
-    progress: Record<string, UserProgress>;
-}
+const ACHIEVEMENTS_MAP = new Map(ACHIEVEMENTS.map(a => [a.id, a]));
 
 const DUMMY_REGISTERED_USERS: RegisteredUser[] = [
-    {
-        user: { name: 'Alice', avatarUrl: 'https://api.dicebear.com/8.x/initials/svg?seed=Alice' },
-        progress: { 
-            'es': { xp: 2540, streak: 12, completedTopics: ['greetings', 'family', 'food'], mistakes: [], learnedVocabulary: [] },
-            'fr': { xp: 1200, streak: 3, completedTopics: ['greetings'], mistakes: [], learnedVocabulary: [] }
-        }
-    },
-    {
-        user: { name: 'Bob', avatarUrl: 'https://api.dicebear.com/8.x/initials/svg?seed=Bob' },
-        progress: { 
-            'es': { xp: 2310, streak: 10, completedTopics: ['greetings', 'family'], mistakes: [], learnedVocabulary: [] }
-        }
-    },
-    {
-        user: { name: 'Charlie', avatarUrl: 'https://api.dicebear.com/8.x/initials/svg?seed=Charlie' },
-        progress: { 
-            'es': { xp: 2100, streak: 8, completedTopics: ['greetings', 'family'], mistakes: [], learnedVocabulary: [] },
-            'de': { xp: 3000, streak: 20, completedTopics: ['greetings', 'family', 'food', 'travel'], mistakes: [], learnedVocabulary: [] }
-        }
-    },
-    {
-        user: { name: 'Diana', avatarUrl: 'https://api.dicebear.com/8.x/initials/svg?seed=Diana' },
-        progress: { 
-            'es': { xp: 1980, streak: 7, completedTopics: ['greetings'], mistakes: [], learnedVocabulary: [] }
-        }
-    },
-    {
-        user: { name: 'Ethan', avatarUrl: 'https://api.dicebear.com/8.x/initials/svg?seed=Ethan' },
-        progress: { 
-            'es': { xp: 1750, streak: 5, completedTopics: ['greetings'], mistakes: [], learnedVocabulary: [] }
-        }
-    },
+    // Gold League
+    { user: { name: 'Alice', avatarUrl: 'https://api.dicebear.com/8.x/initials/svg?seed=Alice' }, progress: { 'es': { xp: 2540, streak: 12, completedTopics: ['greetings', 'family', 'food'], mistakes: [], learnedVocabulary: [{word: 'Hola', translation: 'Hello', pronunciation: 'o-la', nextReview: '2024-01-01T00:00:00.000Z', interval: 1}], league: LeagueTier.Gold, unlockedAchievements: [], practiceSessions: 0 }, 'fr': { xp: 1200, streak: 3, completedTopics: ['greetings'], mistakes: [], learnedVocabulary: [], league: LeagueTier.Bronze, unlockedAchievements: [], practiceSessions: 0 } } },
+    { user: { name: 'Fiona', avatarUrl: 'https://api.dicebear.com/8.x/initials/svg?seed=Fiona' }, progress: { 'es': { xp: 2450, streak: 11, completedTopics: ['greetings', 'family', 'food'], mistakes: [], learnedVocabulary: [], league: LeagueTier.Gold, unlockedAchievements: [], practiceSessions: 0 } } },
+    { user: { name: 'Bob', avatarUrl: 'https://api.dicebear.com/8.x/initials/svg?seed=Bob' }, progress: { 'es': { xp: 2310, streak: 10, completedTopics: ['greetings', 'family'], mistakes: [], learnedVocabulary: [], league: LeagueTier.Gold, unlockedAchievements: [], practiceSessions: 0 } } },
+    { user: { name: 'George', avatarUrl: 'https://api.dicebear.com/8.x/initials/svg?seed=George' }, progress: { 'es': { xp: 2200, streak: 9, completedTopics: ['greetings', 'family'], mistakes: [], learnedVocabulary: [], league: LeagueTier.Gold, unlockedAchievements: [], practiceSessions: 0 } } },
+    { user: { name: 'Charlie', avatarUrl: 'https://api.dicebear.com/8.x/initials/svg?seed=Charlie' }, progress: { 'es': { xp: 2100, streak: 8, completedTopics: ['greetings', 'family'], mistakes: [], learnedVocabulary: [], league: LeagueTier.Gold, unlockedAchievements: [], practiceSessions: 0 }, 'de': { xp: 3000, streak: 20, completedTopics: ['greetings', 'family', 'food', 'travel'], mistakes: [], learnedVocabulary: [], league: LeagueTier.Gold, unlockedAchievements: [], practiceSessions: 0 } } },
+    { user: { name: 'Diana', avatarUrl: 'https://api.dicebear.com/8.x/initials/svg?seed=Diana' }, progress: { 'es': { xp: 1980, streak: 7, completedTopics: ['greetings'], mistakes: [], learnedVocabulary: [], league: LeagueTier.Gold, unlockedAchievements: [], practiceSessions: 0 } } },
+    { user: { name: 'Hannah', avatarUrl: 'https://api.dicebear.com/8.x/initials/svg?seed=Hannah' }, progress: { 'es': { xp: 1820, streak: 6, completedTopics: ['greetings'], mistakes: [], learnedVocabulary: [], league: LeagueTier.Gold, unlockedAchievements: [], practiceSessions: 0 } } },
+    { user: { name: 'Ethan', avatarUrl: 'https://api.dicebear.com/8.x/initials/svg?seed=Ethan' }, progress: { 'es': { xp: 1750, streak: 5, completedTopics: ['greetings'], mistakes: [], learnedVocabulary: [], league: LeagueTier.Gold, unlockedAchievements: [], practiceSessions: 0 } } },
+    { user: { name: 'Ian', avatarUrl: 'https://api.dicebear.com/8.x/initials/svg?seed=Ian' }, progress: { 'es': { xp: 1600, streak: 4, completedTopics: ['greetings'], mistakes: [], learnedVocabulary: [], league: LeagueTier.Gold, unlockedAchievements: [], practiceSessions: 0 } } },
+    { user: { name: 'Jane', avatarUrl: 'https://api.dicebear.com/8.x/initials/svg?seed=Jane' }, progress: { 'es': { xp: 1450, streak: 3, completedTopics: [], mistakes: [], learnedVocabulary: [], league: LeagueTier.Gold, unlockedAchievements: [], practiceSessions: 0 } } },
+
+    // Silver League
+    { user: { name: 'Kyle', avatarUrl: 'https://api.dicebear.com/8.x/initials/svg?seed=Kyle' }, progress: { 'es': { xp: 1200, streak: 15, completedTopics: ['greetings'], mistakes: [], learnedVocabulary: [], league: LeagueTier.Silver, unlockedAchievements: [], practiceSessions: 0 } } },
+    { user: { name: 'Liam', avatarUrl: 'https://api.dicebear.com/8.x/initials/svg?seed=Liam' }, progress: { 'es': { xp: 1150, streak: 14, completedTopics: ['greetings'], mistakes: [], learnedVocabulary: [], league: LeagueTier.Silver, unlockedAchievements: [], practiceSessions: 0 } } },
+    { user: { name: 'Mona', avatarUrl: 'https://api.dicebear.com/8.x/initials/svg?seed=Mona' }, progress: { 'es': { xp: 1100, streak: 13, completedTopics: ['greetings'], mistakes: [], learnedVocabulary: [], league: LeagueTier.Silver, unlockedAchievements: [], practiceSessions: 0 } } },
+    { user: { name: 'Nora', avatarUrl: 'https://api.dicebear.com/8.x/initials/svg?seed=Nora' }, progress: { 'es': { xp: 1050, streak: 12, completedTopics: ['greetings'], mistakes: [], learnedVocabulary: [], league: LeagueTier.Silver, unlockedAchievements: [], practiceSessions: 0 } } },
+    { user: { name: 'Oscar', avatarUrl: 'https://api.dicebear.com/8.x/initials/svg?seed=Oscar' }, progress: { 'es': { xp: 1000, streak: 11, completedTopics: ['greetings'], mistakes: [], learnedVocabulary: [], league: LeagueTier.Silver, unlockedAchievements: [], practiceSessions: 0 } } },
+    { user: { name: 'Pria', avatarUrl: 'https://api.dicebear.com/8.x/initials/svg?seed=Pria' }, progress: { 'es': { xp: 950, streak: 10, completedTopics: [], mistakes: [], learnedVocabulary: [], league: LeagueTier.Silver, unlockedAchievements: [], practiceSessions: 0 } } },
+    { user: { name: 'Quinn', avatarUrl: 'https://api.dicebear.com/8.x/initials/svg?seed=Quinn' }, progress: { 'es': { xp: 900, streak: 9, completedTopics: [], mistakes: [], learnedVocabulary: [], league: LeagueTier.Silver, unlockedAchievements: [], practiceSessions: 0 } } },
+    { user: { name: 'Riley', avatarUrl: 'https://api.dicebear.com/8.x/initials/svg?seed=Riley' }, progress: { 'es': { xp: 850, streak: 8, completedTopics: [], mistakes: [], learnedVocabulary: [], league: LeagueTier.Silver, unlockedAchievements: [], practiceSessions: 0 } } },
+    { user: { name: 'Sam', avatarUrl: 'https://api.dicebear.com/8.x/initials/svg?seed=Sam' }, progress: { 'es': { xp: 800, streak: 7, completedTopics: [], mistakes: [], learnedVocabulary: [], league: LeagueTier.Silver, unlockedAchievements: [], practiceSessions: 0 } } },
+    { user: { name: 'Tina', avatarUrl: 'https://api.dicebear.com/8.x/initials/svg?seed=Tina' }, progress: { 'es': { xp: 750, streak: 6, completedTopics: [], mistakes: [], learnedVocabulary: [], league: LeagueTier.Silver, unlockedAchievements: [], practiceSessions: 0 } } },
 ];
 
 const Sidebar: React.FC<{
@@ -196,10 +185,54 @@ const RightSidebar: React.FC<{
     );
 };
 
+const tierColors: Record<AchievementTier, { text: string; bg: string; shadow: string }> = {
+    [AchievementTier.Bronze]: { text: 'text-amber-700 dark:text-amber-500', bg: 'bg-amber-200 dark:bg-amber-900/50', shadow: 'shadow-amber-500/30' },
+    [AchievementTier.Silver]: { text: 'text-slate-600 dark:text-slate-300', bg: 'bg-slate-200 dark:bg-slate-700', shadow: 'shadow-slate-500/30' },
+    [AchievementTier.Gold]: { text: 'text-amber-500 dark:text-amber-300', bg: 'bg-amber-100 dark:bg-yellow-900/50', shadow: 'shadow-yellow-500/30' },
+};
+
+const AchievementsDisplay: React.FC<{
+    userProgress: Record<string, UserProgress>;
+}> = ({ userProgress }) => {
+    const unlockedAchievements = useMemo(() => {
+        const allUnlocked = new Set<string>();
+        Object.values(userProgress).forEach(progress => {
+            progress.unlockedAchievements?.forEach(id => allUnlocked.add(id));
+        });
+        return allUnlocked;
+    }, [userProgress]);
+
+    return (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
+            {ACHIEVEMENTS.map(ach => {
+                const isUnlocked = unlockedAchievements.has(ach.id);
+                const colors = tierColors[ach.tier];
+
+                return (
+                    <div key={ach.id} className={`p-5 rounded-2xl transition-all duration-300 ${isUnlocked ? `${colors.bg} ${colors.shadow} shadow-lg` : 'bg-slate-100 dark:bg-slate-800/50'}`}>
+                        <div className="flex items-center gap-4">
+                            <div className={`p-3 rounded-full ${isUnlocked ? colors.bg : 'bg-slate-200 dark:bg-slate-700'}`}>
+                                <TrophyIcon className={`w-8 h-8 transition-colors ${isUnlocked ? colors.text : 'text-slate-400 dark:text-slate-500'}`} />
+                            </div>
+                            <div className="flex-grow">
+                                <h4 className={`font-bold text-lg ${isUnlocked ? 'text-slate-800 dark:text-slate-100' : 'text-slate-500 dark:text-slate-400'}`}>{ach.title}</h4>
+                                <p className={`text-sm ${isUnlocked ? 'text-slate-600 dark:text-slate-300' : 'text-slate-400 dark:text-slate-500'}`}>{ach.description}</p>
+                            </div>
+                        </div>
+                    </div>
+                );
+            })}
+        </div>
+    );
+};
+
 const ProfilePage: React.FC<{
     user: User | null;
-    progress: UserProgress | null;
-}> = ({ user, progress }) => {
+    userProgress: Record<string, UserProgress>;
+    languages: Language[];
+}> = ({ user, userProgress, languages }) => {
+    const [activeTab, setActiveTab] = useState('progress');
+    
     if (!user) {
         return (
              <div className="p-4 sm:p-6 lg:p-8 animate-fade-in text-center">
@@ -210,75 +243,231 @@ const ProfilePage: React.FC<{
             </div>
         )
     }
+    
+    const languagesWithProgress = Object.entries(userProgress)
+        .map(([langId, progress]) => {
+            const langInfo = languages.find(l => l.id === langId);
+            if (langInfo && (progress.xp > 0 || progress.completedTopics.length > 0)) {
+                return { ...langInfo, ...progress };
+            }
+            return null;
+        })
+        .filter(Boolean) as (Language & UserProgress)[];
+
     return (
         <div className="p-4 sm:p-6 lg:p-8 animate-fade-in">
             <h2 className="text-3xl font-bold text-slate-800 dark:text-slate-100 mb-6">Profile</h2>
-            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-8 text-center">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-8 mb-8 text-center">
                 <img src={user.avatarUrl} alt={user.name} className="w-24 h-24 rounded-full mx-auto mb-4 border-4 border-teal-500" />
                 <h3 className="text-2xl font-bold">{user.name}</h3>
-                <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4 text-lg">
-                    <div className="p-4 bg-slate-100 dark:bg-slate-700 rounded-lg">
-                        <p className="text-slate-500 dark:text-slate-400">Total XP</p>
-                        <p className="font-bold text-2xl text-amber-500">{progress?.xp ?? 0}</p>
-                    </div>
-                    <div className="p-4 bg-slate-100 dark:bg-slate-700 rounded-lg">
-                        <p className="text-slate-500 dark:text-slate-400">Day Streak</p>
-                        <p className="font-bold text-2xl text-orange-500">{progress?.streak ?? 0}</p>
-                    </div>
+            </div>
+            
+             <div className="mb-8">
+                <div className="border-b border-slate-200 dark:border-slate-700">
+                    <nav className="-mb-px flex space-x-6" aria-label="Tabs">
+                        <button
+                            onClick={() => setActiveTab('progress')}
+                            className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-lg ${activeTab === 'progress' ? 'border-teal-500 text-teal-600' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'}`}
+                        >
+                            Progress
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('achievements')}
+                            className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-lg ${activeTab === 'achievements' ? 'border-teal-500 text-teal-600' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'}`}
+                        >
+                            Achievements
+                        </button>
+                    </nav>
                 </div>
             </div>
+
+            {activeTab === 'progress' && (
+                <div>
+                    <h3 className="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-4">Your Language Progress</h3>
+                    {languagesWithProgress.length > 0 ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {languagesWithProgress.map(langProgress => (
+                                <div key={langProgress.id} className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-6">
+                                    <div className="flex items-center mb-4">
+                                        <span className="text-4xl mr-4">{langProgress.flag}</span>
+                                        <h4 className="text-xl font-bold">{langProgress.name}</h4>
+                                    </div>
+                                    <div className="space-y-3">
+                                        <div className="flex justify-between items-center p-3 bg-slate-100 dark:bg-slate-700 rounded-lg">
+                                            <div className="flex items-center space-x-2 text-slate-600 dark:text-slate-300">
+                                                <StarIcon className="w-6 h-6 text-amber-500" />
+                                                <span>Total XP</span>
+                                            </div>
+                                            <span className="font-bold text-amber-500">{langProgress.xp}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center p-3 bg-slate-100 dark:bg-slate-700 rounded-lg">
+                                            <div className="flex items-center space-x-2 text-slate-600 dark:text-slate-300">
+                                                <FireIcon className="w-6 h-6 text-orange-500" />
+                                                <span>Day Streak</span>
+                                            </div>
+                                            <span className="font-bold text-orange-500">{langProgress.streak}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center p-3 bg-slate-100 dark:bg-slate-700 rounded-lg">
+                                            <div className="flex items-center space-x-2 text-slate-600 dark:text-slate-300">
+                                                <CheckCircleIcon className="w-6 h-6 text-green-500" />
+                                                <span>Lessons Done</span>
+                                            </div>
+                                            <span className="font-bold text-green-500">{langProgress.completedTopics.length}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-8 text-center">
+                            <p className="text-lg text-slate-500 dark:text-slate-400">Start a lesson to see your progress here!</p>
+                        </div>
+                    )}
+                </div>
+            )}
+             {activeTab === 'achievements' && <AchievementsDisplay userProgress={userProgress} />}
         </div>
     );
 };
 
-const LeaderboardPage: React.FC<{ 
-    user: User | null; 
+const LEAGUE_PROMOTION_COUNT = 3;
+const LEAGUE_DEMOTION_COUNT = 3;
+
+const LeagueTierInfo: Record<LeagueTier, { color: string; icon: string; bg: string }> = {
+    [LeagueTier.Diamond]: { color: 'text-cyan-400', icon: '💎', bg: 'bg-cyan-500' },
+    [LeagueTier.Gold]: { color: 'text-amber-400', icon: '🥇', bg: 'bg-amber-500' },
+    [LeagueTier.Silver]: { color: 'text-slate-400', icon: '🥈', bg: 'bg-slate-500' },
+    [LeagueTier.Bronze]: { color: 'text-amber-600', icon: '🥉', bg: 'bg-yellow-600' },
+};
+
+const LeaderboardPage: React.FC<{
+    user: User | null;
     registeredUsers: RegisteredUser[];
     selectedLanguage: Language | null;
 }> = ({ user, registeredUsers, selectedLanguage }) => {
-    
-    const leaderboardData = useMemo(() => {
-        if (!selectedLanguage) return [];
+    const [timeLeft, setTimeLeft] = useState('');
+
+    useEffect(() => {
+        const timer = setInterval(() => {
+            const now = new Date();
+            const endOfWeek = new Date(now);
+            endOfWeek.setDate(now.getDate() + (7 - now.getDay()) % 7);
+            endOfWeek.setHours(23, 59, 59, 999);
+            
+            const diff = endOfWeek.getTime() - now.getTime();
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            
+            setTimeLeft(`${days}d ${hours}h ${minutes}m`);
+        }, 1000 * 60);
         
-        return registeredUsers
-            .map(regUser => ({
-                name: regUser.user.name,
-                avatarUrl: regUser.user.avatarUrl,
-                xp: regUser.progress[selectedLanguage.id]?.xp ?? 0
+        // Initial call
+        const now = new Date();
+        const endOfWeek = new Date(now);
+        endOfWeek.setDate(now.getDate() + (7 - now.getDay()) % 7);
+        endOfWeek.setHours(23, 59, 59, 999);
+        const diff = endOfWeek.getTime() - now.getTime();
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        setTimeLeft(`${days}d ${hours}h ${minutes}m`);
+
+        return () => clearInterval(timer);
+    }, []);
+
+    const { currentLeague, leagueData } = useMemo(() => {
+        if (!selectedLanguage) return { currentLeague: null, leagueData: [] };
+
+        const langId = selectedLanguage.id;
+        let currentUserLeague = LeagueTier.Bronze; 
+
+        if (user) {
+            const currentUserRegistered = registeredUsers.find(ru => ru.user.name === user.name);
+            currentUserLeague = currentUserRegistered?.progress[langId]?.league ?? LeagueTier.Bronze;
+        }
+
+        const data = registeredUsers
+            .filter(ru => (ru.progress[langId]?.league ?? LeagueTier.Bronze) === currentUserLeague)
+            .map(ru => ({
+                name: ru.user.name,
+                avatarUrl: ru.user.avatarUrl,
+                xp: ru.progress[langId]?.xp ?? 0
             }))
-            .filter(player => player.xp > 0)
             .sort((a, b) => b.xp - a.xp);
-    }, [registeredUsers, selectedLanguage]);
+        
+        return { currentLeague: currentUserLeague, leagueData: data };
+    }, [registeredUsers, selectedLanguage, user]);
     
-    const rankColors = ['bg-amber-400', 'bg-slate-300', 'bg-amber-600'];
+    const renderZone = (index: number) => {
+        if (index < LEAGUE_PROMOTION_COUNT) return 'promotion';
+        if (index >= leagueData.length - LEAGUE_DEMOTION_COUNT) return 'demotion';
+        return 'safe';
+    };
 
     return (
         <div className="p-4 sm:p-6 lg:p-8 animate-fade-in">
             <h2 className="text-3xl font-bold text-slate-800 dark:text-slate-100 mb-2">Leaderboard</h2>
-            {selectedLanguage && <p className="text-lg text-slate-500 dark:text-slate-400 mb-6">Top learners in {selectedLanguage.name}</p>}
+            {selectedLanguage && <p className="text-lg text-slate-500 dark:text-slate-400 mb-6">Your weekly progress in {selectedLanguage.name}</p>}
 
-            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-6">
-                {leaderboardData.length > 0 ? (
-                    <ul className="space-y-4">
-                        {leaderboardData.map((player, index) => (
-                            <li key={player.name} className={`flex items-center p-4 rounded-lg transition-all ${user && player.name === user.name ? 'bg-teal-100 dark:bg-teal-900/50 ring-2 ring-teal-500' : 'bg-slate-50 dark:bg-slate-700/50'}`}>
-                                <span className={`w-10 h-10 flex items-center justify-center font-bold text-lg rounded-full mr-4 ${index < 3 ? `${rankColors[index]} text-white` : 'bg-slate-200 dark:bg-slate-600'}`}>{index + 1}</span>
-                                <img src={player.avatarUrl} alt={player.name} className="w-12 h-12 rounded-full mr-4" />
-                                <span className="font-bold text-lg flex-grow">{player.name}</span>
-                                <span className="font-extrabold text-teal-500 text-xl">{player.xp} XP</span>
-                            </li>
-                        ))}
-                    </ul>
-                ) : (
-                    <div className="text-center py-8">
-                        <p className="text-slate-500 dark:text-slate-400">No one is on the leaderboard for this language yet. Be the first!</p>
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg">
+                {currentLeague && (
+                     <div className={`p-6 rounded-t-2xl ${LeagueTierInfo[currentLeague].bg} text-white`}>
+                        <div className="flex justify-between items-center">
+                             <div className="flex items-center gap-4">
+                                <span className="text-5xl">{LeagueTierInfo[currentLeague].icon}</span>
+                                <div>
+                                    <h3 className="text-3xl font-extrabold">{currentLeague} League</h3>
+                                    <p className="text-white/80">Top {LEAGUE_PROMOTION_COUNT} advance to the next league!</p>
+                                </div>
+                            </div>
+                            <div className="text-right">
+                                <p className="font-bold text-lg">{timeLeft}</p>
+                                <p className="text-sm text-white/80">left</p>
+                            </div>
+                         </div>
                     </div>
                 )}
-                {!user && (
-                    <div className="text-center mt-6 p-4 bg-slate-100 dark:bg-slate-700 rounded-lg">
-                        <p>Create an account to join the leaderboard!</p>
-                    </div>
-                )}
+                
+                <div className="p-2 sm:p-4">
+                    {leagueData.length > 0 ? (
+                        <ul>
+                            {leagueData.map((player, index) => {
+                                const zone = renderZone(index);
+                                let zoneStyle = '';
+                                if (zone === 'promotion' && index === LEAGUE_PROMOTION_COUNT - 1) zoneStyle += ' border-b-2 border-dashed border-green-400 dark:border-green-600 pb-4 mb-4';
+                                if (zone === 'safe' && index === leagueData.length - LEAGUE_DEMOTION_COUNT - 1) zoneStyle += ' border-b-2 border-dashed border-red-400 dark:border-red-600 pb-4 mb-4';
+
+                                return (
+                                <li key={player.name} className={`flex items-center p-3 rounded-lg transition-all ${user && player.name === user.name ? 'bg-teal-100 dark:bg-teal-900/50 ring-2 ring-teal-500' : ''} ${zoneStyle}`}>
+                                    <span className={`w-8 h-8 text-sm flex items-center justify-center font-bold rounded-full mr-3
+                                        ${zone === 'promotion' ? 'bg-green-100 dark:bg-green-900/50 text-green-600 dark:text-green-300' 
+                                        : zone === 'demotion' ? 'bg-red-100 dark:bg-red-900/50 text-red-600 dark:text-red-300' 
+                                        : 'bg-slate-200 dark:bg-slate-600'}`
+                                    }>
+                                        {index + 1}
+                                    </span>
+                                    <img src={player.avatarUrl} alt={player.name} className="w-12 h-12 rounded-full mr-4" />
+                                    <span className="font-bold text-lg flex-grow">{player.name}</span>
+                                    <div className="flex items-center gap-4">
+                                      <span className="font-extrabold text-teal-500 text-xl hidden sm:inline">{player.xp} XP</span>
+                                       {zone === 'promotion' && <ArrowUpIcon className="w-6 h-6 text-green-500" title="Promotion Zone" />}
+                                       {zone === 'demotion' && <ArrowDownIcon className="w-6 h-6 text-red-500" title="Demotion Zone" />}
+                                    </div>
+                                </li>
+                            )})}
+                        </ul>
+                    ) : (
+                        <div className="text-center py-8">
+                            <p className="text-slate-500 dark:text-slate-400">No one is in this league for this language yet. Be the first!</p>
+                        </div>
+                    )}
+                    {!user && (
+                        <div className="text-center mt-6 p-4 bg-slate-100 dark:bg-slate-700 rounded-lg">
+                            <p>Create an account to join the competition!</p>
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     );
@@ -286,15 +475,118 @@ const LeaderboardPage: React.FC<{
 
 
 const App: React.FC = () => {
-    const [page, setPage] = useState<Page>(Page.LanguageSelection);
+    const [page, setPage] = useState<Page>(Page.Home);
     const [user, setUser] = useState<User | null>(null);
     const [selectedLanguage, setSelectedLanguage] = useState<Language | null>(null);
     const [selectedTopic, setSelectedTopic] = useState<LessonTopic | null>(null);
     const [userProgress, setUserProgress] = useState<Record<string, UserProgress>>({});
     const [practiceMode, setPracticeMode] = useState<PracticeMode | null>(null);
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-    const [isChangingLanguage, setIsChangingLanguage] = useState(false);
-    const [registeredUsers, setRegisteredUsers] = useState<RegisteredUser[]>(DUMMY_REGISTERED_USERS);
+    const [toasts, setToasts] = useState<{ id: number; achievement: Achievement }[]>([]);
+    
+    const [registeredUsers, setRegisteredUsers] = useState<RegisteredUser[]>(() => {
+        try {
+            const savedUsers = localStorage.getItem('growEasyUsers');
+            if (savedUsers) {
+                return JSON.parse(savedUsers);
+            }
+        } catch (error) {
+            console.error("Failed to parse registered users from localStorage", error);
+        }
+        return DUMMY_REGISTERED_USERS;
+    });
+
+    // Toast notification handler
+    const addToast = (achievement: Achievement) => {
+        const id = Date.now();
+        setToasts(prev => [...prev.filter(t => t.achievement.id !== achievement.id), { id, achievement }]);
+        setTimeout(() => {
+            setToasts(prev => prev.filter(t => t.id !== id));
+        }, 5000); // Remove toast after 5 seconds
+    };
+    
+    // Achievement checking logic
+    const checkAndUnlockAchievements = useCallback((currentProgress: Record<string, UserProgress>) => {
+        if (!user) return;
+
+        let changed = false;
+        const newProgress = { ...currentProgress };
+
+        Object.keys(newProgress).forEach(langId => {
+            const langProgress = newProgress[langId];
+            const alreadyUnlocked = new Set(langProgress.unlockedAchievements ?? []);
+            
+            ACHIEVEMENTS.forEach(ach => {
+                if (!alreadyUnlocked.has(ach.id)) {
+                    if (ach.check(langProgress, newProgress)) {
+                        if (!langProgress.unlockedAchievements) {
+                            langProgress.unlockedAchievements = [];
+                        }
+                        langProgress.unlockedAchievements.push(ach.id);
+                        addToast(ach);
+                        changed = true;
+                    }
+                }
+            });
+        });
+        
+        if(changed) {
+            setUserProgress(newProgress);
+        }
+
+    }, [user]);
+
+    // Effect to run achievement checks whenever progress changes
+    useEffect(() => {
+        if(user && Object.keys(userProgress).length > 0) {
+            checkAndUnlockAchievements(userProgress);
+        }
+    }, [userProgress, user, checkAndUnlockAchievements]);
+
+
+    useEffect(() => {
+        const savedData = localStorage.getItem('growEasySession');
+        if (savedData) {
+            try {
+                const { user: savedUser, selectedLanguageId, userProgress: savedProgress } = JSON.parse(savedData);
+                if (savedUser && savedProgress) {
+                     const language = LANGUAGES.find(l => l.id === selectedLanguageId) || null;
+                     setUser(savedUser);
+                     setUserProgress(savedProgress);
+                     setSelectedLanguage(language);
+                     if (language) {
+                         setPage(Page.Dashboard);
+                     }
+                }
+            } catch (error) {
+                console.error("Failed to parse saved session data", error);
+                localStorage.removeItem('growEasySession');
+            }
+        } else {
+            setPage(Page.Home);
+        }
+    }, []);
+
+    useEffect(() => {
+        if (user) {
+            const dataToSave = {
+                user,
+                selectedLanguageId: selectedLanguage?.id,
+                userProgress,
+            };
+            localStorage.setItem('growEasySession', JSON.stringify(dataToSave));
+        }
+    }, [user, selectedLanguage, userProgress]);
+
+    // Persist the entire registered users database whenever it changes
+    useEffect(() => {
+        try {
+            localStorage.setItem('growEasyUsers', JSON.stringify(registeredUsers));
+        } catch (error) {
+            console.error("Failed to save registered users to localStorage", error);
+        }
+    }, [registeredUsers]);
+
 
     // Keep registered user data in sync with the current user's progress
     useEffect(() => {
@@ -369,6 +661,7 @@ const App: React.FC = () => {
 
         const today = new Date().toISOString().split('T')[0];
         const langProgress = userProgress[selectedLanguage.id];
+        const defaultProgress = { xp: 0, streak: 0, completedTopics: [], mistakes: [], learnedVocabulary: [], league: LeagueTier.Bronze, unlockedAchievements: [], practiceSessions: 0, perfectLessons: 0 };
 
         if (!langProgress?.quests || langProgress.quests.lastReset !== today) {
             const shuffledQuests = [...DAILY_QUESTS].sort(() => 0.5 - Math.random());
@@ -381,7 +674,7 @@ const App: React.FC = () => {
             setUserProgress(prev => ({
                 ...prev,
                 [selectedLanguage.id]: {
-                    ...(prev[selectedLanguage.id] || { xp: 0, streak: 0, completedTopics: [], mistakes: [], learnedVocabulary: [] }),
+                    ...(prev[selectedLanguage.id] || defaultProgress),
                     quests: {
                         lastReset: today,
                         activeQuests: newQuests,
@@ -396,11 +689,10 @@ const App: React.FC = () => {
         if (user && !userProgress[language.id]) {
             setUserProgress(prev => ({
                 ...prev,
-                [language.id]: { xp: 0, streak: 0, completedTopics: [], mistakes: [], learnedVocabulary: [] }
+                [language.id]: { xp: 0, streak: 0, completedTopics: [], mistakes: [], learnedVocabulary: [], league: LeagueTier.Bronze, unlockedAchievements: [], practiceSessions: 0, perfectLessons: 0 }
             }));
         }
         setPage(Page.Dashboard);
-        setIsChangingLanguage(false);
     }, [user, userProgress]);
 
     const handleNavigate = useCallback((targetPage: Page) => {
@@ -430,21 +722,42 @@ const App: React.FC = () => {
     }, [user]);
     
     const handleEndPractice = useCallback(() => {
-        if (user) {
+        if (user && selectedLanguage) {
+            setUserProgress(prev => {
+                const langProgress = prev[selectedLanguage.id] || { xp: 0, streak: 0, completedTopics: [], mistakes: [], learnedVocabulary: [], league: LeagueTier.Bronze, unlockedAchievements: [], practiceSessions: 0, perfectLessons: 0 };
+                return {
+                    ...prev,
+                    [selectedLanguage.id]: {
+                        ...langProgress,
+                        practiceSessions: (langProgress.practiceSessions || 0) + 1,
+                    }
+                }
+            });
             updateQuestProgress([{type: 'practice', amount: 1}]);
         }
         setPracticeMode(null);
         setPage(Page.PracticeHub);
-    }, [user, updateQuestProgress]);
+    }, [user, selectedLanguage, updateQuestProgress]);
 
-    const handleCompleteLesson = useCallback((xpGained: number, newMistakes: MistakeItem[], newVocabulary: VocabularyItem[]) => {
+    const handleCompleteLesson = useCallback((xpGained: number, newMistakes: MistakeItem[], newVocabulary: Omit<VocabularyItem, 'nextReview' | 'interval'>[]) => {
         if (selectedLanguage && selectedTopic) {
             setUserProgress(prev => {
-                const langProgress = prev[selectedLanguage.id] || { xp: 0, streak: 0, completedTopics: [], mistakes: [], learnedVocabulary: [] };
+                const langProgress = prev[selectedLanguage.id] || { xp: 0, streak: 0, completedTopics: [], mistakes: [], learnedVocabulary: [], league: LeagueTier.Bronze, unlockedAchievements: [], practiceSessions: 0, perfectLessons: 0 };
                 
                 const today = new Date().toISOString().split('T')[0];
                 const lastCompleted = langProgress.lastCompletedDate;
                 let newStreak = langProgress.streak;
+                
+                const updatedVocab = [...langProgress.learnedVocabulary];
+                newVocabulary.forEach(newItem => {
+                    if (!updatedVocab.some(existing => existing.word === newItem.word)) {
+                        updatedVocab.push({
+                            ...newItem,
+                            nextReview: new Date().toISOString(),
+                            interval: 1
+                        });
+                    }
+                });
 
                 if (!user) { // Guest user progress tracking
                      return {
@@ -452,7 +765,7 @@ const App: React.FC = () => {
                         [selectedLanguage.id]: {
                            ...langProgress,
                             completedTopics: [...new Set([...langProgress.completedTopics, selectedTopic.id])],
-                            learnedVocabulary: [...langProgress.learnedVocabulary, ...newVocabulary],
+                            learnedVocabulary: updatedVocab,
                         }
                     };
                 }
@@ -471,12 +784,7 @@ const App: React.FC = () => {
                     }
                 }
                 
-                const updatedVocab = [...langProgress.learnedVocabulary];
-                newVocabulary.forEach(newItem => {
-                    if (!updatedVocab.some(existing => existing.word === newItem.word)) {
-                        updatedVocab.push(newItem);
-                    }
-                });
+                const isPerfect = xpGained > 0 && newMistakes.length === 0;
 
                 return {
                     ...prev,
@@ -488,6 +796,7 @@ const App: React.FC = () => {
                         lastCompletedDate: xpGained > 0 ? today : langProgress.lastCompletedDate,
                         mistakes: [...langProgress.mistakes, ...newMistakes],
                         learnedVocabulary: updatedVocab,
+                        perfectLessons: isPerfect ? (langProgress.perfectLessons || 0) + 1 : langProgress.perfectLessons,
                     }
                 };
             });
@@ -505,7 +814,6 @@ const App: React.FC = () => {
     
     const handleChangeLanguage = useCallback(() => {
         setSelectedLanguage(null);
-        setIsChangingLanguage(true);
         setPage(Page.LanguageSelection);
     }, []);
     
@@ -515,12 +823,12 @@ const App: React.FC = () => {
         if (existingRegisteredUser) {
             setUserProgress(existingRegisteredUser.progress);
         } else {
-            if (selectedLanguage && !userProgress[selectedLanguage.id]) {
-                setUserProgress(prev => ({
-                    ...prev,
-                    [selectedLanguage.id]: { xp: 0, streak: 0, completedTopics: [], mistakes: [], learnedVocabulary: [] }
-                }));
+            // New user, initialize progress if they already picked a language as a guest
+            const initialProgress = { ...(userProgress || {}) };
+            if (selectedLanguage && !initialProgress[selectedLanguage.id]) {
+                 initialProgress[selectedLanguage.id] = { xp: 0, streak: 0, completedTopics: [], mistakes: [], learnedVocabulary: [], league: LeagueTier.Bronze, unlockedAchievements: [], practiceSessions: 0, perfectLessons: 0 };
             }
+             setUserProgress(initialProgress);
         }
     
         setUser(loggedInUser);
@@ -528,9 +836,11 @@ const App: React.FC = () => {
     };
 
     const handleLogout = useCallback(() => {
+        localStorage.removeItem('growEasySession');
         setUser(null);
-        // Keep progress for guest session
-        setIsChangingLanguage(false);
+        setUserProgress({});
+        setSelectedLanguage(null);
+        setPage(Page.Home);
     }, []);
     
     const handleUpdateMistakes = (mistakes: MistakeItem[]) => {
@@ -544,13 +854,52 @@ const App: React.FC = () => {
             }));
         }
     }
+    
+    const handleUpdateVocabularyReview = useCallback((word: string, performance: 'again' | 'good' | 'easy') => {
+        if (!selectedLanguage) return;
+    
+        setUserProgress(prev => {
+            const langProgress = prev[selectedLanguage.id];
+            if (!langProgress) return prev;
+    
+            const updatedVocab = langProgress.learnedVocabulary.map(item => {
+                if (item.word === word) {
+                    let newInterval: number;
+                    switch (performance) {
+                        case 'again':
+                            newInterval = 1; // Reset
+                            break;
+                        case 'good':
+                            newInterval = Math.max(2, Math.ceil(item.interval * 2));
+                            break;
+                        case 'easy':
+                            newInterval = Math.max(4, Math.ceil(item.interval * 4));
+                            break;
+                    }
+                    const newNextReview = new Date();
+                    newNextReview.setDate(newNextReview.getDate() + newInterval);
+    
+                    return { ...item, interval: newInterval, nextReview: newNextReview.toISOString() };
+                }
+                return item;
+            });
+    
+            return {
+                ...prev,
+                [selectedLanguage.id]: {
+                    ...langProgress,
+                    learnedVocabulary: updatedVocab,
+                }
+            };
+        });
+    }, [selectedLanguage]);
 
-    const renderPage = () => {
+    const renderPageContent = () => {
         const currentProgress = selectedLanguage ? userProgress[selectedLanguage.id] : null;
 
         switch (page) {
             case Page.LanguageSelection:
-                return <LanguageSelectionPage languages={LANGUAGES} onSelectLanguage={handleSelectLanguage} skipHero={isChangingLanguage} />;
+                return <LanguageSelectionPage languages={LANGUAGES} onSelectLanguage={handleSelectLanguage} />;
             case Page.Dashboard:
                 if (selectedLanguage) {
                     return <DashboardPage user={user} language={selectedLanguage} progress={currentProgress} onStartLesson={handleStartLesson} />;
@@ -568,11 +917,11 @@ const App: React.FC = () => {
                 break;
              case Page.PracticeSession:
                 if (selectedLanguage && practiceMode) {
-                    return <PracticeSessionPage mode={practiceMode} language={selectedLanguage} progress={currentProgress} onEndPractice={handleEndPractice} onUpdateMistakes={handleUpdateMistakes} />;
+                    return <PracticeSessionPage mode={practiceMode} language={selectedLanguage} progress={currentProgress} onEndPractice={handleEndPractice} onUpdateMistakes={handleUpdateMistakes} onUpdateVocabularyReview={handleUpdateVocabularyReview} />;
                 }
                 break;
             case Page.Profile:
-                return <ProfilePage user={user} progress={currentProgress} />;
+                return <ProfilePage user={user} userProgress={userProgress} languages={LANGUAGES} />;
             case Page.Leaderboard:
                 return <LeaderboardPage user={user} registeredUsers={registeredUsers} selectedLanguage={selectedLanguage} />;
             case Page.Dictionary:
@@ -586,6 +935,10 @@ const App: React.FC = () => {
         return null;
     };
     
+    if (page === Page.Home) {
+        return <HomePage onGetStarted={() => setPage(Page.LanguageSelection)} />;
+    }
+
     const isMainView = [Page.Dashboard, Page.PracticeHub, Page.PracticeSession, Page.Profile, Page.Leaderboard, Page.Dictionary].includes(page);
     const currentProgress = selectedLanguage ? userProgress[selectedLanguage.id] : null;
 
@@ -595,8 +948,8 @@ const App: React.FC = () => {
                 {isMainView && <Sidebar user={user} currentPage={page} onNavigate={handleNavigate} onChangeLanguage={handleChangeLanguage} onLogout={handleLogout} />}
                 
                 <main className={isMainView ? "flex-grow py-6" : "container mx-auto max-w-5xl p-4 sm:p-6 lg:p-8"}>
-                    <div key={`${page}-${practiceMode}`} className={!isMainView ? "animate-fade-in" : ""}>
-                        {renderPage()}
+                    <div key={`${page}-${practiceMode}`} className="animate-fade-in">
+                        {renderPageContent()}
                     </div>
                 </main>
                 
@@ -607,7 +960,15 @@ const App: React.FC = () => {
                 isOpen={isAuthModalOpen}
                 onClose={() => setIsAuthModalOpen(false)}
                 onLoginSuccess={handleLoginSuccess}
+                registeredUsers={registeredUsers}
             />
+            <div aria-live="assertive" className="pointer-events-none fixed inset-0 flex items-end px-4 py-6 sm:items-start sm:p-6 z-[100]">
+                <div className="flex w-full flex-col items-center space-y-4 sm:items-end">
+                    {toasts.map(toast => (
+                       <AchievementToast key={toast.id} achievement={toast.achievement} />
+                    ))}
+                </div>
+            </div>
         </div>
     );
 };

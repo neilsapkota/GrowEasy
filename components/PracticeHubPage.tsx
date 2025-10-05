@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Language, UserProgress, PracticeMode } from '../types';
 import { MicrophoneIcon, HeadphonesIcon, TargetIcon, CardsIcon, BookOpenIcon } from './icons';
 
@@ -35,7 +35,7 @@ const PracticeCard: React.FC<PracticeCardProps> = ({ title, description, icon: I
                 <p className="text-slate-500 dark:text-slate-400 mb-4">{description}</p>
                 {count !== undefined && (
                     <span className="font-bold text-sm text-slate-600 dark:text-slate-300 bg-slate-200 dark:bg-slate-700 px-3 py-1 rounded-full">
-                        {count} item{count !== 1 ? 's' : ''}
+                        {count} item{count !== 1 ? 's' : ''} to review
                     </span>
                 )}
                  {disabled && count === 0 && (
@@ -51,7 +51,17 @@ const PracticeCard: React.FC<PracticeCardProps> = ({ title, description, icon: I
 
 const PracticeHubPage: React.FC<PracticeHubPageProps> = ({ language, progress, onStartPractice }) => {
     const mistakeCount = progress?.mistakes?.length ?? 0;
-    const vocabularyCount = progress?.learnedVocabulary?.length ?? 0;
+    
+    const vocabularyToReviewCount = useMemo(() => {
+        if (!progress?.learnedVocabulary) return 0;
+        const now = new Date();
+        return progress.learnedVocabulary.filter(item => {
+            if (!item.nextReview) return false;
+            const reviewDate = new Date(item.nextReview);
+            return reviewDate <= now;
+        }).length;
+    }, [progress]);
+
 
     const practiceOptions: Omit<PracticeCardProps, 'onClick'>[] = [
         {
@@ -75,12 +85,12 @@ const PracticeHubPage: React.FC<PracticeHubPageProps> = ({ language, progress, o
             disabled: mistakeCount === 0,
         },
         {
-            title: 'Vocabulary',
-            description: 'Review your learned words with flashcards.',
+            title: 'Smart Review',
+            description: 'Review words with our Spaced Repetition System.',
             icon: CardsIcon,
             color: 'bg-amber-500',
-            count: vocabularyCount,
-            disabled: vocabularyCount === 0,
+            count: vocabularyToReviewCount,
+            disabled: vocabularyToReviewCount === 0,
         },
         {
             title: 'Stories',
@@ -89,6 +99,14 @@ const PracticeHubPage: React.FC<PracticeHubPageProps> = ({ language, progress, o
             color: 'bg-emerald-500',
         },
     ];
+
+    const modeMap: Record<string, PracticeMode> = {
+        'Conversation': 'conversation',
+        'Listening': 'listening',
+        'Your Mistakes': 'mistakes',
+        'Smart Review': 'vocabulary',
+        'Stories': 'stories',
+    };
 
     return (
         <div className="px-4 animate-fade-in">
@@ -100,7 +118,7 @@ const PracticeHubPage: React.FC<PracticeHubPageProps> = ({ language, progress, o
                     <PracticeCard
                         key={opt.title}
                         {...opt}
-                        onClick={() => onStartPractice(opt.title.toLowerCase().replace('your ', '') as PracticeMode)}
+                        onClick={() => onStartPractice(modeMap[opt.title])}
                     />
                 ))}
             </div>

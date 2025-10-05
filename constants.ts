@@ -1,4 +1,4 @@
-import { Language, LessonTopic, Quest } from './types';
+import { Language, LessonTopic, Quest, Achievement, AchievementTier, UserProgress } from './types';
 
 export const LANGUAGES: Language[] = [
     { id: 'es', name: 'Spanish', flag: '🇪🇸' },
@@ -110,4 +110,26 @@ export const DAILY_QUESTS: Quest[] = [
   { id: 'complete_1_lesson', title: 'Complete 1 lesson', type: 'lesson', target: 1, reward: 10 },
   { id: 'complete_2_lessons', title: 'Complete 2 lessons', type: 'lesson', target: 2, reward: 20 },
   { id: 'practice_1_session', title: 'Finish a practice session', type: 'practice', target: 1, reward: 15 },
+];
+
+export const ACHIEVEMENTS: Achievement[] = [
+    // XP Achievements
+    { id: 'xp_100', title: 'XP Collector', description: 'Earn 100 XP in a language.', tier: AchievementTier.Bronze, check: (p) => p.xp >= 100 },
+    { id: 'xp_500', title: 'XP Enthusiast', description: 'Earn 500 XP in a language.', tier: AchievementTier.Silver, check: (p) => p.xp >= 500 },
+    { id: 'xp_1000', title: 'XP Master', description: 'Earn 1000 XP in a language.', tier: AchievementTier.Gold, check: (p) => p.xp >= 1000 },
+    // Streak Achievements
+    { id: 'streak_3', title: 'On a Roll', description: 'Maintain a 3-day streak.', tier: AchievementTier.Bronze, check: (p) => p.streak >= 3 },
+    { id: 'streak_7', title: 'Fire Starter', description: 'Maintain a 7-day streak.', tier: AchievementTier.Silver, check: (p) => p.streak >= 7 },
+    { id: 'streak_14', title: 'Unstoppable', description: 'Maintain a 14-day streak.', tier: AchievementTier.Gold, check: (p) => p.streak >= 14 },
+    // Lesson Achievements
+    { id: 'lessons_1', title: 'First Steps', description: 'Complete your first lesson.', tier: AchievementTier.Bronze, check: (p) => p.completedTopics.length >= 1 },
+    { id: 'lessons_5', title: 'Bookworm', description: 'Complete 5 different lessons.', tier: AchievementTier.Silver, check: (p) => p.completedTopics.length >= 5 },
+    { id: 'lessons_all_unit1', title: 'Unit 1 Graduate', description: 'Complete all lessons in Unit 1.', tier: AchievementTier.Gold, check: (p) => UNITS[0].lessons.every(l => p.completedTopics.includes(l.id)) },
+    // Practice Achievements
+    { id: 'practice_1', title: 'Practice Makes Perfect', description: 'Complete a practice session.', tier: AchievementTier.Bronze, check: (p) => (p.practiceSessions ?? 0) >= 1 },
+    { id: 'practice_10', title: 'Dedicated Learner', description: 'Complete 10 practice sessions.', tier: AchievementTier.Silver, check: (p) => (p.practiceSessions ?? 0) >= 10 },
+    // Perfectionist
+    { id: 'perfect_lesson_1', title: 'Perfectionist', description: 'Get a perfect score in a lesson without any mistakes.', tier: AchievementTier.Silver, check: (p) => (p.perfectLessons ?? 0) >= 1 },
+    // Global Achievement
+    { id: 'polyglot_starter', title: 'Language Explorer', description: 'Start learning a second language.', tier: AchievementTier.Silver, check: (p, all) => Object.keys(all).filter(langId => all[langId].xp > 0).length >= 2 },
 ];

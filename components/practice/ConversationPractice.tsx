@@ -1,159 +1,150 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Language } from '../../types';
-import { generatePracticeContent } from '../../services/geminiService';
+import { Language, ChatMessage } from '../../types';
+import { startConversation, sendChatMessage } from '../../services/geminiService';
+import { Chat } from '@google/genai';
 import Loader from '../Loader';
-import { MicrophoneIcon, VolumeUpIcon } from '../icons';
+import { MicrophoneIcon, SpinnerIcon } from '../icons';
 
 interface ConversationPracticeProps {
     language: Language;
     onEnd: () => void;
 }
 
-declare global {
-    interface Window {
-        SpeechRecognition: any;
-        webkitSpeechRecognition: any;
-    }
-}
-
 const ConversationPractice: React.FC<ConversationPracticeProps> = ({ language, onEnd }) => {
-    const [phrases, setPhrases] = useState<string[]>([]);
-    const [currentPhraseIndex, setCurrentPhraseIndex] = useState(0);
+    const [chat, setChat] = useState<Chat | null>(null);
+    const [messages, setMessages] = useState<ChatMessage[]>([]);
+    const [userInput, setUserInput] = useState('');
     const [isLoading, setIsLoading] = useState(true);
-    const [isListening, setIsListening] = useState(false);
-    const [transcript, setTranscript] = useState('');
-    const [feedback, setFeedback] = useState('');
-    const recognitionRef = useRef<any>(null);
+    const [error, setError] = useState<string | null>(null);
+    const messagesEndRef = useRef<HTMLDivElement>(null);
 
-    // Fetch phrases on mount
+    // Scroll to bottom of chat
     useEffect(() => {
-        const fetchPhrases = async () => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, [messages]);
+
+    // Initialize conversation
+    useEffect(() => {
+        const initChat = async () => {
             try {
-                const content = await generatePracticeContent(language, 'conversation', 5);
-                setPhrases(content);
-            } catch (error) {
-                console.error(error);
-                setFeedback('Could not load phrases. Please try again.');
+                setIsLoading(true);
+                const chatSession = startConversation(language);
+                setChat(chatSession);
+
+                // Get the first message from the AI
+                const initialResponse = await sendChatMessage(chatSession, "Start the conversation.");
+                setMessages([{ author: 'ai', content: initialResponse.reply, correction: null }]);
+            } catch (err) {
+                console.error(err);
+                setError("Sorry, the conversation partner isn't available right now. Please try again later.");
             } finally {
                 setIsLoading(false);
             }
         };
-        fetchPhrases();
+        initChat();
     }, [language]);
-
-    // Setup speech recognition
-    useEffect(() => {
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (SpeechRecognition) {
-            const recognition = new SpeechRecognition();
-            recognition.continuous = false;
-            recognition.interimResults = false;
-            recognition.lang = language.id;
-            
-            recognition.onerror = (event: any) => {
-                console.error('Speech recognition error', event.error);
-                if (event.error === 'not-allowed') {
-                    setFeedback('Microphone permission is required. Please allow microphone access in your browser settings and try again.');
-                } else {
-                    setFeedback('Sorry, I didn\'t catch that. Please try again.');
-                }
-                setIsListening(false);
-            };
-
-            recognition.onend = () => {
-                setIsListening(false);
-            };
-
-            recognitionRef.current = recognition;
-
-            return () => {
-                recognition.stop();
-            };
-        }
-    }, [language.id]);
     
-    const handleListen = useCallback(() => {
-        if (!recognitionRef.current) {
-            setFeedback('Speech recognition is not supported in your browser.');
-            return;
-        }
-        
-        // Define onresult here to capture current state
-        recognitionRef.current.onresult = (event: any) => {
-            const spokenText = event.results[0][0].transcript;
-            setTranscript(spokenText);
-            const currentPhrase = phrases[currentPhraseIndex];
-            if (currentPhrase && spokenText.trim().toLowerCase() === currentPhrase.trim().toLowerCase()) {
-                setFeedback('Perfect!');
-            } else {
-                setFeedback('Good try! Let\'s move to the next one.');
+    const handleSendMessage = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!userInput.trim() || !chat || isLoading) return;
+
+        const userMessage: ChatMessage = { author: 'user', content: userInput };
+        setMessages(prev => [...prev, userMessage]);
+        setUserInput('');
+        setIsLoading(true);
+
+        try {
+            const response = await sendChatMessage(chat, userInput);
+            const aiMessage: ChatMessage = { author: 'ai', content: response.reply, correction: response.correction };
+            
+            // Add correction to user's message if available
+            if (response.correction) {
+                 setMessages(prev => prev.map((msg, index) => 
+                    index === prev.length - 1 ? { ...msg, correction: response.correction } : msg
+                ));
             }
-        };
 
-        setTranscript('');
-        setFeedback('');
-        setIsListening(true);
-        recognitionRef.current.start();
-    }, [phrases, currentPhraseIndex]);
+            setMessages(prev => [...prev, aiMessage]);
 
-    const handleSpeak = (text: string) => {
-        if ('speechSynthesis' in window) {
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = language.id;
-            window.speechSynthesis.speak(utterance);
+        } catch (err) {
+            console.error(err);
+            const errorMessage: ChatMessage = { author: 'system', content: "I'm having trouble connecting. Let's try that again." };
+            setMessages(prev => [...prev, errorMessage]);
+        } finally {
+            setIsLoading(false);
         }
     };
 
-    const nextPhrase = () => {
-        setTranscript('');
-        setFeedback('');
-        if (currentPhraseIndex < phrases.length - 1) {
-            setCurrentPhraseIndex(currentPhraseIndex + 1);
-        } else {
-            onEnd(); // End of practice
-        }
-    };
-
-    if (isLoading) return <Loader message="Preparing conversation practice..." />;
-
-    if (!phrases || phrases.length === 0) {
-        return <div className="text-center p-4">Could not load practice phrases. <button onClick={onEnd} className="underline">Go back</button>.</div>;
+    if (error) {
+        return (
+             <div className="p-6 bg-white dark:bg-slate-800 rounded-2xl shadow-xl text-center">
+                <h2 className="text-xl font-bold mb-4 text-red-500">An Error Occurred</h2>
+                <p className="text-slate-600 dark:text-slate-300 mb-6">{error}</p>
+                <button onClick={onEnd} className="px-6 py-2 bg-slate-500 text-white font-bold rounded-lg hover:bg-slate-600">
+                    Back to Hub
+                </button>
+            </div>
+        )
     }
 
-    const currentPhrase = phrases[currentPhraseIndex];
-
     return (
-        <div className="p-6 bg-white dark:bg-slate-800 rounded-2xl shadow-xl">
-            <h2 className="text-2xl font-bold mb-4">Conversation Practice</h2>
-            <div className="text-center p-8 bg-slate-100 dark:bg-slate-700 rounded-lg mb-6">
-                <p className="text-slate-500 dark:text-slate-400 mb-2">Say this phrase:</p>
-                <h3 className="text-3xl font-bold text-slate-800 dark:text-white">{currentPhrase}</h3>
-                <button onClick={() => handleSpeak(currentPhrase)} className="mt-2 text-sky-500">
-                    <VolumeUpIcon className="w-6 h-6 inline-block" />
-                </button>
-            </div>
-            <div className="flex justify-center mb-6">
-                <button onClick={handleListen} disabled={isListening} className={`p-6 rounded-full transition-colors ${isListening ? 'bg-red-500 animate-pulse' : 'bg-sky-500 hover:bg-sky-600'}`}>
-                    <MicrophoneIcon className="w-10 h-10 text-white" />
-                </button>
-            </div>
-            {transcript && (
-                <div className="text-center mb-4">
-                    <p className="text-slate-500">You said:</p>
-                    <p className="font-semibold text-lg">"{transcript}"</p>
+        <div className="p-4 sm:p-6 bg-white dark:bg-slate-800 rounded-2xl shadow-xl flex flex-col h-[75vh]">
+            <div className="flex justify-between items-center mb-4 pb-4 border-b border-slate-200 dark:border-slate-700">
+                <div>
+                    <h2 className="text-xl sm:text-2xl font-bold">Conversation Practice</h2>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">Chat with Alex, your AI partner.</p>
                 </div>
-            )}
-            {feedback && (
-                <div className="text-center p-4 bg-blue-100 dark:bg-blue-900/50 rounded-lg mb-6">
-                    <p className="font-semibold">{feedback}</p>
-                </div>
-            )}
-            <div className="flex justify-between">
-                <button onClick={onEnd} className="font-bold text-slate-500">End Practice</button>
-                <button onClick={nextPhrase} className="px-6 py-2 bg-green-500 text-white font-bold rounded-lg hover:bg-green-600">
-                    {currentPhraseIndex === phrases.length - 1 ? 'Finish' : 'Next'}
-                </button>
+                <button onClick={onEnd} className="font-bold text-slate-500 hover:underline">End Practice</button>
             </div>
+            
+            <div className="flex-grow overflow-y-auto pr-2 space-y-4 mb-4">
+                {messages.map((msg, index) => (
+                    <div key={index} className={`flex flex-col ${msg.author === 'user' ? 'items-end' : 'items-start'}`}>
+                        <div className={`max-w-[80%] p-3 rounded-2xl ${
+                            msg.author === 'user' ? 'bg-teal-500 text-white rounded-br-none' : 
+                            msg.author === 'ai' ? 'bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 rounded-bl-none' : 
+                            'bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300'
+                        }`}>
+                           {msg.content}
+                        </div>
+                        {msg.author === 'user' && msg.correction && (
+                             <div className="mt-1.5 text-xs text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/50 px-2 py-1 rounded-full">
+                                💡 {msg.correction}
+                            </div>
+                        )}
+                    </div>
+                ))}
+                {isLoading && messages.length > 0 && (
+                    <div className="flex items-start">
+                         <div className="max-w-[80%] p-3 rounded-2xl bg-slate-200 dark:bg-slate-700 rounded-bl-none flex items-center space-x-2">
+                            <SpinnerIcon className="w-4 h-4 animate-spin text-slate-500" />
+                            <span className="text-sm text-slate-500">Alex is typing...</span>
+                        </div>
+                    </div>
+                )}
+                 {messages.length === 0 && isLoading && (
+                     <Loader message="Connecting to your conversation partner..." />
+                 )}
+                <div ref={messagesEndRef} />
+            </div>
+
+            <form onSubmit={handleSendMessage} className="flex items-center gap-2 pt-4 border-t border-slate-200 dark:border-slate-700">
+                <input
+                    type="text"
+                    value={userInput}
+                    onChange={(e) => setUserInput(e.target.value)}
+                    placeholder="Type your message..."
+                    className="flex-grow px-4 py-3 text-lg bg-slate-100 dark:bg-slate-700 border-2 border-transparent rounded-full focus:outline-none focus:ring-2 focus:ring-teal-500 transition"
+                    disabled={isLoading}
+                />
+                <button
+                    type="submit"
+                    disabled={!userInput.trim() || isLoading}
+                    className="px-6 py-3 font-bold text-white bg-teal-600 rounded-full hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 disabled:bg-slate-400 disabled:cursor-not-allowed transition-colors"
+                >
+                    Send
+                </button>
+            </form>
         </div>
     );
 };

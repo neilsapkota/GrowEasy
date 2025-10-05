@@ -1,5 +1,5 @@
 import React from 'react';
-import { Language, UserProgress, PracticeMode, MistakeItem } from '../types';
+import { Language, UserProgress, PracticeMode, MistakeItem, VocabularyItem } from '../types';
 import ConversationPractice from './practice/ConversationPractice';
 import ListeningPractice from './practice/ListeningPractice';
 import MistakesPractice from './practice/MistakesPractice';
@@ -12,9 +12,10 @@ interface PracticeSessionPageProps {
     progress: UserProgress | null;
     onEndPractice: () => void;
     onUpdateMistakes: (mistakes: MistakeItem[]) => void;
+    onUpdateVocabularyReview: (word: string, performance: 'again' | 'good' | 'easy') => void;
 }
 
-const PracticeSessionPage: React.FC<PracticeSessionPageProps> = ({ mode, language, progress, onEndPractice, onUpdateMistakes }) => {
+const PracticeSessionPage: React.FC<PracticeSessionPageProps> = ({ mode, language, progress, onEndPractice, onUpdateMistakes, onUpdateVocabularyReview }) => {
     const renderPracticeMode = () => {
         switch (mode) {
             case 'conversation':
@@ -24,7 +25,7 @@ const PracticeSessionPage: React.FC<PracticeSessionPageProps> = ({ mode, languag
             case 'mistakes':
                 return <MistakesPractice language={language} mistakes={progress?.mistakes ?? []} onEnd={onEndPractice} onUpdateMistakes={onUpdateMistakes} />;
             case 'vocabulary':
-                return <VocabularyReview vocabulary={progress?.learnedVocabulary ?? []} onEnd={onEndPractice} />;
+                return <VocabularyReview vocabulary={progress?.learnedVocabulary ?? []} onEnd={onEndPractice} onUpdateVocabulary={onUpdateVocabularyReview} />;
             case 'stories':
                 return <StoriesPractice language={language} onEnd={onEndPractice} />;
             default:

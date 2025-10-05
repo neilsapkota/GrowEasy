@@ -145,3 +145,32 @@ export const ClockIcon: React.FC<{ className?: string }> = ({ className }) => (
         <path fillRule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zM12.75 6a.75.75 0 00-1.5 0v6c0 .414.336.75.75.75h4.5a.75.75 0 000-1.5h-3.75V6z" clipRule="evenodd" />
     </svg>
 );
+
+export const ShieldCheckIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} viewBox="0 0 24 24" fill="currentColor">
+        <path fillRule="evenodd" d="M12 1.5a.75.75 0 01.75.75v1.506c4.72 1.01 7.5 5.05 7.5 9.744 0 4.346-2.526 8.22-6.101 9.773a.75.75 0 01-.798 0c-3.575-1.553-6.101-5.427-6.101-9.773 0-4.694 2.78-8.734 7.5-9.744V2.25A.75.75 0 0112 1.5zm-.805 10.335a.75.75 0 00-1.06 1.06l1.5 1.5a.75.75 0 001.06 0l3-3a.75.75 0 00-1.06-1.06L11.25 13.44l-.515-.515z" clipRule="evenodd" />
+    </svg>
+);
+
+export const TrophyIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} viewBox="0 0 24 24" fill="currentColor">
+        <path d="M16.5 2.25a.75.75 0 00-1.5 0v2.079a25.286 25.286 0 00-3.328 0V2.25a.75.75 0 00-1.5 0v2.079a25.286 25.286 0 00-3.328 0V2.25a.75.75 0 00-1.5 0v2.079c-2.433.504-4.333 2.193-4.333 4.171 0 1.954 1.769 3.61 4.12 4.133.456.091.92.16 1.388.204v2.518a.75.75 0 00.75.75h6a.75.75 0 00.75-.75v-2.518c.468-.044.932-.113 1.388-.204 2.351-.523 4.12-2.18 4.12-4.133 0-1.978-1.9-3.667-4.333-4.171V2.25zM12 11.25a2.25 2.25 0 100-4.5 2.25 2.25 0 000 4.5z" />
+        <path d="M4.5 15.75a.75.75 0 00.75.75h13.5a.75.75 0 00.75-.75V15c-2.433-.504-4.333-2.193-4.333-4.171 0-.312.042-.618.12-.916a25.343 25.343 0 00-9.874 0c.078.298.12.604.12.916 0 1.978-1.9 3.667-4.333 4.171v.75z" />
+    </svg>
+);
+
+// FIX: Add title prop to ArrowUpIcon to allow tooltips.
+export const ArrowUpIcon: React.FC<{ className?: string; title?: string }> = ({ className, title }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+    {title && <title>{title}</title>}
+    <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
+  </svg>
+);
+
+// FIX: Add title prop to ArrowDownIcon to allow tooltips.
+export const ArrowDownIcon: React.FC<{ className?: string; title?: string }> = ({ className, title }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+    {title && <title>{title}</title>}
+    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+  </svg>
+);

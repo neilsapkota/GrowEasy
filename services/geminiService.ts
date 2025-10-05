@@ -1,5 +1,5 @@
-import { GoogleGenAI, Type } from "@google/genai";
-import { Language, LessonContent, Feedback, Story, DictionaryEntry } from '../types';
+import { GoogleGenAI, Type, Chat } from "@google/genai";
+import { Language, LessonContent, Feedback, Story, DictionaryEntry, ChatResponse } from '../types';
 
 if (!process.env.API_KEY) {
     throw new Error("API_KEY environment variable not set");
@@ -78,6 +78,14 @@ const dictionaryEntrySchema = {
     required: ['word', 'translation', 'pronunciation', 'definition', 'exampleSentence', 'exampleTranslation'],
 };
 
+const chatResponseSchema = {
+    type: Type.OBJECT,
+    properties: {
+        reply: { type: Type.STRING, description: "Your conversational response in the target language." },
+        correction: { type: Type.STRING, description: "A brief correction of the user's last message in English. If no correction is needed, this should be null." }
+    },
+    required: ['reply'],
+};
 
 export const generateLesson = async (language: Language, topic: string): Promise<LessonContent> => {
     const prompt = `Generate a beginner-level language lesson for learning ${language.name} about '${topic}'. The lesson must include:
@@ -204,5 +212,33 @@ export const getDictionaryEntry = async (language: Language, word: string): Prom
     } catch (error) {
         console.error("Error getting dictionary entry:", error);
         throw new Error(`Failed to find a dictionary entry for "${word}".`);
+    }
+};
+
+export const startConversation = (language: Language): Chat => {
+    const systemInstruction = `You are Alex, a friendly and patient language practice partner. You are talking to a beginner learning ${language.name}. Your goal is to have a simple, natural conversation. 
+    - Keep your responses short and simple (1-2 sentences).
+    - Start the conversation by introducing yourself and asking the user's name in ${language.name}. For example, start with a scenario like "Hi! I'm Alex. We're in a park. What's your name?".
+    - If the user makes a grammatical mistake, provide a brief, friendly correction in English, and then continue the conversation naturally in ${language.name}.
+    - ALWAYS respond in JSON format with two keys: "reply" (your conversational response in ${language.name}) and "correction" (the correction in English, or null if there's no mistake).`;
+
+    return ai.chats.create({
+        model: 'gemini-2.5-flash',
+        config: {
+            systemInstruction,
+            responseMimeType: "application/json",
+            responseSchema: chatResponseSchema,
+        },
+    });
+};
+
+export const sendChatMessage = async (chat: Chat, message: string): Promise<ChatResponse> => {
+    try {
+        const response = await chat.sendMessage({ message });
+        const jsonText = response.text.trim();
+        return JSON.parse(jsonText) as ChatResponse;
+    } catch (error) {
+        console.error("Error sending chat message:", error);
+        throw new Error("Failed to get a response from the AI conversation partner.");
     }
 };

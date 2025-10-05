@@ -8,7 +8,7 @@ import { CheckCircleIcon, XCircleIcon, VolumeUpIcon } from './icons';
 interface LessonPageProps {
     language: Language;
     topic: LessonTopic;
-    onComplete: (xpGained: number, mistakes: MistakeItem[], vocabulary: VocabularyItem[]) => void;
+    onComplete: (xpGained: number, mistakes: MistakeItem[], vocabulary: Omit<VocabularyItem, 'nextReview' | 'interval'>[]) => void;
     onBack: () => void;
 }
 
@@ -116,7 +116,7 @@ const LessonPage: React.FC<LessonPageProps> = ({ language, topic, onComplete, on
         <div className="p-6 sm:p-8 bg-white dark:bg-slate-800 rounded-2xl shadow-xl">
             <div className="flex justify-between items-start mb-6">
                  <div>
-                    <h1 className="text-3xl font-extrabold text-slate-800 dark:text-white">{topic.icon} {topic.title} Lesson</h1>
+                    <h2 className="text-3xl font-extrabold text-slate-800 dark:text-white">{topic.icon} {topic.title} Lesson</h2>
                     <p className="text-slate-500 dark:text-slate-400">Time to learn something new in {language.name}!</p>
                 </div>
                  <button onClick={onBack} className="text-sm font-semibold text-slate-600 dark:text-slate-400 hover:underline">

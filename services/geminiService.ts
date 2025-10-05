@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import { Language, LessonContent, Feedback } from '../types';
+import { Language, LessonContent, Feedback, Story } from '../types';
 
 if (!process.env.API_KEY) {
     throw new Error("API_KEY environment variable not set");
@@ -54,6 +54,17 @@ const feedbackSchema = {
     required: ['isCorrect', 'explanation'],
 };
 
+const storySchema = {
+    type: Type.OBJECT,
+    properties: {
+        id: { type: Type.STRING },
+        title: { type: Type.STRING },
+        content: { type: Type.STRING },
+        level: { type: Type.STRING, enum: ['beginner', 'intermediate', 'advanced'] }
+    },
+    required: ['id', 'title', 'content', 'level']
+};
+
 
 export const generateLesson = async (language: Language, topic: string): Promise<LessonContent> => {
     const prompt = `Generate a beginner-level language lesson for learning ${language.name} about '${topic}'. The lesson must include:
@@ -72,13 +83,11 @@ export const generateLesson = async (language: Language, topic: string): Promise
         });
         const jsonText = response.text.trim();
         const parsedContent = JSON.parse(jsonText) as LessonContent;
-        // Ensure the correct answer is one of the options
+
         if (!parsedContent.quiz.options.includes(parsedContent.quiz.correctAnswer)) {
-            // If not, replace a random incorrect option with the correct one
             const incorrectOptions = parsedContent.quiz.options.filter(opt => opt !== parsedContent.quiz.correctAnswer);
             const options = incorrectOptions.slice(0, 3);
             options.push(parsedContent.quiz.correctAnswer);
-            // Shuffle options
             parsedContent.quiz.options = options.sort(() => Math.random() - 0.5);
         }
         return parsedContent;
@@ -112,5 +121,48 @@ Provide feedback in a JSON format.
     } catch (error) {
         console.error("Error getting feedback:", error);
         throw new Error("Failed to get feedback from the AI.");
+    }
+};
+
+export const generatePracticeContent = async (language: Language, mode: 'conversation' | 'listening', count: number): Promise<string[]> => {
+    const prompt = `Generate ${count} simple, common, beginner-level ${mode === 'conversation' ? 'phrases' : 'sentences'} in ${language.name} for a language learner to practice.`;
+    
+    try {
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: prompt,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: Type.ARRAY,
+                    items: { type: Type.STRING }
+                },
+            },
+        });
+        const jsonText = response.text.trim();
+        return JSON.parse(jsonText) as string[];
+    } catch (error) {
+        console.error(`Error generating ${mode} content:`, error);
+        throw new Error(`Failed to generate ${mode} content.`);
+    }
+};
+
+export const generateStory = async (language: Language): Promise<Story> => {
+    const prompt = `Generate a very short, simple, beginner-level story in ${language.name}. The story should be only 3-4 sentences long. Return it in JSON format. The id should be a random string.`;
+
+    try {
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: prompt,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: storySchema,
+            },
+        });
+        const jsonText = response.text.trim();
+        return JSON.parse(jsonText) as Story;
+    } catch (error) {
+        console.error("Error generating story:", error);
+        throw new Error("Failed to generate a story.");
     }
 };

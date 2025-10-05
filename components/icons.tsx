@@ -94,7 +94,7 @@ export const UserCircleIcon: React.FC<{ className?: string }> = ({ className }) 
 
 export const BookOpenIcon: React.FC<{ className?: string }> = ({ className }) => (
     <svg xmlns="http://www.w3.org/2000/svg" className={className} viewBox="0 0 24 24" fill="currentColor">
-        <path d="M10.5 2.25a2.25 2.25 0 00-2.25 2.25v15a2.25 2.25 0 002.25 2.25h1.5a.75.75 0 000-1.5h-1.5a.75.75 0 01-.75-.75V4.5a.75.75 0 01.75-.75h7.5a.75.75 0 01.75.75v15a.75.75 0 01-.75.75h-1.5a.75.75 0 000 1.5h1.5a2.25 2.25 0 002.25-2.25V4.5a2.25 2.25 0 00-2.25-2.25h-7.5z" />
+        <path d="M10.5 2.25a2.25 2.25 0 00-2.25 2.25v15a2.25 2.25 0 002.25 2.25h1.5a.75.75 0 000-1.5h-1.5a.75.75 0 01-.75-.75V4.5a.75.75 0 01.75-.75h7.5a.75.75 0 01.75.75v15a.75.75 0 01-.75-.75h-1.5a.75.75 0 000 1.5h1.5a2.25 2.25 0 002.25-2.25V4.5a2.25 2.25 0 00-2.25-2.25h-7.5z" />
         <path d="M12.75 6a.75.75 0 00-1.5 0v11.25a.75.75 0 001.5 0V6z" />
     </svg>
 );
@@ -103,5 +103,45 @@ export const ChestIcon: React.FC<{ className?: string }> = ({ className }) => (
     <svg xmlns="http://www.w3.org/2000/svg" className={className} viewBox="0 0 24 24" fill="currentColor">
         <path d="M3.375 4.5C2.339 4.5 1.5 5.34 1.5 6.375V13.5h12V6.375c0-1.036-.84-1.875-1.875-1.875h-8.25zM13.5 15v-1.5H1.5V15c0 1.036.84 1.875 1.875 1.875h.375a3 3 0 116 0h3a.75.75 0 00.75-.75V15z" />
         <path d="M22.5 9.375c0-1.036-.84-1.875-1.875-1.875h-5.25V15h7.125c1.035 0 1.875-.84 1.875-1.875v-3.75z" />
+    </svg>
+);
+
+export const PracticeIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 6.75a5.25 5.25 0 00-5.25 5.25H3a.75.75 0 000 1.5h3.75A5.25 5.25 0 0012 18.75a5.25 5.25 0 005.25-5.25H21a.75.75 0 000-1.5h-3.75A5.25 5.25 0 0012 6.75z" />
+        <path fillRule="evenodd" d="M6.113 9.342a.75.75 0 01.75.068l.25.125a.75.75 0 010 1.28l-.25.125a.75.75 0 01-.818-1.348zM12 2.25a.75.75 0 01.75.75v.25a.75.75 0 01-1.5 0V3a.75.75 0 01.75-.75zM12 20.25a.75.75 0 01.75.75v.25a.75.75 0 01-1.5 0v-.25a.75.75 0 01.75-.75zM17.887 9.342a.75.75 0 01.068.75l.125.25a.75.75 0 01-1.28 0l-.125-.25a.75.75 0 011.348-.818z" clipRule="evenodd" />
+    </svg>
+);
+
+export const MicrophoneIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 18.75a6 6 0 006-6v-1.5a6 6 0 00-12 0v1.5a6 6 0 006 6z" />
+        <path d="M12 5.25a.75.75 0 01.75.75v6a.75.75 0 01-1.5 0V6a.75.75 0 01.75-.75z" />
+        <path fillRule="evenodd" d="M12 21a8.25 8.25 0 005.65-2.073.75.75 0 00-1.016-1.118A6.75 6.75 0 0112 19.5a6.75 6.75 0 01-4.634-1.69.75.75 0 10-1.016 1.118A8.25 8.25 0 0012 21z" clipRule="evenodd" />
+    </svg>
+);
+
+export const HeadphonesIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} viewBox="0 0 24 24" fill="currentColor">
+        <path fillRule="evenodd" d="M1.5 12a10.5 10.5 0 1121 0 10.5 10.5 0 01-21 0zM12 2.25a9.75 9.75 0 00-9.75 9.75 9.75 9.75 0 009.75 9.75 9.75 9.75 0 009.75-9.75A9.75 9.75 0 0012 2.25z" clipRule="evenodd" />
+        <path d="M8.25 12a.75.75 0 01.75-.75h1.5a.75.75 0 01.75.75v3.75a.75.75 0 01-1.5 0V12h-.75a.75.75 0 01-.75-.75zM12.75 12a.75.75 0 01.75-.75h.75v3.75a.75.75 0 01-1.5 0V12h.75a.75.75 0 010-1.5h-1.5a.75.75 0 01-.75-.75.75.75 0 01.75-.75h1.5a2.25 2.25 0 012.25 2.25v1.5a2.25 2.25 0 01-2.25 2.25h-1.5a.75.75 0 010-1.5h.75v-3z" />
+    </svg>
+);
+
+export const TargetIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} viewBox="0 0 24 24" fill="currentColor">
+        <path fillRule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zM12.75 6a.75.75 0 00-1.5 0v6a.75.75 0 001.5 0V6zM12 13.5a1.5 1.5 0 110 3 1.5 1.5 0 010-3z" clipRule="evenodd" />
+    </svg>
+);
+
+export const CardsIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} viewBox="0 0 24 24" fill="currentColor">
+        <path d="M1.5 3.375c0-1.036.84-1.875 1.875-1.875h17.25c1.035 0 1.875.84 1.875 1.875v17.25c0 1.035-.84 1.875-1.875 1.875H3.375A1.875 1.875 0 011.5 20.625V3.375z" />
+    </svg>
+);
+
+export const ClockIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} viewBox="0 0 24 24" fill="currentColor">
+        <path fillRule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zM12.75 6a.75.75 0 00-1.5 0v6c0 .414.336.75.75.75h4.5a.75.75 0 000-1.5h-3.75V6z" clipRule="evenodd" />
     </svg>
 );

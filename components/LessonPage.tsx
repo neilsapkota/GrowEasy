@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Language, LessonTopic, LessonContent, Feedback } from '../types';
+import { Language, LessonTopic, LessonContent, Feedback, MistakeItem, VocabularyItem } from '../types';
 import { XP_PER_CORRECT_ANSWER } from '../constants';
 import { generateLesson, getFeedback } from '../services/geminiService';
 import Loader from './Loader';
@@ -8,12 +8,11 @@ import { CheckCircleIcon, XCircleIcon, VolumeUpIcon } from './icons';
 interface LessonPageProps {
     language: Language;
     topic: LessonTopic;
-    onComplete: (xpGained: number) => void;
+    onComplete: (xpGained: number, mistakes: MistakeItem[], vocabulary: VocabularyItem[]) => void;
     onBack: () => void;
 }
 
 const langCodeMap: { [key: string]: string } = {
-    // Fix: Corrected syntax error for 'jp' key. The value was not a string.
     es: 'es-ES', fr: 'fr-FR', de: 'de-DE', it: 'it-IT', jp: 'ja-JP',
     kr: 'ko-KR', cn: 'zh-CN', in: 'hi-IN', sa: 'ar-SA', bd: 'bn-BD',
     ru: 'ru-RU', pt: 'pt-PT', pk: 'ur-PK', id: 'id-ID', nl: 'nl-NL',
@@ -31,6 +30,7 @@ const LessonPage: React.FC<LessonPageProps> = ({ language, topic, onComplete, on
     const [feedback, setFeedback] = useState<Feedback | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isCompleted, setIsCompleted] = useState(false);
+    const [mistakes, setMistakes] = useState<MistakeItem[]>([]);
     
     useEffect(() => {
         const fetchLesson = async () => {
@@ -60,6 +60,12 @@ const LessonPage: React.FC<LessonPageProps> = ({ language, topic, onComplete, on
             setFeedback(result);
             if(result.isCorrect) {
                 setIsCompleted(true);
+            } else {
+                setMistakes(prev => [...prev, {
+                    question: lessonContent.quiz.question,
+                    correctAnswer: lessonContent.quiz.correctAnswer,
+                    topicId: topic.id,
+                }]);
             }
         } catch (err) {
             setError('Failed to get feedback. Please try again.');
@@ -74,10 +80,16 @@ const LessonPage: React.FC<LessonPageProps> = ({ language, topic, onComplete, on
             const utterance = new SpeechSynthesisUtterance(text);
             utterance.lang = langCodeMap[language.id] || language.id;
             utterance.rate = 0.9;
-            window.speechSynthesis.cancel(); // Cancel any previous speech
+            window.speechSynthesis.cancel();
             window.speechSynthesis.speak(utterance);
         } else {
             alert("Sorry, your browser doesn't support text-to-speech.");
+        }
+    };
+
+    const handleFinish = () => {
+        if (lessonContent) {
+            onComplete(XP_PER_CORRECT_ANSWER, mistakes, lessonContent.vocabulary);
         }
     };
 
@@ -113,7 +125,6 @@ const LessonPage: React.FC<LessonPageProps> = ({ language, topic, onComplete, on
             </div>
 
             <div className="space-y-8">
-                {/* Vocabulary Section */}
                 <div className="animate-fade-in-up" style={{ animationDelay: '100ms' }}>
                     <h2 className="text-2xl font-bold mb-4 border-b-2 border-teal-500 pb-2">Vocabulary</h2>
                     <ul className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -141,7 +152,6 @@ const LessonPage: React.FC<LessonPageProps> = ({ language, topic, onComplete, on
                     </ul>
                 </div>
 
-                {/* Examples Section */}
                 <div className="animate-fade-in-up" style={{ animationDelay: '250ms' }}>
                     <h2 className="text-2xl font-bold mb-4 border-b-2 border-teal-500 pb-2">Examples</h2>
                     <ul className="space-y-3">
@@ -153,7 +163,6 @@ const LessonPage: React.FC<LessonPageProps> = ({ language, topic, onComplete, on
                     </ul>
                 </div>
 
-                {/* Quiz Section */}
                 <div className="animate-fade-in-up" style={{ animationDelay: '400ms' }}>
                     <h2 className="text-2xl font-bold mb-4 border-b-2 border-teal-500 pb-2">Quiz Time!</h2>
                     <p className="text-lg mb-4 p-4 bg-blue-100 dark:bg-blue-900/50 rounded-lg">{lessonContent.quiz.question}</p>
@@ -211,11 +220,20 @@ const LessonPage: React.FC<LessonPageProps> = ({ language, topic, onComplete, on
                     <div className="text-center p-6 bg-teal-100 dark:bg-teal-900/50 rounded-lg">
                         <h3 className="text-2xl font-bold text-teal-700 dark:text-teal-300">Lesson Complete!</h3>
                         <p className="text-lg text-slate-600 dark:text-slate-400">You've earned {XP_PER_CORRECT_ANSWER} XP!</p>
-                        <button onClick={() => onComplete(XP_PER_CORRECT_ANSWER)} className="mt-4 px-6 py-3 font-bold text-white bg-teal-600 rounded-lg hover:bg-teal-700 transition-transform transform hover:scale-105 active:scale-95">
+                        <button onClick={handleFinish} className="mt-4 px-6 py-3 font-bold text-white bg-teal-600 rounded-lg hover:bg-teal-700 transition-transform transform hover:scale-105 active:scale-95">
                             Finish & Continue
                         </button>
                     </div>
                 )}
+                 {!isCompleted && feedback && !feedback.isCorrect && (
+                     <div className="text-center p-6 bg-slate-100 dark:bg-slate-700/50 rounded-lg">
+                        <h3 className="text-2xl font-bold text-slate-700 dark:text-slate-300">Let's keep going!</h3>
+                        <p className="text-lg text-slate-600 dark:text-slate-400">Don't worry, we'll practice this later.</p>
+                        <button onClick={() => onComplete(0, mistakes, [])} className="mt-4 px-6 py-3 font-bold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-transform transform hover:scale-105 active:scale-95">
+                            Continue
+                        </button>
+                    </div>
+                 )}
             </div>
         </div>
     );

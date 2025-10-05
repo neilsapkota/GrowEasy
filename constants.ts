@@ -1,4 +1,4 @@
-import { Language, LessonTopic } from './types';
+import { Language, LessonTopic, Quest } from './types';
 
 export const LANGUAGES: Language[] = [
     { id: 'es', name: 'Spanish', flag: '🇪🇸' },
@@ -103,3 +103,11 @@ export const UNITS: Unit[] = [
 ];
 
 export const XP_PER_CORRECT_ANSWER = 10;
+
+export const DAILY_QUESTS: Quest[] = [
+  { id: 'earn_10_xp', title: 'Earn 10 XP', type: 'xp', target: 10, reward: 5 },
+  { id: 'earn_30_xp', title: 'Earn 30 XP', type: 'xp', target: 30, reward: 15 },
+  { id: 'complete_1_lesson', title: 'Complete 1 lesson', type: 'lesson', target: 1, reward: 10 },
+  { id: 'complete_2_lessons', title: 'Complete 2 lessons', type: 'lesson', target: 2, reward: 20 },
+  { id: 'practice_1_session', title: 'Finish a practice session', type: 'practice', target: 1, reward: 15 },
+];

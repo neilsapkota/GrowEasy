@@ -5,11 +5,12 @@ import HeroIllustration from './HeroIllustration';
 interface LanguageSelectionPageProps {
     languages: Language[];
     onSelectLanguage: (language: Language) => void;
+    skipHero?: boolean;
 }
 
-const LanguageSelectionPage: React.FC<LanguageSelectionPageProps> = ({ languages, onSelectLanguage }) => {
+const LanguageSelectionPage: React.FC<LanguageSelectionPageProps> = ({ languages, onSelectLanguage, skipHero = false }) => {
     
-    const [showLanguages, setShowLanguages] = useState(false);
+    const [showLanguages, setShowLanguages] = useState(skipHero);
 
     const handleGetStartedClick = () => {
         setShowLanguages(true);

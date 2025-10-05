@@ -4,6 +4,9 @@ export enum Page {
     Lesson,
     PracticeHub,
     PracticeSession,
+    Profile,
+    Leaderboard,
+    Dictionary,
 }
 
 export interface User {
@@ -90,3 +93,12 @@ export interface Story {
 }
 
 export type PracticeMode = 'conversation' | 'listening' | 'mistakes' | 'vocabulary' | 'stories';
+
+export interface DictionaryEntry {
+    word: string;
+    translation: string;
+    pronunciation: string;
+    definition: string; // Definition in English
+    exampleSentence: string; // Example in target language
+    exampleTranslation: string; // Example translation in English
+}

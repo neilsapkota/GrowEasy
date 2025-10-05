@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import { Language, LessonContent, Feedback, Story } from '../types';
+import { Language, LessonContent, Feedback, Story, DictionaryEntry } from '../types';
 
 if (!process.env.API_KEY) {
     throw new Error("API_KEY environment variable not set");
@@ -63,6 +63,19 @@ const storySchema = {
         level: { type: Type.STRING, enum: ['beginner', 'intermediate', 'advanced'] }
     },
     required: ['id', 'title', 'content', 'level']
+};
+
+const dictionaryEntrySchema = {
+    type: Type.OBJECT,
+    properties: {
+        word: { type: Type.STRING },
+        translation: { type: Type.STRING },
+        pronunciation: { type: Type.STRING },
+        definition: { type: Type.STRING },
+        exampleSentence: { type: Type.STRING },
+        exampleTranslation: { type: Type.STRING },
+    },
+    required: ['word', 'translation', 'pronunciation', 'definition', 'exampleSentence', 'exampleTranslation'],
 };
 
 
@@ -164,5 +177,32 @@ export const generateStory = async (language: Language): Promise<Story> => {
     } catch (error) {
         console.error("Error generating story:", error);
         throw new Error("Failed to generate a story.");
+    }
+};
+
+export const getDictionaryEntry = async (language: Language, word: string): Promise<DictionaryEntry> => {
+    const prompt = `Provide a dictionary entry for the word "${word}" in ${language.name}. The user is an English speaker learning ${language.name}.
+    Provide the following information:
+    1. The word itself in ${language.name}.
+    2. The English translation.
+    3. A simple, IPA-based phonetic pronunciation guide.
+    4. A concise definition of the word in English.
+    5. An example sentence using the word in ${language.name}.
+    6. The English translation of the example sentence.`;
+
+    try {
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: prompt,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: dictionaryEntrySchema,
+            },
+        });
+        const jsonText = response.text.trim();
+        return JSON.parse(jsonText) as DictionaryEntry;
+    } catch (error) {
+        console.error("Error getting dictionary entry:", error);
+        throw new Error(`Failed to find a dictionary entry for "${word}".`);
     }
 };

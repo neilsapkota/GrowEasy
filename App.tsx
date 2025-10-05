@@ -1,16 +1,57 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import LanguageSelectionPage from './components/LanguageSelectionPage';
 import DashboardPage from './components/DashboardPage';
 import LessonPage from './components/LessonPage';
 import PracticeHubPage from './components/PracticeHubPage';
 import PracticeSessionPage from './components/PracticeSessionPage';
+import DictionaryPage from './components/DictionaryPage';
 import AuthModal from './components/AuthModal';
 import ProgressBar from './components/ProgressBar';
 import { Page, User, Language, LessonTopic, UserProgress, MistakeItem, VocabularyItem, PracticeMode, QuestProgress, Quest } from './types';
 import { LANGUAGES, DAILY_QUESTS } from './constants';
-import { HomeIcon, UserCircleIcon, ChartBarIcon, LogoutIcon, StarIcon, FireIcon, PracticeIcon, ChestIcon, ClockIcon } from './components/icons';
+import { HomeIcon, UserCircleIcon, ChartBarIcon, LogoutIcon, StarIcon, FireIcon, PracticeIcon, ChestIcon, ClockIcon, BookOpenIcon } from './components/icons';
 
 const QUESTS_MAP = new Map(DAILY_QUESTS.map(q => [q.id, q]));
+
+interface RegisteredUser {
+    user: User;
+    progress: Record<string, UserProgress>;
+}
+
+const DUMMY_REGISTERED_USERS: RegisteredUser[] = [
+    {
+        user: { name: 'Alice', avatarUrl: 'https://api.dicebear.com/8.x/initials/svg?seed=Alice' },
+        progress: { 
+            'es': { xp: 2540, streak: 12, completedTopics: ['greetings', 'family', 'food'], mistakes: [], learnedVocabulary: [] },
+            'fr': { xp: 1200, streak: 3, completedTopics: ['greetings'], mistakes: [], learnedVocabulary: [] }
+        }
+    },
+    {
+        user: { name: 'Bob', avatarUrl: 'https://api.dicebear.com/8.x/initials/svg?seed=Bob' },
+        progress: { 
+            'es': { xp: 2310, streak: 10, completedTopics: ['greetings', 'family'], mistakes: [], learnedVocabulary: [] }
+        }
+    },
+    {
+        user: { name: 'Charlie', avatarUrl: 'https://api.dicebear.com/8.x/initials/svg?seed=Charlie' },
+        progress: { 
+            'es': { xp: 2100, streak: 8, completedTopics: ['greetings', 'family'], mistakes: [], learnedVocabulary: [] },
+            'de': { xp: 3000, streak: 20, completedTopics: ['greetings', 'family', 'food', 'travel'], mistakes: [], learnedVocabulary: [] }
+        }
+    },
+    {
+        user: { name: 'Diana', avatarUrl: 'https://api.dicebear.com/8.x/initials/svg?seed=Diana' },
+        progress: { 
+            'es': { xp: 1980, streak: 7, completedTopics: ['greetings'], mistakes: [], learnedVocabulary: [] }
+        }
+    },
+    {
+        user: { name: 'Ethan', avatarUrl: 'https://api.dicebear.com/8.x/initials/svg?seed=Ethan' },
+        progress: { 
+            'es': { xp: 1750, streak: 5, completedTopics: ['greetings'], mistakes: [], learnedVocabulary: [] }
+        }
+    },
+];
 
 const Sidebar: React.FC<{
     user: User | null;
@@ -23,8 +64,9 @@ const Sidebar: React.FC<{
     const navItems = [
         { page: Page.Dashboard, icon: HomeIcon, label: 'Learn' },
         { page: Page.PracticeHub, icon: PracticeIcon, label: 'Practice' },
-        { icon: UserCircleIcon, label: 'Profile' },
-        { icon: ChartBarIcon, label: 'Leaderboard' },
+        { page: Page.Dictionary, icon: BookOpenIcon, label: 'Dictionary' },
+        { page: Page.Profile, icon: UserCircleIcon, label: 'Profile' },
+        { page: Page.Leaderboard, icon: ChartBarIcon, label: 'Leaderboard' },
     ];
 
     return (
@@ -154,6 +196,95 @@ const RightSidebar: React.FC<{
     );
 };
 
+const ProfilePage: React.FC<{
+    user: User | null;
+    progress: UserProgress | null;
+}> = ({ user, progress }) => {
+    if (!user) {
+        return (
+             <div className="p-4 sm:p-6 lg:p-8 animate-fade-in text-center">
+                <h2 className="text-3xl font-bold text-slate-800 dark:text-slate-100 mb-6">Profile</h2>
+                <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-8">
+                    <p className="text-lg">Please create an account to view your profile and track your progress.</p>
+                </div>
+            </div>
+        )
+    }
+    return (
+        <div className="p-4 sm:p-6 lg:p-8 animate-fade-in">
+            <h2 className="text-3xl font-bold text-slate-800 dark:text-slate-100 mb-6">Profile</h2>
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-8 text-center">
+                <img src={user.avatarUrl} alt={user.name} className="w-24 h-24 rounded-full mx-auto mb-4 border-4 border-teal-500" />
+                <h3 className="text-2xl font-bold">{user.name}</h3>
+                <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4 text-lg">
+                    <div className="p-4 bg-slate-100 dark:bg-slate-700 rounded-lg">
+                        <p className="text-slate-500 dark:text-slate-400">Total XP</p>
+                        <p className="font-bold text-2xl text-amber-500">{progress?.xp ?? 0}</p>
+                    </div>
+                    <div className="p-4 bg-slate-100 dark:bg-slate-700 rounded-lg">
+                        <p className="text-slate-500 dark:text-slate-400">Day Streak</p>
+                        <p className="font-bold text-2xl text-orange-500">{progress?.streak ?? 0}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const LeaderboardPage: React.FC<{ 
+    user: User | null; 
+    registeredUsers: RegisteredUser[];
+    selectedLanguage: Language | null;
+}> = ({ user, registeredUsers, selectedLanguage }) => {
+    
+    const leaderboardData = useMemo(() => {
+        if (!selectedLanguage) return [];
+        
+        return registeredUsers
+            .map(regUser => ({
+                name: regUser.user.name,
+                avatarUrl: regUser.user.avatarUrl,
+                xp: regUser.progress[selectedLanguage.id]?.xp ?? 0
+            }))
+            .filter(player => player.xp > 0)
+            .sort((a, b) => b.xp - a.xp);
+    }, [registeredUsers, selectedLanguage]);
+    
+    const rankColors = ['bg-amber-400', 'bg-slate-300', 'bg-amber-600'];
+
+    return (
+        <div className="p-4 sm:p-6 lg:p-8 animate-fade-in">
+            <h2 className="text-3xl font-bold text-slate-800 dark:text-slate-100 mb-2">Leaderboard</h2>
+            {selectedLanguage && <p className="text-lg text-slate-500 dark:text-slate-400 mb-6">Top learners in {selectedLanguage.name}</p>}
+
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-6">
+                {leaderboardData.length > 0 ? (
+                    <ul className="space-y-4">
+                        {leaderboardData.map((player, index) => (
+                            <li key={player.name} className={`flex items-center p-4 rounded-lg transition-all ${user && player.name === user.name ? 'bg-teal-100 dark:bg-teal-900/50 ring-2 ring-teal-500' : 'bg-slate-50 dark:bg-slate-700/50'}`}>
+                                <span className={`w-10 h-10 flex items-center justify-center font-bold text-lg rounded-full mr-4 ${index < 3 ? `${rankColors[index]} text-white` : 'bg-slate-200 dark:bg-slate-600'}`}>{index + 1}</span>
+                                <img src={player.avatarUrl} alt={player.name} className="w-12 h-12 rounded-full mr-4" />
+                                <span className="font-bold text-lg flex-grow">{player.name}</span>
+                                <span className="font-extrabold text-teal-500 text-xl">{player.xp} XP</span>
+                            </li>
+                        ))}
+                    </ul>
+                ) : (
+                    <div className="text-center py-8">
+                        <p className="text-slate-500 dark:text-slate-400">No one is on the leaderboard for this language yet. Be the first!</p>
+                    </div>
+                )}
+                {!user && (
+                    <div className="text-center mt-6 p-4 bg-slate-100 dark:bg-slate-700 rounded-lg">
+                        <p>Create an account to join the leaderboard!</p>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
+
+
 const App: React.FC = () => {
     const [page, setPage] = useState<Page>(Page.LanguageSelection);
     const [user, setUser] = useState<User | null>(null);
@@ -163,6 +294,24 @@ const App: React.FC = () => {
     const [practiceMode, setPracticeMode] = useState<PracticeMode | null>(null);
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
     const [isChangingLanguage, setIsChangingLanguage] = useState(false);
+    const [registeredUsers, setRegisteredUsers] = useState<RegisteredUser[]>(DUMMY_REGISTERED_USERS);
+
+    // Keep registered user data in sync with the current user's progress
+    useEffect(() => {
+        if (user) {
+            setRegisteredUsers(prev => {
+                const userExists = prev.some(ru => ru.user.name === user.name);
+                if (!userExists) {
+                    return [...prev, { user, progress: userProgress }];
+                }
+                return prev.map(ru =>
+                    ru.user.name === user.name
+                        ? { ...ru, progress: userProgress }
+                        : ru
+                );
+            });
+        }
+    }, [user, userProgress]);
 
     const updateQuestProgress = useCallback((updates: { type: 'xp' | 'lesson' | 'practice', amount: number }[]) => {
         if (!user || !selectedLanguage) return;
@@ -254,15 +403,31 @@ const App: React.FC = () => {
         setIsChangingLanguage(false);
     }, [user, userProgress]);
 
+    const handleNavigate = useCallback((targetPage: Page) => {
+        if (!user && (targetPage === Page.Profile || targetPage === Page.Leaderboard)) {
+            setIsAuthModalOpen(true);
+        } else {
+            setPage(targetPage);
+        }
+    }, [user]);
+
     const handleStartLesson = useCallback((topic: LessonTopic) => {
-        setSelectedTopic(topic);
-        setPage(Page.Lesson);
-    }, []);
+        if (user) {
+            setSelectedTopic(topic);
+            setPage(Page.Lesson);
+        } else {
+            setIsAuthModalOpen(true);
+        }
+    }, [user]);
 
     const handleStartPractice = useCallback((mode: PracticeMode) => {
-        setPracticeMode(mode);
-        setPage(Page.PracticeSession);
-    }, []);
+        if (user) {
+            setPracticeMode(mode);
+            setPage(Page.PracticeSession);
+        } else {
+            setIsAuthModalOpen(true);
+        }
+    }, [user]);
     
     const handleEndPractice = useCallback(() => {
         if (user) {
@@ -345,22 +510,26 @@ const App: React.FC = () => {
     }, []);
     
     const handleLoginSuccess = (loggedInUser: User) => {
+        const existingRegisteredUser = registeredUsers.find(ru => ru.user.name === loggedInUser.name);
+    
+        if (existingRegisteredUser) {
+            setUserProgress(existingRegisteredUser.progress);
+        } else {
+            if (selectedLanguage && !userProgress[selectedLanguage.id]) {
+                setUserProgress(prev => ({
+                    ...prev,
+                    [selectedLanguage.id]: { xp: 0, streak: 0, completedTopics: [], mistakes: [], learnedVocabulary: [] }
+                }));
+            }
+        }
+    
         setUser(loggedInUser);
         setIsAuthModalOpen(false);
-        if (selectedLanguage && !userProgress[selectedLanguage.id]) {
-            setUserProgress(prev => ({
-                ...prev,
-                [selectedLanguage.id]: { xp: 0, streak: 0, completedTopics: [], mistakes: [], learnedVocabulary: [] }
-            }));
-        }
     };
 
     const handleLogout = useCallback(() => {
         setUser(null);
         // Keep progress for guest session
-        // setUserProgress({}); 
-        // setSelectedLanguage(null);
-        // setPage(Page.LanguageSelection);
         setIsChangingLanguage(false);
     }, []);
     
@@ -402,19 +571,28 @@ const App: React.FC = () => {
                     return <PracticeSessionPage mode={practiceMode} language={selectedLanguage} progress={currentProgress} onEndPractice={handleEndPractice} onUpdateMistakes={handleUpdateMistakes} />;
                 }
                 break;
+            case Page.Profile:
+                return <ProfilePage user={user} progress={currentProgress} />;
+            case Page.Leaderboard:
+                return <LeaderboardPage user={user} registeredUsers={registeredUsers} selectedLanguage={selectedLanguage} />;
+            case Page.Dictionary:
+                 if (selectedLanguage) {
+                    return <DictionaryPage language={selectedLanguage} />;
+                }
+                break;
         }
         // Default navigation
         setPage(Page.LanguageSelection);
         return null;
     };
     
-    const isMainView = [Page.Dashboard, Page.PracticeHub, Page.PracticeSession].includes(page);
+    const isMainView = [Page.Dashboard, Page.PracticeHub, Page.PracticeSession, Page.Profile, Page.Leaderboard, Page.Dictionary].includes(page);
     const currentProgress = selectedLanguage ? userProgress[selectedLanguage.id] : null;
 
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 transition-colors duration-500">
             <div className={isMainView ? "flex container mx-auto max-w-[1536px]" : ""}>
-                {isMainView && <Sidebar user={user} currentPage={page} onNavigate={setPage} onChangeLanguage={handleChangeLanguage} onLogout={handleLogout} />}
+                {isMainView && <Sidebar user={user} currentPage={page} onNavigate={handleNavigate} onChangeLanguage={handleChangeLanguage} onLogout={handleLogout} />}
                 
                 <main className={isMainView ? "flex-grow py-6" : "container mx-auto max-w-5xl p-4 sm:p-6 lg:p-8"}>
                     <div key={`${page}-${practiceMode}`} className={!isMainView ? "animate-fade-in" : ""}>
@@ -426,7 +604,7 @@ const App: React.FC = () => {
             </div>
             
             <AuthModal
-                isOpen={!user && page !== Page.LanguageSelection}
+                isOpen={isAuthModalOpen}
                 onClose={() => setIsAuthModalOpen(false)}
                 onLoginSuccess={handleLoginSuccess}
             />

@@ -18,8 +18,9 @@ const lessonSchema = {
                 properties: {
                     word: { type: Type.STRING },
                     translation: { type: Type.STRING },
+                    pronunciation: { type: Type.STRING },
                 },
-                required: ['word', 'translation'],
+                required: ['word', 'translation', 'pronunciation'],
             },
         },
         examples: {
@@ -56,7 +57,7 @@ const feedbackSchema = {
 
 export const generateLesson = async (language: Language, topic: string): Promise<LessonContent> => {
     const prompt = `Generate a beginner-level language lesson for learning ${language.name} about '${topic}'. The lesson must include:
-1. A list of 3-5 key vocabulary words with their English translations.
+1. A list of 3-5 key vocabulary words with their English translations and a simple, IPA-based phonetic pronunciation guide for each word.
 2. One simple example sentence in ${language.name} for each vocabulary word.
 3. A single, simple multiple-choice quiz question to test understanding. Provide the question in English. Provide 4 options in ${language.name}: one correct answer and three plausible but incorrect distractors. Also, specify the correct answer.`;
 

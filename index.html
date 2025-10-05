@@ -12,6 +12,40 @@
         body {
             font-family: 'Nunito', sans-serif;
         }
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(20, 184, 166, 0.7);
+            }
+            50% {
+                transform: scale(1.05);
+                box-shadow: 0 0 0 10px rgba(20, 184, 166, 0);
+            }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+        .animate-fade-in-up {
+            animation: fadeInUp 0.6s ease-out forwards;
+            opacity: 0; /* Start hidden */
+        }
+        .animate-pulse-live {
+            animation: pulse 2s infinite;
+        }
     </style>
 <script type="importmap">
 {
@@ -27,31 +61,5 @@
 </head>
 <body class="bg-slate-50">
     <div id="root"></div>
-    <script>
-        // --- IMPORTANT: FACEBOOK CONFIGURATION ---
-        // Replace 'YOUR_FACEBOOK_APP_ID' with the App ID from your Meta Developer Dashboard.
-        window.FB_APP_ID = 'YOUR_FACEBOOK_APP_ID';
-        // -----------------------------------------
-
-        window.fbAsyncInit = function() {
-          FB.init({
-            appId      : window.FB_APP_ID, 
-            cookie     : true,
-            xfbml      : true,
-            version    : 'v18.0'
-          });
-          FB.AppEvents.logPageView();   
-          // Dispatch a custom event to signal that the SDK is ready
-          window.dispatchEvent(new Event('fbAsyncInit'));
-        };
-      
-        (function(d, s, id){
-           var js, fjs = d.getElementsByTagName(s)[0];
-           if (d.getElementById(id)) {return;}
-           js = d.createElement(s); js.id = id;
-           js.src = "https://connect.facebook.net/en_US/sdk.js";
-           fjs.parentNode.insertBefore(js, fjs);
-         }(document, 'script', 'facebook-jssdk'));
-      </script>
 </body>
 </html>

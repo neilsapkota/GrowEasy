@@ -5,11 +5,10 @@ import { StarIcon, FireIcon, LogoutIcon } from './icons';
 interface HeaderProps {
     user: User | null;
     progress: UserProgress | null;
-    onLoginClick: () => void;
     onLogout: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ user, progress, onLoginClick, onLogout }) => {
+const Header: React.FC<HeaderProps> = ({ user, progress, onLogout }) => {
     return (
         <header className="flex justify-between items-center mb-8 p-4 bg-white dark:bg-slate-800 rounded-xl shadow-md">
             <div>
@@ -39,12 +38,7 @@ const Header: React.FC<HeaderProps> = ({ user, progress, onLoginClick, onLogout 
                     </button>
                 </div>
             ) : (
-                 <button
-                    onClick={onLoginClick}
-                    className="px-4 py-2 text-base font-bold text-white bg-teal-600 rounded-lg hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition-transform transform hover:scale-105"
-                >
-                    Sign In / Sign Up
-                </button>
+                 null
             )}
         </header>
     );

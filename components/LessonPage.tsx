@@ -3,7 +3,7 @@ import { Language, LessonTopic, LessonContent, Feedback } from '../types';
 import { XP_PER_CORRECT_ANSWER } from '../constants';
 import { generateLesson, getFeedback } from '../services/geminiService';
 import Loader from './Loader';
-import { CheckCircleIcon, XCircleIcon } from './icons';
+import { CheckCircleIcon, XCircleIcon, VolumeUpIcon } from './icons';
 
 interface LessonPageProps {
     language: Language;
@@ -11,6 +11,17 @@ interface LessonPageProps {
     onComplete: (xpGained: number) => void;
     onBack: () => void;
 }
+
+const langCodeMap: { [key: string]: string } = {
+    // Fix: Corrected syntax error for 'jp' key. The value was not a string.
+    es: 'es-ES', fr: 'fr-FR', de: 'de-DE', it: 'it-IT', jp: 'ja-JP',
+    kr: 'ko-KR', cn: 'zh-CN', in: 'hi-IN', sa: 'ar-SA', bd: 'bn-BD',
+    ru: 'ru-RU', pt: 'pt-PT', pk: 'ur-PK', id: 'id-ID', nl: 'nl-NL',
+    tr: 'tr-TR', vn: 'vi-VN', th: 'th-TH', pl: 'pl-PL', ro: 'ro-RO',
+    gr: 'el-GR', se: 'sv-SE', no: 'nb-NO', dk: 'da-DK', fi: 'fi-FI',
+    il: 'he-IL', ke: 'sw-KE', cz: 'cs-CZ', hu: 'hu-HU', bg: 'bg-BG',
+    hr: 'hr-HR', ua: 'uk-UA', sk: 'sk-SK',
+};
 
 const LessonPage: React.FC<LessonPageProps> = ({ language, topic, onComplete, onBack }) => {
     const [lessonContent, setLessonContent] = useState<LessonContent | null>(null);
@@ -58,6 +69,18 @@ const LessonPage: React.FC<LessonPageProps> = ({ language, topic, onComplete, on
         }
     };
 
+    const handleSpeak = (text: string) => {
+        if ('speechSynthesis' in window) {
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = langCodeMap[language.id] || language.id;
+            utterance.rate = 0.9;
+            window.speechSynthesis.cancel(); // Cancel any previous speech
+            window.speechSynthesis.speak(utterance);
+        } else {
+            alert("Sorry, your browser doesn't support text-to-speech.");
+        }
+    };
+
     if (isLoading) {
         return <Loader message={`Building your ${topic.title} lesson...`} />;
     }
@@ -91,20 +114,35 @@ const LessonPage: React.FC<LessonPageProps> = ({ language, topic, onComplete, on
 
             <div className="space-y-8">
                 {/* Vocabulary Section */}
-                <div>
+                <div className="animate-fade-in-up" style={{ animationDelay: '100ms' }}>
                     <h2 className="text-2xl font-bold mb-4 border-b-2 border-teal-500 pb-2">Vocabulary</h2>
                     <ul className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         {lessonContent.vocabulary.map((item, index) => (
-                            <li key={index} className="p-4 bg-slate-100 dark:bg-slate-700 rounded-lg">
-                                <span className="font-bold text-lg text-teal-600 dark:text-teal-400">{item.word}</span>
-                                <span className="text-slate-500 dark:text-slate-400"> &rarr; {item.translation}</span>
+                             <li key={index} className="p-4 bg-slate-100 dark:bg-slate-700 rounded-lg flex justify-between items-center">
+                                <div className="flex-grow">
+                                    <div className="flex items-baseline gap-2">
+                                        <span className="font-bold text-lg text-teal-600 dark:text-teal-400">{item.word}</span>
+                                        {item.pronunciation && (
+                                            <span className="text-sm text-slate-500 dark:text-slate-400 font-mono">/{item.pronunciation}/</span>
+                                        )}
+                                    </div>
+                                    <p className="text-slate-600 dark:text-slate-300 font-medium">{item.translation}</p>
+                                </div>
+                                <button 
+                                    onClick={() => handleSpeak(item.word)}
+                                    className="p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-full transition-colors flex-shrink-0 ml-4"
+                                    aria-label={`Pronounce ${item.word}`}
+                                    title={`Pronounce ${item.word}`}
+                                >
+                                    <VolumeUpIcon className="w-6 h-6" />
+                                </button>
                             </li>
                         ))}
                     </ul>
                 </div>
 
                 {/* Examples Section */}
-                <div>
+                <div className="animate-fade-in-up" style={{ animationDelay: '250ms' }}>
                     <h2 className="text-2xl font-bold mb-4 border-b-2 border-teal-500 pb-2">Examples</h2>
                     <ul className="space-y-3">
                         {lessonContent.examples.map((example, index) => (
@@ -116,7 +154,7 @@ const LessonPage: React.FC<LessonPageProps> = ({ language, topic, onComplete, on
                 </div>
 
                 {/* Quiz Section */}
-                <div>
+                <div className="animate-fade-in-up" style={{ animationDelay: '400ms' }}>
                     <h2 className="text-2xl font-bold mb-4 border-b-2 border-teal-500 pb-2">Quiz Time!</h2>
                     <p className="text-lg mb-4 p-4 bg-blue-100 dark:bg-blue-900/50 rounded-lg">{lessonContent.quiz.question}</p>
                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -173,7 +211,7 @@ const LessonPage: React.FC<LessonPageProps> = ({ language, topic, onComplete, on
                     <div className="text-center p-6 bg-teal-100 dark:bg-teal-900/50 rounded-lg">
                         <h3 className="text-2xl font-bold text-teal-700 dark:text-teal-300">Lesson Complete!</h3>
                         <p className="text-lg text-slate-600 dark:text-slate-400">You've earned {XP_PER_CORRECT_ANSWER} XP!</p>
-                        <button onClick={() => onComplete(XP_PER_CORRECT_ANSWER)} className="mt-4 px-6 py-3 font-bold text-white bg-teal-600 rounded-lg hover:bg-teal-700 transition-transform transform hover:scale-105">
+                        <button onClick={() => onComplete(XP_PER_CORRECT_ANSWER)} className="mt-4 px-6 py-3 font-bold text-white bg-teal-600 rounded-lg hover:bg-teal-700 transition-transform transform hover:scale-105 active:scale-95">
                             Finish & Continue
                         </button>
                     </div>

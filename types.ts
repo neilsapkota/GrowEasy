@@ -24,6 +24,7 @@ export interface LessonTopic {
 export interface VocabularyItem {
     word: string;
     translation: string;
+    pronunciation: string;
 }
 
 export interface Quiz {

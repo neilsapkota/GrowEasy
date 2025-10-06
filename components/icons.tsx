@@ -174,3 +174,21 @@ export const ArrowDownIcon: React.FC<{ className?: string; title?: string }> = (
     <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
   </svg>
 );
+
+export const QuestsIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} viewBox="0 0 24 24" fill="currentColor">
+        <path fillRule="evenodd" d="M3 6a3 3 0 013-3h12a3 3 0 013 3v12a3 3 0 01-3 3H6a3 3 0 01-3-3V6zm4.5 9a1.5 1.5 0 100-3 1.5 1.5 0 000 3zM12 15a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm4.5 0a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm-9-4.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zm4.5 0a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zm4.5 0a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" clipRule="evenodd" />
+    </svg>
+);
+
+export const SettingsIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path fillRule="evenodd" d="M11.078 2.25c-.917 0-1.699.663-1.85 1.567L9.05 5.85c-.09.55-.443.99-.98 1.13l-2.68.75c-.98.27-1.705 1.15-1.705 2.16v1.92c0 1.01.725 1.89 1.705 2.16l2.68.75c.537.14.89.58.98 1.13l.178 2.034c.15.904.932 1.567 1.85 1.567h1.844c.917 0 1.699-.663 1.85-1.567l.178-2.034c.09-.55.443-.99.98-1.13l2.68-.75c.98-.27 1.705-1.15 1.705-2.16v-1.92c0-1.01-.725-1.89-1.705-2.16l-2.68-.75c-.537-.14-.89-.58-.98-1.13l-.178-2.034A1.875 1.875 0 0012.922 2.25h-1.844zM12 15.75a3.75 3.75 0 100-7.5 3.75 3.75 0 000 7.5z" clipRule="evenodd" />
+    </svg>
+);
+  
+export const HelpIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path fillRule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm11.378-3.917c.44-.322.622-.872.3-1.312s-.872-.622-1.312-.3-.622.872-.3 1.312l.3.22a2.25 2.25 0 01.364 2.45l-2.42 4.84a.75.75 0 01-1.352-.674l2.42-4.84a.75.75 0 00-.122-.816l-.004-.004zM12 15.75a.75.75 0 01.75.75v.008a.75.75 0 01-1.5 0v-.008a.75.75 0 01.75-.75z" clipRule="evenodd" />
+    </svg>
+);

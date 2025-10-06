@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import HomePage from './components/HomePage';
 import LanguageSelectionPage from './components/LanguageSelectionPage';
@@ -7,12 +6,16 @@ import LessonPage from './components/LessonPage';
 import PracticeHubPage from './components/PracticeHubPage';
 import PracticeSessionPage from './components/PracticeSessionPage';
 import DictionaryPage from './components/DictionaryPage';
+import QuestsPage from './components/QuestsPage';
+import SettingsPage from './components/SettingsPage';
+import HelpPage from './components/HelpPage';
 import AuthModal from './components/AuthModal';
 import ProgressBar from './components/ProgressBar';
 import AchievementToast from './components/AchievementToast';
-import { Page, User, Language, LessonTopic, UserProgress, MistakeItem, VocabularyItem, PracticeMode, QuestProgress, Quest, LeagueTier, Achievement, AchievementTier, RegisteredUser } from './types';
-import { LANGUAGES, DAILY_QUESTS, ACHIEVEMENTS } from './constants';
-import { HomeIcon, UserCircleIcon, ChartBarIcon, LogoutIcon, StarIcon, FireIcon, PracticeIcon, ChestIcon, ClockIcon, BookOpenIcon, CheckCircleIcon, ShieldCheckIcon, ArrowUpIcon, ArrowDownIcon, TrophyIcon } from './components/icons';
+import PlacementTestPage from './components/PlacementTestPage';
+import { Page, User, Language, LessonTopic, UserProgress, MistakeItem, VocabularyItem, PracticeMode, QuestProgress, Quest, LeagueTier, Achievement, AchievementTier, RegisteredUser, AppSettings, Theme } from './types';
+import { LANGUAGES, DAILY_QUESTS, ACHIEVEMENTS, MONTHLY_CHALLENGES } from './constants';
+import { HomeIcon, UserCircleIcon, ChartBarIcon, LogoutIcon, StarIcon, FireIcon, PracticeIcon, ChestIcon, ClockIcon, BookOpenIcon, CheckCircleIcon, ShieldCheckIcon, ArrowUpIcon, ArrowDownIcon, TrophyIcon, QuestsIcon, SettingsIcon, HelpIcon } from './components/icons';
 
 const QUESTS_MAP = new Map(DAILY_QUESTS.map(q => [q.id, q]));
 const ACHIEVEMENTS_MAP = new Map(ACHIEVEMENTS.map(a => [a.id, a]));
@@ -51,48 +54,68 @@ const Sidebar: React.FC<{
     onLogout: () => void;
 }> = ({ user, currentPage, onNavigate, onChangeLanguage, onLogout }) => {
     
-    const navItems = [
-        { page: Page.Dashboard, icon: HomeIcon, label: 'Learn' },
-        { page: Page.PracticeHub, icon: PracticeIcon, label: 'Practice' },
-        { page: Page.Dictionary, icon: BookOpenIcon, label: 'Dictionary' },
-        { page: Page.Profile, icon: UserCircleIcon, label: 'Profile' },
-        { page: Page.Leaderboard, icon: ChartBarIcon, label: 'Leaderboard' },
+    const mainNavItems = [
+        { page: Page.Dashboard, icon: HomeIcon, label: 'LEARN', color: 'text-rose-500' },
+        { page: Page.PracticeHub, icon: PracticeIcon, label: 'PRACTICE', color: 'text-sky-500' },
+        { page: Page.Dictionary, icon: BookOpenIcon, label: 'DICTIONARY', color: 'text-orange-500' },
+        { page: Page.Quests, icon: QuestsIcon, label: 'QUESTS', color: 'text-amber-500' },
+        { page: Page.Leaderboard, icon: ChartBarIcon, label: 'LEADERBOARD', color: 'text-violet-500' },
     ];
 
+    const bottomNavItems = [
+        { page: Page.Profile, icon: UserCircleIcon, label: 'PROFILE', color: 'text-green-500' },
+        { page: Page.Settings, icon: SettingsIcon, label: 'SETTINGS', color: 'text-slate-400' },
+        { page: Page.Help, icon: HelpIcon, label: 'HELP', color: 'text-indigo-400' },
+    ];
+
+    const NavButton: React.FC<{item: {page: Page; icon: React.ElementType; label: string; color: string;}; isActive: boolean;}> = ({ item, isActive }) => (
+        <button
+            onClick={() => onNavigate(item.page)}
+            className={`w-full flex items-center space-x-4 py-3 px-4 rounded-lg transition-all duration-200 text-md font-extrabold uppercase ${
+                isActive 
+                ? 'bg-sky-500 text-white' 
+                : 'text-slate-300 hover:bg-slate-800'
+            }`}
+        >
+            <item.icon className={`w-8 h-8 ${isActive ? 'text-white' : item.color}`} />
+            <span>{item.label}</span>
+        </button>
+    );
+
     return (
-        <aside className="w-64 flex-shrink-0 p-6 hidden lg:flex flex-col">
-            <h1 className="text-3xl font-extrabold text-teal-600 dark:text-teal-400 mb-10">
+        <aside className="w-64 bg-slate-900 flex-shrink-0 p-4 hidden lg:flex flex-col">
+            <h1 className="text-3xl font-extrabold text-emerald-400 mb-10 px-2 pt-2">
                 GrowEasy
             </h1>
             <nav className="flex-grow">
-                <ul>
-                    {navItems.map(item => (
+                <ul className="space-y-2">
+                    {mainNavItems.map(item => (
                         <li key={item.label}>
-                            <button
-                                onClick={() => item.page && onNavigate(item.page)}
-                                disabled={!item.page}
-                                className={`w-full flex items-center space-x-4 p-3 rounded-xl transition-colors text-lg font-bold ${item.page && currentPage === item.page ? 'bg-teal-100 dark:bg-teal-900/50 text-teal-600 dark:text-teal-300' : 'hover:bg-slate-100 dark:hover:bg-slate-800'} ${!item.page ? 'text-slate-400 dark:text-slate-600 cursor-not-allowed' : ''}`}
-                            >
-                                <item.icon className="w-8 h-8" />
-                                <span>{item.label}</span>
-                            </button>
+                           <NavButton item={item} isActive={currentPage === item.page} />
                         </li>
                     ))}
                 </ul>
             </nav>
-            <div className="space-y-4">
+            <div className="space-y-2">
+                <ul className="space-y-2 pt-4 border-t border-slate-700">
+                    {bottomNavItems.map(item => (
+                         <li key={item.label}>
+                           <NavButton item={item} isActive={currentPage === item.page} />
+                        </li>
+                    ))}
+                </ul>
                 <button 
                     onClick={onChangeLanguage} 
-                    className="w-full text-left flex items-center space-x-4 p-3 rounded-xl transition-colors text-lg font-bold hover:bg-slate-100 dark:hover:bg-slate-800"
+                    className="w-full text-left flex items-center space-x-4 py-3 px-4 rounded-lg transition-colors text-md font-extrabold uppercase text-slate-300 hover:bg-slate-800"
                 >
-                    <span>🌐</span>
-                    <span>Change Language</span>
+                    <span className="text-2xl">🌐</span>
+                    <span>Language</span>
                 </button>
                  {user && (
-                    <div className="flex items-center space-x-3 p-2 rounded-xl border border-slate-200 dark:border-slate-700">
+                    <div className="flex items-center space-x-3 p-2 rounded-xl mt-4 border-t border-slate-700 pt-4">
                         <img src={user.avatarUrl} alt={user.name} className="w-10 h-10 rounded-full" />
-                        <span className="font-bold flex-grow truncate">{user.name}</span>
-                        <button onClick={onLogout} title="Log Out" className="p-2 rounded-md hover:bg-slate-200 dark:hover:bg-slate-700">
+                        <span className="font-bold flex-grow truncate text-slate-200">{user.name}</span>
+                        <button onClick={onLogout} title="Log Out" className="p-2 rounded-md text-slate-400 hover:bg-slate-700">
                             <LogoutIcon className="w-6 h-6" />
                         </button>
                     </div>
@@ -105,33 +128,9 @@ const Sidebar: React.FC<{
 const RightSidebar: React.FC<{
     progress: UserProgress | null;
 }> = ({ progress }) => {
-    const [timeLeft, setTimeLeft] = useState('');
-
-    useEffect(() => {
-        const timer = setInterval(() => {
-            const now = new Date();
-            const tomorrow = new Date(now);
-            tomorrow.setDate(tomorrow.getDate() + 1);
-            tomorrow.setHours(0, 0, 0, 0);
-            
-            const diff = tomorrow.getTime() - now.getTime();
-            const hours = Math.floor(diff / (1000 * 60 * 60));
-            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-
-            setTimeLeft(`${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`);
-        }, 1000);
-
-        return () => clearInterval(timer);
-    }, []);
-
-    const quests = progress?.quests?.activeQuests;
-    const completedQuestsCount = quests?.filter(q => q.completed).length ?? 0;
-
     return (
         <aside className="w-96 flex-shrink-0 p-6 hidden xl:block">
             <div className="border-2 border-slate-200 dark:border-slate-700 rounded-2xl p-6 sticky top-6">
-                {/* Stats */}
                 <h2 className="text-xl font-bold">Your Stats</h2>
                 <div className="flex items-center justify-between p-4 bg-amber-100 dark:bg-amber-900/50 rounded-lg mt-4">
                     <div className="flex items-center space-x-3">
@@ -146,40 +145,6 @@ const RightSidebar: React.FC<{
                         <span className="text-lg font-bold">Day Streak</span>
                     </div>
                     <span className="text-xl font-extrabold text-orange-600 dark:text-orange-400">{progress?.streak ?? 0}</span>
-                </div>
-
-                {/* Quests */}
-                <div className="mt-8 pt-6 border-t border-slate-200 dark:border-slate-700">
-                    <div className="flex justify-between items-center mb-2">
-                        <h2 className="text-xl font-bold">Daily Quests</h2>
-                        <span className="text-sm font-semibold text-slate-500 dark:text-slate-400 flex items-center">
-                            <ClockIcon className="w-4 h-4 mr-1" />
-                            {timeLeft}
-                        </span>
-                    </div>
-                    <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
-                        You've completed {completedQuestsCount} out of {quests?.length ?? 3} quests today.
-                    </p>
-                    <div className="space-y-4">
-                        {quests?.map(questProgress => {
-                            const questDef = QUESTS_MAP.get(questProgress.questId);
-                            if (!questDef) return null;
-                            const isCompleted = questProgress.completed;
-                            return (
-                                <div key={questDef.id}>
-                                    <div className="flex items-center mb-2">
-                                        <ChestIcon className={`w-10 h-10 mr-3 transition-colors ${isCompleted ? 'text-amber-400' : 'text-slate-400'}`} />
-                                        <div>
-                                            <p className="font-bold text-slate-700 dark:text-slate-200">{questDef.title}</p>
-                                            {!isCompleted && <p className="text-xs text-slate-500 dark:text-slate-400">Reward: {questDef.reward} XP</p>}
-                                        </div>
-                                    </div>
-                                    <ProgressBar value={questProgress.current} max={questDef.target} label={""} />
-                                </div>
-                            );
-                        })}
-                         {!quests && <p className="text-sm text-center text-slate-400">Log in to see your daily quests!</p>}
-                    </div>
                 </div>
             </div>
         </aside>
@@ -486,6 +451,15 @@ const App: React.FC = () => {
     const [practiceMode, setPracticeMode] = useState<PracticeMode | null>(null);
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
     const [toasts, setToasts] = useState<{ id: number; achievement: Achievement }[]>([]);
+    const [appSettings, setAppSettings] = useState<AppSettings>(() => {
+        try {
+            const savedSettings = localStorage.getItem('growEasySettings');
+            return savedSettings ? JSON.parse(savedSettings) : { theme: 'system', soundEffectsEnabled: true };
+        } catch {
+            return { theme: 'system', soundEffectsEnabled: true };
+        }
+    });
+
     
     const [registeredUsers, setRegisteredUsers] = useState<RegisteredUser[]>(() => {
         try {
@@ -498,6 +472,28 @@ const App: React.FC = () => {
         }
         return DUMMY_REGISTERED_USERS;
     });
+
+    // Theme handler
+    useEffect(() => {
+        const applyTheme = (theme: Theme) => {
+            if (theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+                document.body.classList.remove('bg-slate-50');
+                document.body.classList.add('bg-slate-900');
+            } else {
+                document.documentElement.classList.remove('dark');
+                document.body.classList.remove('bg-slate-900');
+                document.body.classList.add('bg-slate-50');
+            }
+        };
+
+        applyTheme(appSettings.theme);
+
+        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+        const handleChange = () => appSettings.theme === 'system' && applyTheme('system');
+        mediaQuery.addEventListener('change', handleChange);
+        return () => mediaQuery.removeEventListener('change', handleChange);
+    }, [appSettings.theme]);
 
     // Toast notification handler
     const addToast = (achievement: Achievement) => {
@@ -539,12 +535,47 @@ const App: React.FC = () => {
 
     }, [user]);
 
+    // Monthly Challenge logic
+    const checkAndUnlockMonthlyChallenges = useCallback(() => {
+        if (!user || !selectedLanguage) return;
+
+        const currentMonthId = new Date().toISOString().slice(0, 7); // e.g., "2024-07"
+        const challenge = MONTHLY_CHALLENGES.find(c => c.id === currentMonthId);
+        if (!challenge) return;
+
+        setUserProgress(prev => {
+            const langProgress = prev[selectedLanguage.id];
+            const alreadyCompleted = langProgress.completedMonthlyChallenges?.includes(currentMonthId);
+
+            if (!langProgress || alreadyCompleted) {
+                return prev;
+            }
+
+            const totalQuestsCompleted = Object.values(prev)
+                .reduce((total, p) => total + (p.quests?.completedTodayCount || 0), 0);
+
+            if (totalQuestsCompleted >= challenge.target) {
+                const newProgress = { ...prev };
+                if (!newProgress[selectedLanguage.id].completedMonthlyChallenges) {
+                    newProgress[selectedLanguage.id].completedMonthlyChallenges = [];
+                }
+                newProgress[selectedLanguage.id].completedMonthlyChallenges!.push(currentMonthId);
+                // Optionally add a toast for monthly challenges too
+                return newProgress;
+            }
+            
+            return prev;
+        });
+    }, [user, selectedLanguage]);
+
+
     // Effect to run achievement checks whenever progress changes
     useEffect(() => {
         if(user && Object.keys(userProgress).length > 0) {
             checkAndUnlockAchievements(userProgress);
+            checkAndUnlockMonthlyChallenges();
         }
-    }, [userProgress, user, checkAndUnlockAchievements]);
+    }, [userProgress, user, checkAndUnlockAchievements, checkAndUnlockMonthlyChallenges]);
 
 
     useEffect(() => {
@@ -580,6 +611,12 @@ const App: React.FC = () => {
             localStorage.setItem('growEasySession', JSON.stringify(dataToSave));
         }
     }, [user, selectedLanguage, userProgress]);
+    
+    // Persist settings
+    useEffect(() => {
+        localStorage.setItem('growEasySettings', JSON.stringify(appSettings));
+    }, [appSettings]);
+
 
     // Persist the entire registered users database whenever it changes
     useEffect(() => {
@@ -608,7 +645,7 @@ const App: React.FC = () => {
         }
     }, [user, userProgress]);
 
-    const updateQuestProgress = useCallback((updates: { type: 'xp' | 'lesson' | 'practice', amount: number }[]) => {
+    const updateQuestProgress = useCallback((updates: { type: 'xp' | 'lesson' | 'practice' | 'perfect_lesson', amount: number }[]) => {
         if (!user || !selectedLanguage) return;
 
         setUserProgress(prev => {
@@ -617,6 +654,7 @@ const App: React.FC = () => {
 
             let totalXpReward = 0;
             let questsDirty = false;
+            let newlyCompletedCount = 0;
             
             const updatedQuests = langProgress.quests.activeQuests.map(q => {
                 if (q.completed) return q;
@@ -635,6 +673,7 @@ const App: React.FC = () => {
 
                 if (newProgress >= questDef.target) {
                     totalXpReward += questDef.reward;
+                    newlyCompletedCount++;
                     return { ...q, current: questDef.target, completed: true };
                 } else {
                     return { ...q, current: newProgress };
@@ -642,16 +681,19 @@ const App: React.FC = () => {
             });
 
             if (questsDirty) {
+                const updatedLangProgress = {
+                    ...langProgress,
+                    xp: langProgress.xp + totalXpReward,
+                    quests: {
+                        ...langProgress.quests,
+                        activeQuests: updatedQuests,
+                        completedTodayCount: (langProgress.quests.completedTodayCount || 0) + newlyCompletedCount,
+                    }
+                };
+                
                 return {
                     ...prev,
-                    [selectedLanguage.id]: {
-                        ...langProgress,
-                        xp: langProgress.xp + totalXpReward,
-                        quests: {
-                            ...langProgress.quests,
-                            activeQuests: updatedQuests
-                        }
-                    }
+                    [selectedLanguage.id]: updatedLangProgress
                 };
             }
             return prev;
@@ -681,6 +723,7 @@ const App: React.FC = () => {
                     quests: {
                         lastReset: today,
                         activeQuests: newQuests,
+                        completedTodayCount: 0,
                     }
                 }
             }));
@@ -689,17 +732,26 @@ const App: React.FC = () => {
     
     const handleSelectLanguage = useCallback((language: Language) => {
         setSelectedLanguage(language);
-        if (user && !userProgress[language.id]) {
-            setUserProgress(prev => ({
+        const langProgress = userProgress[language.id];
+
+        // Ensure progress object exists
+        if (!langProgress) {
+             setUserProgress(prev => ({
                 ...prev,
                 [language.id]: { xp: 0, streak: 0, completedTopics: [], mistakes: [], learnedVocabulary: [], league: LeagueTier.Bronze, unlockedAchievements: [], practiceSessions: 0, perfectLessons: 0 }
             }));
         }
-        setPage(Page.Dashboard);
-    }, [user, userProgress]);
+        
+        // If the user has no completed topics in this language, offer placement test.
+        if (!langProgress || langProgress.completedTopics.length === 0) {
+            setPage(Page.PlacementTest);
+        } else {
+            setPage(Page.Dashboard);
+        }
+    }, [userProgress]);
 
     const handleNavigate = useCallback((targetPage: Page) => {
-        if (!user && (targetPage === Page.Profile || targetPage === Page.Leaderboard)) {
+        if (!user && (targetPage === Page.Profile || targetPage === Page.Leaderboard || targetPage === Page.Quests || targetPage === Page.Settings)) {
             setIsAuthModalOpen(true);
         } else {
             setPage(targetPage);
@@ -804,10 +856,13 @@ const App: React.FC = () => {
                 };
             });
              if (user) {
-                const questUpdates: { type: 'xp' | 'lesson' | 'practice', amount: number }[] = [];
+                const questUpdates: { type: 'xp' | 'lesson' | 'practice' | 'perfect_lesson', amount: number }[] = [];
                 if (xpGained > 0) {
                     questUpdates.push({ type: 'xp', amount: xpGained });
                     questUpdates.push({ type: 'lesson', amount: 1 });
+                }
+                if (xpGained > 0 && newMistakes.length === 0) {
+                    questUpdates.push({ type: 'perfect_lesson', amount: 1 });
                 }
                 updateQuestProgress(questUpdates);
             }
@@ -897,12 +952,53 @@ const App: React.FC = () => {
         });
     }, [selectedLanguage]);
 
+    const handleSkipPlacementTest = useCallback(() => {
+        setPage(Page.Dashboard);
+    }, []);
+
+    const handleCompletePlacementTest = useCallback((completedTopics: string[]) => {
+        if (selectedLanguage) {
+            // Award 10 XP per lesson skipped
+            const xpGained = completedTopics.length * 10;
+
+            setUserProgress(prev => {
+                const langProgress = prev[selectedLanguage.id] || { xp: 0, streak: 0, completedTopics: [], mistakes: [], learnedVocabulary: [], league: LeagueTier.Bronze, unlockedAchievements: [], practiceSessions: 0, perfectLessons: 0 };
+                return {
+                    ...prev,
+                    [selectedLanguage.id]: {
+                        ...langProgress,
+                        xp: langProgress.xp + xpGained,
+                        completedTopics: [...new Set(completedTopics)],
+                    }
+                };
+            });
+        }
+        setPage(Page.Dashboard);
+    }, [selectedLanguage]);
+    
+    const handleUpdateSettings = useCallback((newSettings: Partial<AppSettings>) => {
+        setAppSettings(prev => ({ ...prev, ...newSettings }));
+    }, []);
+
+    const handleUpdateUser = useCallback((updatedUser: Partial<User>) => {
+        setUser(prev => {
+            if (!prev) return null;
+            return { ...prev, ...updatedUser };
+        });
+    }, []);
+
+
     const renderPageContent = () => {
         const currentProgress = selectedLanguage ? userProgress[selectedLanguage.id] : null;
 
         switch (page) {
             case Page.LanguageSelection:
                 return <LanguageSelectionPage languages={LANGUAGES} onSelectLanguage={handleSelectLanguage} />;
+            case Page.PlacementTest:
+                 if (selectedLanguage) {
+                    return <PlacementTestPage language={selectedLanguage} onComplete={handleCompletePlacementTest} onSkip={handleSkipPlacementTest} />;
+                }
+                break;
             case Page.Dashboard:
                 if (selectedLanguage) {
                     return <DashboardPage user={user} language={selectedLanguage} progress={currentProgress} onStartLesson={handleStartLesson} />;
@@ -910,7 +1006,7 @@ const App: React.FC = () => {
                 break;
             case Page.Lesson:
                 if (selectedLanguage && selectedTopic) {
-                    return <LessonPage language={selectedLanguage} topic={selectedTopic} onComplete={handleCompleteLesson} onBack={() => setPage(Page.Dashboard)} />;
+                    return <LessonPage language={selectedLanguage} topic={selectedTopic} onComplete={handleCompleteLesson} onBack={() => setPage(Page.Dashboard)} soundEffectsEnabled={appSettings.soundEffectsEnabled} />;
                 }
                 break;
             case Page.PracticeHub:
@@ -925,6 +1021,8 @@ const App: React.FC = () => {
                 break;
             case Page.Profile:
                 return <ProfilePage user={user} userProgress={userProgress} languages={LANGUAGES} />;
+            case Page.Quests:
+                return <QuestsPage user={user} userProgress={userProgress} selectedLanguage={selectedLanguage} />;
             case Page.Leaderboard:
                 return <LeaderboardPage user={user} registeredUsers={registeredUsers} selectedLanguage={selectedLanguage} />;
             case Page.Dictionary:
@@ -932,9 +1030,15 @@ const App: React.FC = () => {
                     return <DictionaryPage language={selectedLanguage} />;
                 }
                 break;
+            case Page.Settings:
+                return <SettingsPage user={user} appSettings={appSettings} onUpdateUser={handleUpdateUser} onUpdateSettings={handleUpdateSettings} onLogout={handleLogout} />;
+            case Page.Help:
+                return <HelpPage />;
         }
         // Default navigation
-        setPage(Page.LanguageSelection);
+        if (page !== Page.Home) {
+            setPage(Page.LanguageSelection);
+        }
         return null;
     };
     
@@ -942,11 +1046,11 @@ const App: React.FC = () => {
         return <HomePage onGetStarted={() => setPage(Page.LanguageSelection)} />;
     }
 
-    const isMainView = [Page.Dashboard, Page.PracticeHub, Page.PracticeSession, Page.Profile, Page.Leaderboard, Page.Dictionary].includes(page);
+    const isMainView = [Page.Dashboard, Page.PracticeHub, Page.PracticeSession, Page.Profile, Page.Leaderboard, Page.Dictionary, Page.Quests, Page.Settings, Page.Help].includes(page);
     const currentProgress = selectedLanguage ? userProgress[selectedLanguage.id] : null;
 
     return (
-        <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 transition-colors duration-500">
+        <div className="min-h-screen text-slate-800 dark:text-slate-200 transition-colors duration-500">
             <div className={isMainView ? "flex container mx-auto max-w-[1536px]" : ""}>
                 {isMainView && <Sidebar user={user} currentPage={page} onNavigate={handleNavigate} onChangeLanguage={handleChangeLanguage} onLogout={handleLogout} />}
                 

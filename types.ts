@@ -1,6 +1,7 @@
 export enum Page {
     Home,
     LanguageSelection,
+    PlacementTest,
     Dashboard,
     Lesson,
     PracticeHub,
@@ -8,6 +9,9 @@ export enum Page {
     Profile,
     Leaderboard,
     Dictionary,
+    Quests,
+    Settings,
+    Help,
 }
 
 export interface User {
@@ -63,7 +67,7 @@ export interface MistakeItem {
 export interface Quest {
     id: string;
     title: string;
-    type: 'xp' | 'lesson' | 'practice';
+    type: 'xp' | 'lesson' | 'practice' | 'perfect_lesson';
     target: number;
     reward: number; // in XP
 }
@@ -96,6 +100,14 @@ export interface Achievement {
     check: (progress: UserProgress, allProgress: Record<string, UserProgress>) => boolean;
 }
 
+export interface MonthlyChallenge {
+    id: string; // e.g., '2024-07'
+    title: string;
+    description: string;
+    target: number; // e.g., 30 quests
+    icon: string;
+}
+
 
 export interface UserProgress {
     xp: number;
@@ -108,10 +120,12 @@ export interface UserProgress {
     quests?: {
         lastReset: string;
         activeQuests: QuestProgress[];
+        completedTodayCount?: number;
     };
     unlockedAchievements?: string[];
     practiceSessions?: number;
     perfectLessons?: number;
+    completedMonthlyChallenges?: string[]; // e.g., ['2024-06', '2024-07']
 }
 
 export interface Story {
@@ -126,7 +140,7 @@ export interface RegisteredUser {
     progress: Record<string, UserProgress>;
 }
 
-export type PracticeMode = 'conversation' | 'listening' | 'mistakes' | 'vocabulary' | 'stories';
+export type PracticeMode = 'conversation' | 'listening' | 'mistakes' | 'vocabulary' | 'stories' | 'pronunciation';
 
 export interface DictionaryEntry {
     word: string;
@@ -147,4 +161,31 @@ export interface ChatMessage {
 export interface ChatResponse {
     reply: string;
     correction: string | null;
+}
+
+// Types for Pronunciation Practice
+export interface PronunciationFeedback {
+    score: number;
+    feedback: string;
+}
+
+// Types for Placement Test
+export interface PlacementTestQuestion {
+    question: string;
+    options: string[];
+    correctAnswer: string;
+    difficulty: string; // e.g. A1, A2, B1
+}
+
+export interface PlacementTestResult {
+    completedTopics: string[]; // e.g. ['greetings', 'family']
+    summary: string;
+}
+
+// Settings
+export type Theme = 'light' | 'dark' | 'system';
+
+export interface AppSettings {
+    theme: Theme;
+    soundEffectsEnabled: boolean;
 }

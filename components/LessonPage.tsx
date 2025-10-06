@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Language, LessonTopic, LessonContent, MistakeItem, VocabularyItem, Challenge } from '../types';
 import { XP_PER_CORRECT_ANSWER } from '../constants';
@@ -6,12 +7,13 @@ import Loader from './Loader';
 import { CheckCircleIcon, XCircleIcon, StarIcon } from './icons';
 
 const SOUND_URLS = {
-    CORRECT: 'https://actions.google.com/sounds/v1/positive/success.mp3',
-    INCORRECT: 'https://cdn.pixabay.com/audio/2021/08/04/audio_c6ccf34812.mp3',
-    LESSON_COMPLETE: 'https://cdn.pixabay.com/audio/2022/01/18/audio_82c292a9a7.mp3',
+    CORRECT: 'https://actions.google.com/sounds/v1/positive/success.ogg',
+    INCORRECT: 'https://actions.google.com/sounds/v1/negative/failure.ogg',
+    LESSON_COMPLETE: 'https://actions.google.com/sounds/v1/impacts/wind_chimes.ogg',
 };
 
-const playSound = (url: string) => {
+const playSound = (url: string, enabled: boolean) => {
+    if (!enabled) return;
     try {
         const audio = new Audio(url);
         audio.play().catch(e => console.error("Error playing sound:", e));
@@ -127,10 +129,10 @@ const LessonFooter: React.FC<{
     );
 };
 
-const LessonCompletionSummary: React.FC<{ xpGained: number, onFinish: () => void }> = ({ xpGained, onFinish }) => {
+const LessonCompletionSummary: React.FC<{ xpGained: number, onFinish: () => void, soundEffectsEnabled: boolean }> = ({ xpGained, onFinish, soundEffectsEnabled }) => {
     useEffect(() => {
-        playSound(SOUND_URLS.LESSON_COMPLETE);
-    }, []);
+        playSound(SOUND_URLS.LESSON_COMPLETE, soundEffectsEnabled);
+    }, [soundEffectsEnabled]);
     return (
         <div className="text-center p-8 flex flex-col justify-center items-center h-full animate-fade-in">
             <CheckCircleIcon className="w-24 h-24 text-green-500 animate-pulse" />
@@ -155,9 +157,10 @@ interface LessonPageProps {
     topic: LessonTopic;
     onComplete: (xpGained: number, newMistakes: MistakeItem[], newVocabulary: Omit<VocabularyItem, 'nextReview' | 'interval'>[]) => void;
     onBack: () => void;
+    soundEffectsEnabled: boolean;
 }
 
-const LessonPage: React.FC<LessonPageProps> = ({ language, topic, onComplete, onBack }) => {
+const LessonPage: React.FC<LessonPageProps> = ({ language, topic, onComplete, onBack, soundEffectsEnabled }) => {
     const [lessonContent, setLessonContent] = useState<LessonContent | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -195,11 +198,11 @@ const LessonPage: React.FC<LessonPageProps> = ({ language, topic, onComplete, on
         const isCorrect = selectedAnswer === currentChallenge.correctAnswer;
 
         if (isCorrect) {
-            playSound(SOUND_URLS.CORRECT);
+            playSound(SOUND_URLS.CORRECT, soundEffectsEnabled);
             setAnswerState('correct');
             setXpGained(prev => prev + XP_PER_CORRECT_ANSWER);
         } else {
-            playSound(SOUND_URLS.INCORRECT);
+            playSound(SOUND_URLS.INCORRECT, soundEffectsEnabled);
             setAnswerState('incorrect');
             setMistakes(prev => [...prev, {
                 question: currentChallenge.question,
@@ -250,7 +253,7 @@ const LessonPage: React.FC<LessonPageProps> = ({ language, topic, onComplete, on
     const currentChallenge = lessonContent.challenges[currentChallengeIndex];
 
     if (lessonCompleted) {
-        return <LessonCompletionSummary xpGained={xpGained} onFinish={handleFinish} />;
+        return <LessonCompletionSummary xpGained={xpGained} onFinish={handleFinish} soundEffectsEnabled={soundEffectsEnabled} />;
     }
 
     return (

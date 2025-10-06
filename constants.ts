@@ -1,4 +1,4 @@
-import { Language, LessonTopic, Quest, Achievement, AchievementTier, UserProgress } from './types';
+import { Language, LessonTopic, Quest, Achievement, AchievementTier, UserProgress, MonthlyChallenge } from './types';
 
 export const LANGUAGES: Language[] = [
     { id: 'es', name: 'Spanish', flag: '🇪🇸' },
@@ -110,6 +110,7 @@ export const DAILY_QUESTS: Quest[] = [
   { id: 'complete_1_lesson', title: 'Complete 1 lesson', type: 'lesson', target: 1, reward: 10 },
   { id: 'complete_2_lessons', title: 'Complete 2 lessons', type: 'lesson', target: 2, reward: 20 },
   { id: 'practice_1_session', title: 'Finish a practice session', type: 'practice', target: 1, reward: 15 },
+  { id: 'perfect_lesson_1', title: 'Score 100% in 1 lesson', type: 'perfect_lesson', target: 1, reward: 25 },
 ];
 
 export const ACHIEVEMENTS: Achievement[] = [
@@ -132,4 +133,10 @@ export const ACHIEVEMENTS: Achievement[] = [
     { id: 'perfect_lesson_1', title: 'Perfectionist', description: 'Get a perfect score in a lesson without any mistakes.', tier: AchievementTier.Silver, check: (p) => (p.perfectLessons ?? 0) >= 1 },
     // Global Achievement
     { id: 'polyglot_starter', title: 'Language Explorer', description: 'Start learning a second language.', tier: AchievementTier.Silver, check: (p, all) => Object.keys(all).filter(langId => all[langId].xp > 0).length >= 2 },
+];
+
+export const MONTHLY_CHALLENGES: MonthlyChallenge[] = [
+    { id: '2024-07', title: 'July Challenge', description: 'Complete 30 quests this month.', target: 30, icon: '☀️' },
+    { id: '2024-08', title: 'August Adventure', description: 'Earn 1000 XP this month.', target: 1000, icon: '🏕️' },
+    { id: '2024-09', title: 'September Scholar', description: 'Complete 15 perfect lessons.', target: 15, icon: '🍎' },
 ];

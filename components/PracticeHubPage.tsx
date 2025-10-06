@@ -71,6 +71,12 @@ const PracticeHubPage: React.FC<PracticeHubPageProps> = ({ language, progress, o
             color: 'bg-sky-500',
         },
         {
+            title: 'Pronunciation',
+            description: 'Get AI feedback on your pronunciation.',
+            icon: MicrophoneIcon,
+            color: 'bg-blue-500',
+        },
+        {
             title: 'Listening',
             description: 'Boost your listening with audio-only sessions.',
             icon: HeadphonesIcon,
@@ -106,6 +112,7 @@ const PracticeHubPage: React.FC<PracticeHubPageProps> = ({ language, progress, o
         'Your Mistakes': 'mistakes',
         'Smart Review': 'vocabulary',
         'Stories': 'stories',
+        'Pronunciation': 'pronunciation',
     };
 
     return (

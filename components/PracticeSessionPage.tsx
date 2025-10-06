@@ -5,6 +5,7 @@ import ListeningPractice from './practice/ListeningPractice';
 import MistakesPractice from './practice/MistakesPractice';
 import VocabularyReview from './practice/VocabularyReview';
 import StoriesPractice from './practice/StoriesPractice';
+import PronunciationPractice from './practice/PronunciationPractice';
 
 interface PracticeSessionPageProps {
     mode: PracticeMode;
@@ -28,6 +29,8 @@ const PracticeSessionPage: React.FC<PracticeSessionPageProps> = ({ mode, languag
                 return <VocabularyReview vocabulary={progress?.learnedVocabulary ?? []} onEnd={onEndPractice} onUpdateVocabulary={onUpdateVocabularyReview} />;
             case 'stories':
                 return <StoriesPractice language={language} onEnd={onEndPractice} />;
+            case 'pronunciation':
+                return <PronunciationPractice language={language} onEnd={onEndPractice} />;
             default:
                 return (
                     <div>

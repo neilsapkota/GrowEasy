@@ -23,26 +23,26 @@ const lessonSchema = {
                 required: ['word', 'translation', 'pronunciation'],
             },
         },
-        examples: {
+        challenges: {
             type: Type.ARRAY,
-            items: { type: Type.STRING },
-        },
-        quiz: {
-            type: Type.OBJECT,
-            properties: {
-                question: { type: Type.STRING },
-                options: {
-                    type: Type.ARRAY,
-                    items: { type: Type.STRING }
+            items: {
+                type: Type.OBJECT,
+                properties: {
+                    question: { type: Type.STRING },
+                    options: {
+                        type: Type.ARRAY,
+                        items: { type: Type.STRING }
+                    },
+                    correctAnswer: { type: Type.STRING },
+                    type: { type: Type.STRING, enum: ['translate', 'fill-in-the-blank', 'multiple-choice'] },
                 },
-                correctAnswer: { type: Type.STRING },
-                type: { type: Type.STRING, enum: ['translate', 'fill-in-the-blank', 'multiple-choice'] },
+                required: ['question', 'options', 'correctAnswer', 'type'],
             },
-            required: ['question', 'options', 'correctAnswer', 'type'],
         },
     },
-    required: ['topic', 'vocabulary', 'examples', 'quiz'],
+    required: ['topic', 'vocabulary', 'challenges'],
 };
+
 
 const feedbackSchema = {
     type: Type.OBJECT,
@@ -88,10 +88,13 @@ const chatResponseSchema = {
 };
 
 export const generateLesson = async (language: Language, topic: string): Promise<LessonContent> => {
-    const prompt = `Generate a beginner-level language lesson for learning ${language.name} about '${topic}'. The lesson must include:
-1. A list of 3-5 key vocabulary words with their English translations and a simple, IPA-based phonetic pronunciation guide for each word.
-2. One simple example sentence in ${language.name} for each vocabulary word.
-3. A single, simple multiple-choice quiz question to test understanding. Provide the question in English. Provide 4 options in ${language.name}: one correct answer and three plausible but incorrect distractors. Also, specify the correct answer.`;
+    const prompt = `Generate a beginner-level language lesson for learning ${language.name} about '${topic}'. The lesson should feel like a Duolingo lesson. It must include:
+1. A list of 3-4 key vocabulary words with their English translations and a simple, IPA-based phonetic pronunciation guide.
+2. A sequence of 5-7 interactive challenges to teach and test these vocabulary words. The challenges should be an array.
+Good challenge types are:
+- 'multiple-choice': Ask to translate a word from English to ${language.name} or vice-versa. Provide 4 options, one of which is correct.
+- 'fill-in-the-blank': Provide a sentence in ${language.name} with a missing word (represented by '___'), and provide 4 options to fill it.
+Ensure the questions are varied and directly relate to the provided vocabulary. For each challenge, provide the question, 4 options, the correct answer, and a type. Ensure the correct answer is always one of the provided options.`;
 
     try {
         const response = await ai.models.generateContent({
@@ -105,12 +108,13 @@ export const generateLesson = async (language: Language, topic: string): Promise
         const jsonText = response.text.trim();
         const parsedContent = JSON.parse(jsonText) as LessonContent;
 
-        if (!parsedContent.quiz.options.includes(parsedContent.quiz.correctAnswer)) {
-            const incorrectOptions = parsedContent.quiz.options.filter(opt => opt !== parsedContent.quiz.correctAnswer);
-            const options = incorrectOptions.slice(0, 3);
-            options.push(parsedContent.quiz.correctAnswer);
-            parsedContent.quiz.options = options.sort(() => Math.random() - 0.5);
-        }
+        // Data validation and cleanup
+        parsedContent.challenges.forEach(challenge => {
+            if (!challenge.options.includes(challenge.correctAnswer)) {
+                challenge.options[Math.floor(Math.random() * challenge.options.length)] = challenge.correctAnswer;
+            }
+        });
+
         return parsedContent;
     } catch (error) {
         console.error("Error generating lesson:", error);

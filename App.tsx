@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import HomePage from './components/HomePage';
 import LanguageSelectionPage from './components/LanguageSelectionPage';
@@ -196,7 +197,8 @@ const AchievementsDisplay: React.FC<{
 }> = ({ userProgress }) => {
     const unlockedAchievements = useMemo(() => {
         const allUnlocked = new Set<string>();
-        Object.values(userProgress).forEach(progress => {
+        // FIX: Explicitly type 'progress' to resolve type inference issue with Object.values.
+        Object.values(userProgress).forEach((progress: UserProgress) => {
             progress.unlockedAchievements?.forEach(id => allUnlocked.add(id));
         });
         return allUnlocked;
@@ -245,7 +247,8 @@ const ProfilePage: React.FC<{
     }
     
     const languagesWithProgress = Object.entries(userProgress)
-        .map(([langId, progress]) => {
+        // FIX: Explicitly type the destructured array from Object.entries to resolve type inference issue.
+        .map(([langId, progress]: [string, UserProgress]) => {
             const langInfo = languages.find(l => l.id === langId);
             if (langInfo && (progress.xp > 0 || progress.completedTopics.length > 0)) {
                 return { ...langInfo, ...progress };

@@ -35,7 +35,7 @@ export interface VocabularyItem {
     interval: number; // Interval in days for next review
 }
 
-export interface Quiz {
+export interface Challenge {
     question: string;
     options: string[];
     correctAnswer: string;
@@ -45,8 +45,7 @@ export interface Quiz {
 export interface LessonContent {
     topic: string;
     vocabulary: Omit<VocabularyItem, 'nextReview' | 'interval'>[];
-    examples: string[];
-    quiz: Quiz;
+    challenges: Challenge[];
 }
 
 export interface Feedback {

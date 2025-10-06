@@ -1,46 +1,186 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Language, LessonTopic, LessonContent, Feedback, MistakeItem, VocabularyItem } from '../types';
+import React, { useState, useEffect } from 'react';
+import { Language, LessonTopic, LessonContent, MistakeItem, VocabularyItem, Challenge } from '../types';
 import { XP_PER_CORRECT_ANSWER } from '../constants';
-import { generateLesson, getFeedback } from '../services/geminiService';
+import { generateLesson } from '../services/geminiService';
 import Loader from './Loader';
-import { CheckCircleIcon, XCircleIcon, VolumeUpIcon } from './icons';
+import { CheckCircleIcon, XCircleIcon, StarIcon } from './icons';
 
+const SOUND_URLS = {
+    CORRECT: 'https://actions.google.com/sounds/v1/positive/success.mp3',
+    INCORRECT: 'https://cdn.pixabay.com/audio/2021/08/04/audio_c6ccf34812.mp3',
+    LESSON_COMPLETE: 'https://cdn.pixabay.com/audio/2022/01/18/audio_82c292a9a7.mp3',
+};
+
+const playSound = (url: string) => {
+    try {
+        const audio = new Audio(url);
+        audio.play().catch(e => console.error("Error playing sound:", e));
+    } catch (e) {
+        console.error("Could not play sound", e);
+    }
+};
+
+const LessonHeader: React.FC<{ progress: number; onExit: () => void }> = ({ progress, onExit }) => (
+    <div className="flex items-center gap-4 mb-8">
+        <button onClick={onExit} className="text-2xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">&times;</button>
+        <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-4">
+            <div
+                className="bg-green-500 h-4 rounded-full transition-all duration-300 ease-linear"
+                style={{ width: `${progress}%` }}
+            />
+        </div>
+    </div>
+);
+
+const ChallengeView: React.FC<{
+    challenge: Challenge;
+    selectedAnswer: string | null;
+    answerState: 'idle' | 'correct' | 'incorrect';
+    onSelectAnswer: (answer: string) => void;
+}> = ({ challenge, selectedAnswer, answerState, onSelectAnswer }) => {
+    return (
+        <div className="flex-grow flex flex-col justify-center items-center">
+            <div className="w-full max-w-2xl text-center">
+                <h2 className="text-2xl sm:text-3xl font-bold mb-8">{challenge.question}</h2>
+                <div className="grid grid-cols-2 gap-3">
+                    {challenge.options.map((option) => {
+                        const isSelected = selectedAnswer === option;
+                        const isCorrect = challenge.correctAnswer === option;
+                        
+                        let buttonClass = "w-full text-center p-4 rounded-xl font-bold text-lg transition-all duration-200 border-b-4 disabled:cursor-not-allowed ";
+
+                        if (answerState !== 'idle') {
+                            if (isCorrect) {
+                                buttonClass += 'bg-green-400 border-green-600 text-white';
+                            } else if (isSelected && !isCorrect) {
+                                buttonClass += 'bg-red-400 border-red-600 text-white';
+                            } else {
+                                buttonClass += 'bg-slate-200 dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-400 opacity-50';
+                            }
+                        } else {
+                             buttonClass += isSelected 
+                                ? 'bg-sky-300 border-sky-500 text-white' 
+                                : 'bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-600';
+                        }
+                        
+                        return (
+                            <button
+                                key={option}
+                                onClick={() => onSelectAnswer(option)}
+                                disabled={answerState !== 'idle'}
+                                className={buttonClass}
+                            >
+                                {option}
+                            </button>
+                        );
+                    })}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const LessonFooter: React.FC<{
+    answerState: 'idle' | 'correct' | 'incorrect';
+    onCheck: () => void;
+    onContinue: () => void;
+    isAnswerSelected: boolean;
+    correctAnswer: string;
+}> = ({ answerState, onCheck, onContinue, isAnswerSelected, correctAnswer }) => {
+    if (answerState === 'idle') {
+        return (
+            <div className="h-32 flex items-center justify-center border-t-2 border-slate-200 dark:border-slate-700">
+                <button
+                    onClick={onCheck}
+                    disabled={!isAnswerSelected}
+                    className="w-full max-w-xs px-6 py-4 text-xl font-bold text-white uppercase bg-green-500 rounded-2xl border-b-4 border-green-700 hover:bg-green-600 disabled:bg-slate-300 dark:disabled:bg-slate-600 disabled:border-slate-400 dark:disabled:border-slate-700 disabled:cursor-not-allowed transition-all duration-200 active:translate-y-0.5"
+                >
+                    Check
+                </button>
+            </div>
+        );
+    }
+    
+    const isCorrect = answerState === 'correct';
+    const bgColor = isCorrect ? 'bg-green-100 dark:bg-green-900/50' : 'bg-red-100 dark:bg-red-900/50';
+    const textColor = isCorrect ? 'text-green-600 dark:text-green-300' : 'text-red-600 dark:text-red-300';
+    const buttonBgColor = isCorrect ? 'bg-green-500 border-green-700 hover:bg-green-600' : 'bg-red-500 border-red-700 hover:bg-red-600';
+
+    return (
+        <div className={`h-32 p-4 transition-colors duration-300 ${bgColor}`}>
+            <div className="max-w-4xl mx-auto flex justify-between items-center h-full">
+                <div className="flex items-center">
+                    {isCorrect ? <CheckCircleIcon className={`w-10 h-10 mr-4 ${textColor}`} /> : <XCircleIcon className={`w-10 h-10 mr-4 ${textColor}`} />}
+                     <div>
+                        <p className={`font-bold text-xl ${textColor}`}>{isCorrect ? "Correct!" : "Correct solution:"}</p>
+                        {!isCorrect && <p className={`font-semibold text-lg ${textColor}`}>{correctAnswer}</p>}
+                    </div>
+                </div>
+                <button
+                    onClick={onContinue}
+                    className={`px-8 py-4 text-xl font-bold text-white uppercase rounded-2xl border-b-4 ${buttonBgColor} transition-all duration-200 active:translate-y-0.5`}
+                >
+                    Continue
+                </button>
+            </div>
+        </div>
+    );
+};
+
+const LessonCompletionSummary: React.FC<{ xpGained: number, onFinish: () => void }> = ({ xpGained, onFinish }) => {
+    useEffect(() => {
+        playSound(SOUND_URLS.LESSON_COMPLETE);
+    }, []);
+    return (
+        <div className="text-center p-8 flex flex-col justify-center items-center h-full animate-fade-in">
+            <CheckCircleIcon className="w-24 h-24 text-green-500 animate-pulse" />
+            <h2 className="text-4xl font-extrabold mt-6 text-slate-800 dark:text-white">Lesson Complete!</h2>
+            <div className="mt-4 flex items-center justify-center p-4 bg-amber-100 dark:bg-amber-900/50 rounded-xl">
+                 <StarIcon className="w-10 h-10 text-amber-500 mr-3" />
+                 <span className="text-3xl font-bold text-amber-600 dark:text-amber-400">+{xpGained} XP</span>
+            </div>
+            <button
+                onClick={onFinish}
+                className="mt-12 w-full max-w-xs px-6 py-4 text-xl font-bold text-white uppercase bg-teal-500 rounded-2xl border-b-4 border-teal-700 hover:bg-teal-600 transition-all duration-200 active:translate-y-0.5"
+            >
+                Continue
+            </button>
+        </div>
+    );
+};
+
+// FIX: Define missing LessonPageProps interface.
 interface LessonPageProps {
     language: Language;
     topic: LessonTopic;
-    onComplete: (xpGained: number, mistakes: MistakeItem[], vocabulary: Omit<VocabularyItem, 'nextReview' | 'interval'>[]) => void;
+    onComplete: (xpGained: number, newMistakes: MistakeItem[], newVocabulary: Omit<VocabularyItem, 'nextReview' | 'interval'>[]) => void;
     onBack: () => void;
 }
-
-const langCodeMap: { [key: string]: string } = {
-    es: 'es-ES', fr: 'fr-FR', de: 'de-DE', it: 'it-IT', jp: 'ja-JP',
-    kr: 'ko-KR', cn: 'zh-CN', in: 'hi-IN', sa: 'ar-SA', bd: 'bn-BD',
-    ru: 'ru-RU', pt: 'pt-PT', pk: 'ur-PK', id: 'id-ID', nl: 'nl-NL',
-    tr: 'tr-TR', vn: 'vi-VN', th: 'th-TH', pl: 'pl-PL', ro: 'ro-RO',
-    gr: 'el-GR', se: 'sv-SE', no: 'nb-NO', dk: 'da-DK', fi: 'fi-FI',
-    il: 'he-IL', ke: 'sw-KE', cz: 'cs-CZ', hu: 'hu-HU', bg: 'bg-BG',
-    hr: 'hr-HR', ua: 'uk-UA', sk: 'sk-SK',
-};
 
 const LessonPage: React.FC<LessonPageProps> = ({ language, topic, onComplete, onBack }) => {
     const [lessonContent, setLessonContent] = useState<LessonContent | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
-    const [feedback, setFeedback] = useState<Feedback | null>(null);
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [isCompleted, setIsCompleted] = useState(false);
-    const [mistakes, setMistakes] = useState<MistakeItem[]>([]);
     
+    const [currentChallengeIndex, setCurrentChallengeIndex] = useState(0);
+    const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
+    const [answerState, setAnswerState] = useState<'idle' | 'correct' | 'incorrect'>('idle');
+    const [xpGained, setXpGained] = useState(0);
+    const [mistakes, setMistakes] = useState<MistakeItem[]>([]);
+    const [lessonCompleted, setLessonCompleted] = useState(false);
+
     useEffect(() => {
         const fetchLesson = async () => {
             try {
                 setIsLoading(true);
                 setError(null);
                 const content = await generateLesson(language, topic.title);
+                if (!content.challenges || content.challenges.length === 0) {
+                    throw new Error("Generated lesson has no challenges.");
+                }
                 setLessonContent(content);
             } catch (err) {
-                setError('Failed to generate the lesson. Please try again.');
+                setError('Failed to generate the lesson. Please try again later.');
                 console.error(err);
             } finally {
                 setIsLoading(false);
@@ -49,52 +189,46 @@ const LessonPage: React.FC<LessonPageProps> = ({ language, topic, onComplete, on
         fetchLesson();
     }, [language, topic]);
 
-    const handleAnswerSelect = async (answer: string) => {
-        if (!lessonContent) return;
-        
-        setSelectedAnswer(answer);
-        setIsSubmitting(true);
-        setFeedback(null);
-        try {
-            const result = await getFeedback(language, lessonContent.quiz.question, answer, lessonContent.quiz.correctAnswer);
-            setFeedback(result);
-            if(result.isCorrect) {
-                setIsCompleted(true);
-            } else {
-                setMistakes(prev => [...prev, {
-                    question: lessonContent.quiz.question,
-                    correctAnswer: lessonContent.quiz.correctAnswer,
-                    topicId: topic.id,
-                }]);
-            }
-        } catch (err) {
-            setError('Failed to get feedback. Please try again.');
-            console.error(err);
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
+    const handleCheckAnswer = () => {
+        if (!lessonContent || selectedAnswer === null) return;
+        const currentChallenge = lessonContent.challenges[currentChallengeIndex];
+        const isCorrect = selectedAnswer === currentChallenge.correctAnswer;
 
-    const handleSpeak = (text: string) => {
-        if ('speechSynthesis' in window) {
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = langCodeMap[language.id] || language.id;
-            utterance.rate = 0.9;
-            window.speechSynthesis.cancel();
-            window.speechSynthesis.speak(utterance);
+        if (isCorrect) {
+            playSound(SOUND_URLS.CORRECT);
+            setAnswerState('correct');
+            setXpGained(prev => prev + XP_PER_CORRECT_ANSWER);
         } else {
-            alert("Sorry, your browser doesn't support text-to-speech.");
+            playSound(SOUND_URLS.INCORRECT);
+            setAnswerState('incorrect');
+            setMistakes(prev => [...prev, {
+                question: currentChallenge.question,
+                correctAnswer: currentChallenge.correctAnswer,
+                topicId: topic.id,
+            }]);
         }
     };
+    
+    const handleContinue = () => {
+        if (!lessonContent) return;
 
+        if (currentChallengeIndex < lessonContent.challenges.length - 1) {
+            setCurrentChallengeIndex(prev => prev + 1);
+            setSelectedAnswer(null);
+            setAnswerState('idle');
+        } else {
+            setLessonCompleted(true);
+        }
+    };
+    
     const handleFinish = () => {
         if (lessonContent) {
-            onComplete(XP_PER_CORRECT_ANSWER, mistakes, lessonContent.vocabulary);
+            onComplete(xpGained, mistakes, lessonContent.vocabulary);
         }
     };
 
     if (isLoading) {
-        return <Loader message={`Building your ${topic.title} lesson...`} />;
+        return <Loader message={`Building your interactive ${topic.title} lesson...`} />;
     }
 
     if (error) {
@@ -111,130 +245,36 @@ const LessonPage: React.FC<LessonPageProps> = ({ language, topic, onComplete, on
     if (!lessonContent) {
         return null;
     }
+    
+    const progress = (currentChallengeIndex / lessonContent.challenges.length) * 100;
+    const currentChallenge = lessonContent.challenges[currentChallengeIndex];
+
+    if (lessonCompleted) {
+        return <LessonCompletionSummary xpGained={xpGained} onFinish={handleFinish} />;
+    }
 
     return (
-        <div className="p-6 sm:p-8 bg-white dark:bg-slate-800 rounded-2xl shadow-xl">
-            <div className="flex justify-between items-start mb-6">
-                 <div>
-                    <h2 className="text-3xl font-extrabold text-slate-800 dark:text-white">{topic.icon} {topic.title} Lesson</h2>
-                    <p className="text-slate-500 dark:text-slate-400">Time to learn something new in {language.name}!</p>
-                </div>
-                 <button onClick={onBack} className="text-sm font-semibold text-slate-600 dark:text-slate-400 hover:underline">
-                    &larr; Back
-                </button>
+        <div className="flex flex-col h-full min-h-[calc(100vh-2rem)]">
+            <div className="px-4 sm:px-8 pt-4">
+                 <LessonHeader progress={progress} onExit={onBack} />
             </div>
-
-            <div className="space-y-8">
-                <div className="animate-fade-in-up" style={{ animationDelay: '100ms' }}>
-                    <h2 className="text-2xl font-bold mb-4 border-b-2 border-teal-500 pb-2">Vocabulary</h2>
-                    <ul className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {lessonContent.vocabulary.map((item, index) => (
-                             <li key={index} className="p-4 bg-slate-100 dark:bg-slate-700 rounded-lg flex justify-between items-center">
-                                <div className="flex-grow">
-                                    <div className="flex items-baseline gap-2">
-                                        <span className="font-bold text-lg text-teal-600 dark:text-teal-400">{item.word}</span>
-                                        {item.pronunciation && (
-                                            <span className="text-sm text-slate-500 dark:text-slate-400 font-mono">/{item.pronunciation}/</span>
-                                        )}
-                                    </div>
-                                    <p className="text-slate-600 dark:text-slate-300 font-medium">{item.translation}</p>
-                                </div>
-                                <button 
-                                    onClick={() => handleSpeak(item.word)}
-                                    className="p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-full transition-colors flex-shrink-0 ml-4"
-                                    aria-label={`Pronounce ${item.word}`}
-                                    title={`Pronounce ${item.word}`}
-                                >
-                                    <VolumeUpIcon className="w-6 h-6" />
-                                </button>
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-
-                <div className="animate-fade-in-up" style={{ animationDelay: '250ms' }}>
-                    <h2 className="text-2xl font-bold mb-4 border-b-2 border-teal-500 pb-2">Examples</h2>
-                    <ul className="space-y-3">
-                        {lessonContent.examples.map((example, index) => (
-                            <li key={index} className="italic text-slate-600 dark:text-slate-300 p-3 bg-slate-50 dark:bg-slate-700/50 rounded-md">
-                                "{example}"
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-
-                <div className="animate-fade-in-up" style={{ animationDelay: '400ms' }}>
-                    <h2 className="text-2xl font-bold mb-4 border-b-2 border-teal-500 pb-2">Quiz Time!</h2>
-                    <p className="text-lg mb-4 p-4 bg-blue-100 dark:bg-blue-900/50 rounded-lg">{lessonContent.quiz.question}</p>
-                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {lessonContent.quiz.options.map((option) => {
-                            const isSelected = selectedAnswer === option;
-                            const isCorrect = lessonContent.quiz.correctAnswer === option;
-                            
-                            let buttonClass = "w-full text-left p-4 rounded-lg font-semibold text-lg transition-all duration-300 border-2 ";
-
-                            if (selectedAnswer) {
-                                if (isCorrect) {
-                                    buttonClass += 'bg-green-500 border-green-600 text-white scale-105';
-                                } else if (isSelected && !isCorrect) {
-                                    buttonClass += 'bg-red-500 border-red-600 text-white';
-                                } else {
-                                    buttonClass += 'bg-slate-200 dark:bg-slate-700 border-transparent text-slate-500 cursor-not-allowed opacity-70';
-                                }
-                            } else {
-                                buttonClass += 'bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-600 hover:border-teal-500';
-                            }
-                            
-                            return (
-                                <button
-                                    key={option}
-                                    onClick={() => handleAnswerSelect(option)}
-                                    disabled={selectedAnswer !== null || isSubmitting}
-                                    className={buttonClass}
-                                >
-                                    {option}
-                                </button>
-                            )
-                        })}
-                    </div>
-                </div>
-                
-                {feedback && (
-                    <div className={`p-4 rounded-lg transition-all duration-300 mt-4 ${feedback.isCorrect ? 'bg-green-100 dark:bg-green-900/50' : 'bg-red-100 dark:bg-red-900/50'}`}>
-                        <div className="flex items-start">
-                            {feedback.isCorrect ? <CheckCircleIcon className="w-8 h-8 mr-3 text-green-500" /> : <XCircleIcon className="w-8 h-8 mr-3 text-red-500" />}
-                            <div>
-                                <h3 className={`text-xl font-bold ${feedback.isCorrect ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300'}`}>
-                                    {feedback.isCorrect ? 'Correct!' : 'Not Quite'}
-                                </h3>
-                                <p className="mt-1 text-slate-700 dark:text-slate-300">{feedback.explanation}</p>
-                                {!feedback.isCorrect && feedback.suggestion && (
-                                     <p className="mt-2 text-slate-700 dark:text-slate-300">Suggestion: <em className="font-semibold">{feedback.suggestion}</em></p>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {isCompleted && (
-                    <div className="text-center p-6 bg-teal-100 dark:bg-teal-900/50 rounded-lg">
-                        <h3 className="text-2xl font-bold text-teal-700 dark:text-teal-300">Lesson Complete!</h3>
-                        <p className="text-lg text-slate-600 dark:text-slate-400">You've earned {XP_PER_CORRECT_ANSWER} XP!</p>
-                        <button onClick={handleFinish} className="mt-4 px-6 py-3 font-bold text-white bg-teal-600 rounded-lg hover:bg-teal-700 transition-transform transform hover:scale-105 active:scale-95">
-                            Finish & Continue
-                        </button>
-                    </div>
-                )}
-                 {!isCompleted && feedback && !feedback.isCorrect && (
-                     <div className="text-center p-6 bg-slate-100 dark:bg-slate-700/50 rounded-lg">
-                        <h3 className="text-2xl font-bold text-slate-700 dark:text-slate-300">Let's keep going!</h3>
-                        <p className="text-lg text-slate-600 dark:text-slate-400">Don't worry, we'll practice this later.</p>
-                        <button onClick={() => onComplete(0, mistakes, [])} className="mt-4 px-6 py-3 font-bold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-transform transform hover:scale-105 active:scale-95">
-                            Continue
-                        </button>
-                    </div>
-                 )}
-            </div>
+            <main className="flex-grow flex flex-col px-4 sm:px-8">
+                <ChallengeView
+                    challenge={currentChallenge}
+                    selectedAnswer={selectedAnswer}
+                    answerState={answerState}
+                    onSelectAnswer={setSelectedAnswer}
+                />
+            </main>
+             <footer className="mt-auto">
+                 <LessonFooter
+                    answerState={answerState}
+                    onCheck={handleCheckAnswer}
+                    onContinue={handleContinue}
+                    isAnswerSelected={selectedAnswer !== null}
+                    correctAnswer={currentChallenge.correctAnswer}
+                 />
+            </footer>
         </div>
     );
 };

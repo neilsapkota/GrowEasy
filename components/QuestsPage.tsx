@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { User, UserProgress, Language, Quest, QuestProgress } from '../types';
 import { DAILY_QUESTS, MONTHLY_CHALLENGES } from '../constants';
@@ -60,8 +61,9 @@ const QuestsPage: React.FC<QuestsPageProps> = ({ user, userProgress, selectedLan
     const currentMonthId = new Date().toISOString().slice(0, 7); // e.g., "2024-07"
     const currentMonthlyChallenge = MONTHLY_CHALLENGES.find(c => c.id === currentMonthId);
     
+    // FIX: Explicitly type the accumulator `total` as a number to prevent type inference issues.
     const totalQuestsCompletedThisMonth = Object.values(userProgress)
-        .reduce((total, p) => total + (p.quests?.completedTodayCount || 0), 0);
+        .reduce((total: number, p: UserProgress) => total + (p.quests?.completedTodayCount || 0), 0);
     
     const hasCompletedCurrentMonthChallenge = (currentProgress?.completedMonthlyChallenges ?? []).includes(currentMonthId);
 

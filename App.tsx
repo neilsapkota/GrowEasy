@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import HomePage from './components/HomePage';
 import LanguageSelectionPage from './components/LanguageSelectionPage';
@@ -73,17 +74,17 @@ const Sidebar: React.FC<{
             onClick={() => onNavigate(item.page)}
             className={`w-full flex items-center space-x-4 py-3 px-4 rounded-lg transition-all duration-200 text-md font-extrabold uppercase ${
                 isActive 
-                ? 'bg-sky-500 text-white' 
-                : 'text-slate-300 hover:bg-slate-800'
+                ? 'bg-sky-500/20 text-sky-400 border-2 border-sky-500' 
+                : 'text-slate-400 hover:bg-slate-800'
             }`}
         >
-            <item.icon className={`w-8 h-8 ${isActive ? 'text-white' : item.color}`} />
+            <item.icon className={`w-8 h-8 ${isActive ? 'text-sky-400' : 'text-slate-400'}`} />
             <span>{item.label}</span>
         </button>
     );
 
     return (
-        <aside className="w-64 bg-slate-900 flex-shrink-0 p-4 hidden lg:flex flex-col">
+        <aside className="w-64 bg-[#141a24] flex-shrink-0 p-4 hidden lg:flex flex-col">
             <h1 className="text-3xl font-extrabold text-emerald-400 mb-10 px-2 pt-2">
                 GrowEasy
             </h1>
@@ -106,7 +107,7 @@ const Sidebar: React.FC<{
                 </ul>
                 <button 
                     onClick={onChangeLanguage} 
-                    className="w-full text-left flex items-center space-x-4 py-3 px-4 rounded-lg transition-colors text-md font-extrabold uppercase text-slate-300 hover:bg-slate-800"
+                    className="w-full text-left flex items-center space-x-4 py-3 px-4 rounded-lg transition-colors text-md font-extrabold uppercase text-slate-400 hover:bg-slate-800"
                 >
                     <span className="text-2xl">🌐</span>
                     <span>Language</span>
@@ -125,27 +126,56 @@ const Sidebar: React.FC<{
     );
 };
 
+const DailyQuestsCard: React.FC<{ quests: QuestProgress[] | undefined, onNavigate: (page: Page) => void }> = ({ quests, onNavigate }) => {
+    if (!quests || quests.length === 0) {
+        return null;
+    }
+    return (
+        <div className="bg-[#2e3a4e] border border-slate-700 rounded-2xl p-4">
+            <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-bold">Daily Quests</h3>
+                <button onClick={() => onNavigate(Page.Quests)} className="text-sm font-bold text-sky-400 hover:underline">VIEW ALL</button>
+            </div>
+            <ul className="space-y-4">
+                {quests.map(q => {
+                    const questDef = QUESTS_MAP.get(q.questId);
+                    if (!questDef) return null;
+                    const percentage = (q.current / questDef.target) * 100;
+                    return (
+                        <li key={q.questId}>
+                            <p className="font-semibold text-sm mb-1">{questDef.title}</p>
+                            <div className="flex items-center gap-3">
+                                <div className="w-full bg-slate-600 rounded-full h-2.5">
+                                    <div className="bg-amber-400 h-2.5 rounded-full" style={{width: `${percentage}%`}}></div>
+                                </div>
+                                <ChestIcon className="w-8 h-8 text-amber-400" />
+                            </div>
+                        </li>
+                    )
+                })}
+            </ul>
+        </div>
+    )
+}
+
 const RightSidebar: React.FC<{
     progress: UserProgress | null;
-}> = ({ progress }) => {
+    onNavigate: (page: Page) => void;
+}> = ({ progress, onNavigate }) => {
     return (
         <aside className="w-96 flex-shrink-0 p-6 hidden xl:block">
-            <div className="border-2 border-slate-200 dark:border-slate-700 rounded-2xl p-6 sticky top-6">
-                <h2 className="text-xl font-bold">Your Stats</h2>
-                <div className="flex items-center justify-between p-4 bg-amber-100 dark:bg-amber-900/50 rounded-lg mt-4">
-                    <div className="flex items-center space-x-3">
-                        <StarIcon className="w-8 h-8 text-amber-500" />
-                        <span className="text-lg font-bold">Total XP</span>
+            <div className="space-y-6 sticky top-6">
+                <div className="bg-[#2e3a4e] border border-slate-700 rounded-2xl p-4 flex justify-around">
+                    <div className="flex items-center space-x-2 text-amber-400">
+                        <StarIcon className="w-6 h-6" />
+                        <span className="text-lg font-bold">{progress?.xp ?? 0}</span>
                     </div>
-                    <span className="text-xl font-extrabold text-amber-600 dark:text-amber-400">{progress?.xp ?? 0}</span>
-                </div>
-                 <div className="flex items-center justify-between p-4 bg-orange-100 dark:bg-orange-900/50 rounded-lg mt-4">
-                    <div className="flex items-center space-x-3">
-                        <FireIcon className="w-8 h-8 text-orange-500" />
-                        <span className="text-lg font-bold">Day Streak</span>
+                     <div className="flex items-center space-x-2 text-orange-400">
+                        <FireIcon className="w-6 h-6" />
+                        <span className="text-lg font-bold">{progress?.streak ?? 0}</span>
                     </div>
-                    <span className="text-xl font-extrabold text-orange-600 dark:text-orange-400">{progress?.streak ?? 0}</span>
                 </div>
+                <DailyQuestsCard quests={progress?.quests?.activeQuests} onNavigate={onNavigate} />
             </div>
         </aside>
     );
@@ -162,7 +192,6 @@ const AchievementsDisplay: React.FC<{
 }> = ({ userProgress }) => {
     const unlockedAchievements = useMemo(() => {
         const allUnlocked = new Set<string>();
-        // FIX: Explicitly type 'progress' to resolve type inference issue with Object.values.
         Object.values(userProgress).forEach((progress: UserProgress) => {
             progress.unlockedAchievements?.forEach(id => allUnlocked.add(id));
         });
@@ -212,7 +241,6 @@ const ProfilePage: React.FC<{
     }
     
     const languagesWithProgress = Object.entries(userProgress)
-        // FIX: Explicitly type the destructured array from Object.entries to resolve type inference issue.
         .map(([langId, progress]: [string, UserProgress]) => {
             const langInfo = languages.find(l => l.id === langId);
             if (langInfo && (progress.xp > 0 || progress.completedTopics.length > 0)) {
@@ -476,14 +504,11 @@ const App: React.FC = () => {
     // Theme handler
     useEffect(() => {
         const applyTheme = (theme: Theme) => {
-            if (theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            const isDark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+            if (isDark) {
                 document.documentElement.classList.add('dark');
-                document.body.classList.remove('bg-slate-50');
-                document.body.classList.add('bg-slate-900');
             } else {
                 document.documentElement.classList.remove('dark');
-                document.body.classList.remove('bg-slate-900');
-                document.body.classList.add('bg-slate-50');
             }
         };
 
@@ -545,14 +570,15 @@ const App: React.FC = () => {
 
         setUserProgress(prev => {
             const langProgress = prev[selectedLanguage.id];
-            const alreadyCompleted = langProgress.completedMonthlyChallenges?.includes(currentMonthId);
+            // FIX: Add optional chaining to prevent crash if langProgress is undefined.
+            const alreadyCompleted = langProgress?.completedMonthlyChallenges?.includes(currentMonthId);
 
             if (!langProgress || alreadyCompleted) {
                 return prev;
             }
-
+            // FIX: Explicitly type the accumulator `total` as a number to prevent type inference issues.
             const totalQuestsCompleted = Object.values(prev)
-                .reduce((total, p) => total + (p.quests?.completedTodayCount || 0), 0);
+                .reduce((total: number, p: UserProgress) => total + (p.quests?.completedTodayCount || 0), 0);
 
             if (totalQuestsCompleted >= challenge.target) {
                 const newProgress = { ...prev };
@@ -1050,7 +1076,7 @@ const App: React.FC = () => {
     const currentProgress = selectedLanguage ? userProgress[selectedLanguage.id] : null;
 
     return (
-        <div className="min-h-screen text-slate-800 dark:text-slate-200 transition-colors duration-500">
+        <div className="min-h-screen transition-colors duration-500">
             <div className={isMainView ? "flex container mx-auto max-w-[1536px]" : ""}>
                 {isMainView && <Sidebar user={user} currentPage={page} onNavigate={handleNavigate} onChangeLanguage={handleChangeLanguage} onLogout={handleLogout} />}
                 
@@ -1060,7 +1086,7 @@ const App: React.FC = () => {
                     </div>
                 </main>
                 
-                {isMainView && <RightSidebar progress={currentProgress} />}
+                {isMainView && <RightSidebar progress={currentProgress} onNavigate={handleNavigate} />}
             </div>
             
             <AuthModal

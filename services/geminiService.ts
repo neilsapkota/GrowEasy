@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type, Chat } from "@google/genai";
-import { Language, LessonContent, Feedback, Story, DictionaryEntry, ChatResponse, PronunciationFeedback, PlacementTestQuestion, PlacementTestResult } from '../types';
+import { Language, LessonContent, Feedback, Story, DictionaryEntry, ChatResponse, PronunciationFeedback, PlacementTestQuestion, PlacementTestResult, WritingFeedback } from '../types';
 
 if (!process.env.API_KEY) {
     throw new Error("API_KEY environment variable not set");
@@ -117,11 +117,25 @@ const placementTestResultSchema = {
         completedTopics: {
             type: Type.ARRAY,
             items: { type: Type.STRING },
-            description: "An array of topic IDs that the user has demonstrated mastery of. Valid IDs are 'greetings', 'family', 'food', 'hobbies', 'travel', 'work'."
+            description: "An array of topic IDs that the user has demonstrated mastery of. Valid IDs are 'greetings', 'family', 'food', 'hobbies', 'travel', 'work', 'shopping', 'directions', 'weather', 'home', 'health', 'emotions', 'school', 'tech', 'culture', 'nature', 'past', 'future'."
         },
         summary: { type: Type.STRING, description: "A one-sentence summary of the user's proficiency level." },
     },
     required: ['completedTopics', 'summary'],
+};
+
+const writingFeedbackSchema = {
+    type: Type.OBJECT,
+    properties: {
+        score: { type: Type.NUMBER, description: 'A score from 0 to 100 evaluating the user\'s writing based on grammar, vocabulary, and relevance.' },
+        summary: { type: Type.STRING, description: 'A brief, encouraging summary of what the user did well.' },
+        suggestions: {
+            type: Type.ARRAY,
+            items: { type: Type.STRING },
+            description: 'A list of 2-3 specific, actionable suggestions for improvement.'
+        },
+    },
+    required: ['score', 'summary', 'suggestions'],
 };
 
 
@@ -274,6 +288,39 @@ export const startConversation = (language: Language): Chat => {
     });
 };
 
+export const startRoleplayConversation = (language: Language, scenario: string): Chat => {
+    let scenarioPrompt = '';
+    switch (scenario) {
+        case 'coffee':
+            scenarioPrompt = `You are a friendly barista in a café in a ${language.name}-speaking country. Your goal is to take the user's order. Start the conversation by greeting them and asking what they would like.`;
+            break;
+        case 'market':
+            scenarioPrompt = `You are a friendly vendor at an outdoor market in a ${language.name}-speaking country. Your goal is to sell some fruits or vegetables to the user. Start the conversation by greeting them and asking if they need help.`;
+            break;
+        case 'taxi':
+            scenarioPrompt = `You are a taxi driver in a ${language.name}-speaking country. Your goal is to find out where the user wants to go. Start the conversation by greeting them and asking for their destination.`;
+            break;
+        default:
+            scenarioPrompt = `You are a friendly local. Start a simple conversation with the user.`;
+    }
+
+    const systemInstruction = `You are an AI for a language learning app. You are playing a role in a scenario. You are talking to a beginner learning ${language.name}.
+    - Your Persona and Goal: ${scenarioPrompt}
+    - Keep your responses short and simple (1-2 sentences).
+    - Guide the conversation towards your goal.
+    - If the user makes a grammatical mistake, provide a brief, friendly correction in English, and then continue the conversation naturally in ${language.name} in character.
+    - ALWAYS respond in JSON format with two keys: "reply" (your conversational response in ${language.name}) and "correction" (the correction in English, or null if there's no mistake).`;
+
+    return ai.chats.create({
+        model: 'gemini-2.5-flash',
+        config: {
+            systemInstruction,
+            responseMimeType: "application/json",
+            responseSchema: chatResponseSchema,
+        },
+    });
+};
+
 export const sendChatMessage = async (chat: Chat, message: string): Promise<ChatResponse> => {
     try {
         const response = await chat.sendMessage({ message });
@@ -376,7 +423,10 @@ Based on this, what is their proficiency level?
 Determine which of the following topics they can skip. The available topics correspond to different levels:
 - A1 Level: 'greetings', 'family'
 - A2 Level: 'food', 'hobbies'
-- B1 Level: 'travel', 'work'
+- B1 Level: 'travel', 'work', 'shopping', 'directions'
+- B2 Level: 'weather', 'home', 'health', 'emotions'
+- C1 Level: 'school', 'tech', 'culture', 'nature'
+- C2 Level: 'past', 'future'
 
 A user who answers mostly A1 questions correctly should skip 'greetings' and 'family'. A user who also answers A2 questions correctly can skip the first four topics, and so on. If they struggle with A1 questions, they should skip nothing.
 
@@ -396,5 +446,45 @@ Return your evaluation as a JSON object with 'completedTopics' (an array of topi
     } catch (error) {
         console.error("Error evaluating placement test:", error);
         throw new Error("Failed to evaluate the placement test results.");
+    }
+};
+
+export const generateWritingPrompt = async (language: Language): Promise<string> => {
+    const prompt = `Generate one simple and engaging writing prompt for a beginner learning ${language.name}. The prompt should be in English and encourage them to write 2-3 sentences. For example: "Describe your family." or "What did you do yesterday?". Return only the prompt text as a single string.`;
+
+    try {
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: prompt,
+        });
+        return response.text.trim().replace(/"/g, '');
+    } catch (error) {
+        console.error("Error generating writing prompt:", error);
+        throw new Error("Failed to generate a writing prompt.");
+    }
+};
+
+export const evaluateWriting = async (language: Language, prompt: string, userText: string): Promise<WritingFeedback> => {
+    const systemInstruction = `You are a friendly and encouraging language teacher. The user, a beginner in ${language.name}, was given the prompt: "${prompt}". They wrote: "${userText}".
+    
+    Please evaluate their writing. Provide feedback in JSON format.
+    - Give a 'score' from 0 to 100. Be generous for beginners.
+    - Write a brief, positive 'summary' highlighting something they did well.
+    - Provide a list of 2-3 specific, actionable 'suggestions' for improvement. Frame them constructively (e.g., "You could also say...").`;
+
+    try {
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: systemInstruction,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: writingFeedbackSchema,
+            },
+        });
+        const jsonText = response.text.trim();
+        return JSON.parse(jsonText) as WritingFeedback;
+    } catch (error) {
+        console.error("Error evaluating writing:", error);
+        throw new Error("Failed to get writing feedback from the AI.");
     }
 };

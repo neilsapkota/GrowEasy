@@ -1,3 +1,4 @@
+
 import React from 'react';
 
 export const StarIcon: React.FC<{ className?: string }> = ({ className }) => (
@@ -47,6 +48,43 @@ export const HobbiesIcon: React.FC<{ className?: string }> = ({ className }) => 
 );
 export const WorkIcon: React.FC<{ className?: string }> = ({ className }) => (
     <span className={className} style={{ fontSize: '1.5em' }}>💼</span>
+);
+export const ShoppingIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <span className={className} style={{ fontSize: '1.5em' }}>🛍️</span>
+);
+export const DirectionsIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <span className={className} style={{ fontSize: '1.5em' }}>🗺️</span>
+);
+export const WeatherIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <span className={className} style={{ fontSize: '1.5em' }}>☀️</span>
+);
+export const HealthIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <span className={className} style={{ fontSize: '1.5em' }}>🩺</span>
+);
+export const EmotionsIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <span className={className} style={{ fontSize: '1.5em' }}>😊</span>
+);
+export const TechIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <span className={className} style={{ fontSize: '1.5em' }}>💻</span>
+);
+// FIX: Renamed HomeIcon to HomeTopicIcon to avoid redeclaration error.
+export const HomeTopicIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <span className={className} style={{ fontSize: '1.5em' }}>🏠</span>
+);
+export const SchoolIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <span className={className} style={{ fontSize: '1.5em' }}>🏫</span>
+);
+export const CultureIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <span className={className} style={{ fontSize: '1.5em' }}>🎭</span>
+);
+export const NatureIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <span className={className} style={{ fontSize: '1.5em' }}>🌳</span>
+);
+export const FutureIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <span className={className} style={{ fontSize: '1.5em' }}>🔮</span>
+);
+export const PastIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <span className={className} style={{ fontSize: '1.5em' }}>📜</span>
 );
 
 
@@ -190,5 +228,29 @@ export const SettingsIcon: React.FC<{ className?: string }> = ({ className }) =>
 export const HelpIcon: React.FC<{ className?: string }> = ({ className }) => (
     <svg xmlns="http://www.w3.org/2000/svg" className={className} viewBox="0 0 24 24" fill="currentColor">
       <path fillRule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm11.378-3.917c.44-.322.622-.872.3-1.312s-.872-.622-1.312-.3-.622.872-.3 1.312l.3.22a2.25 2.25 0 01.364 2.45l-2.42 4.84a.75.75 0 01-1.352-.674l2.42-4.84a.75.75 0 00-.122-.816l-.004-.004zM12 15.75a.75.75 0 01.75.75v.008a.75.75 0 01-1.5 0v-.008a.75.75 0 01.75-.75z" clipRule="evenodd" />
+    </svg>
+);
+
+export const RoleplayIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} viewBox="0 0 24 24" fill="currentColor">
+        <path fillRule="evenodd" d="M4.804 21.644A6.707 6.707 0 014.5 21.52V18a2.25 2.25 0 012.25-2.25h1.5a.75.75 0 010 1.5h-1.5a.75.75 0 00-.75.75v2.34l.126-.063a5.25 5.25 0 014.252-1.282l.332.106A6.75 6.75 0 0018.75 18v.038l.017.003.003.001a.75.75 0 00.7-1.025a5.25 5.25 0 01-3.55-4.887c.334-.325.648-.68.93-1.062a.75.75 0 10-1.214-.886A6.73 6.73 0 0015 9.75a6.75 6.75 0 00-6.75-6.75S2.25 3 2.25 9.75c0 3.53 2.62 6.447 6 6.721a.75.75 0 00.547-1.378A5.23 5.23 0 013.75 9.75c0-2.9 2.35-5.25 5.25-5.25s5.25 2.35 5.25 5.25c0 2.01-1.128 3.76-2.823 4.637l-.21.104a3.75 3.75 0 00-3.038.913l-.112.084a3.75 3.75 0 00-1.293 2.855l-.01.127a.75.75 0 001.49.12l.009-.115a2.25 2.25 0 01.777-1.713l.112-.084a3.75 3.75 0 013.038-.913l.21-.104a5.25 5.25 0 004.887-3.55.75.75 0 00-1.025-.7l-.001.003-.017.038V12a6.75 6.75 0 00-11.25-4.995V4.662a.75.75 0 00-1.5 0v3.477c-.282.382-.596.737-.93 1.062A5.25 5.25 0 004.804 21.644z" clipRule="evenodd" />
+    </svg>
+);
+
+export const WritingIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} viewBox="0 0 24 24" fill="currentColor">
+        <path d="M21.731 2.269a2.625 2.625 0 00-3.712 0l-1.157 1.157 3.712 3.712 1.157-1.157a2.625 2.625 0 000-3.712zM19.513 8.199l-3.712-3.712-12.15 12.15a5.25 5.25 0 00-1.32 2.214l-.8 2.685a.75.75 0 00.933.933l2.685-.8a5.25 5.25 0 002.214-1.32L19.513 8.2z" />
+    </svg>
+);
+
+export const LockIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path fillRule="evenodd" d="M12 1.5a5.25 5.25 0 00-5.25 5.25v3a3 3 0 00-3 3v6.75a3 3 0 003 3h10.5a3 3 0 003-3v-6.75a3 3 0 00-3-3v-3c0-2.9-2.35-5.25-5.25-5.25zm3.75 8.25v-3a3.75 3.75 0 10-7.5 0v3h7.5z" clipRule="evenodd" />
+    </svg>
+);
+
+export const BackIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
     </svg>
 );

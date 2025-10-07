@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { Language, UserProgress, PracticeMode } from '../types';
-import { MicrophoneIcon, HeadphonesIcon, TargetIcon, CardsIcon, BookOpenIcon } from './icons';
+import { MicrophoneIcon, HeadphonesIcon, TargetIcon, CardsIcon, BookOpenIcon, RoleplayIcon, WritingIcon } from './icons';
 
 interface PracticeHubPageProps {
     language: Language;
@@ -65,6 +65,18 @@ const PracticeHubPage: React.FC<PracticeHubPageProps> = ({ language, progress, o
 
     const practiceOptions: Omit<PracticeCardProps, 'onClick'>[] = [
         {
+            title: 'Role-play Scenarios',
+            description: 'Practice real-world conversations.',
+            icon: RoleplayIcon,
+            color: 'bg-orange-500',
+        },
+        {
+            title: 'Writing Workshop',
+            description: 'Hone your writing skills with AI-graded prompts.',
+            icon: WritingIcon,
+            color: 'bg-indigo-500',
+        },
+        {
             title: 'Conversation',
             description: 'Improve your speaking skills with phrases.',
             icon: MicrophoneIcon,
@@ -113,6 +125,8 @@ const PracticeHubPage: React.FC<PracticeHubPageProps> = ({ language, progress, o
         'Smart Review': 'vocabulary',
         'Stories': 'stories',
         'Pronunciation': 'pronunciation',
+        'Role-play Scenarios': 'roleplay',
+        'Writing Workshop': 'writing',
     };
 
     return (

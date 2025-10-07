@@ -140,7 +140,7 @@ export interface RegisteredUser {
     progress: Record<string, UserProgress>;
 }
 
-export type PracticeMode = 'conversation' | 'listening' | 'mistakes' | 'vocabulary' | 'stories' | 'pronunciation';
+export type PracticeMode = 'conversation' | 'listening' | 'mistakes' | 'vocabulary' | 'stories' | 'pronunciation' | 'roleplay' | 'writing';
 
 export interface DictionaryEntry {
     word: string;
@@ -188,4 +188,38 @@ export type Theme = 'light' | 'dark' | 'system';
 export interface AppSettings {
     theme: Theme;
     soundEffectsEnabled: boolean;
+}
+
+// Types for Writing Practice
+export interface WritingFeedback {
+    score: number; // Score out of 100
+    summary: string; // A brief, positive summary.
+    suggestions: string[]; // A list of specific suggestions for improvement.
+}
+
+// New types for structured learning path
+export interface Unit {
+    unitNumber: number;
+    title: string;
+    lessons: LessonTopic[];
+    color: {
+        bg: string;
+        border: string;
+        text: string;
+        shadow: string;
+    };
+}
+
+export interface Section {
+    sectionNumber: number;
+    title: string;
+    units: Unit[];
+    cefrLevel: string;
+    phrase: string;
+}
+
+export interface Path {
+    id: string;
+    title: string;
+    sections: Section[];
 }

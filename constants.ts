@@ -1,4 +1,4 @@
-import { Language, LessonTopic, Quest, Achievement, AchievementTier, UserProgress, MonthlyChallenge } from './types';
+import { Language, LessonTopic, Quest, Achievement, AchievementTier, UserProgress, MonthlyChallenge, Path } from './types';
 
 export const LANGUAGES: Language[] = [
     { id: 'es', name: 'Spanish', flag: '🇪🇸' },
@@ -43,64 +43,138 @@ export const LESSON_TOPICS: LessonTopic[] = [
     { id: 'travel', title: 'Travel', icon: '✈️' },
     { id: 'hobbies', title: 'Hobbies', icon: '🎨' },
     { id: 'work', title: 'Work', icon: '💼' },
+    { id: 'shopping', title: 'Shopping', icon: '🛍️' },
+    { id: 'directions', title: 'Directions', icon: '🗺️' },
+    { id: 'weather', title: 'Weather', icon: '☀️' },
+    { id: 'health', title: 'Health', icon: '🩺' },
+    { id: 'emotions', title: 'Emotions', icon: '😊' },
+    { id: 'tech', title: 'Technology', icon: '💻' },
+    { id: 'home', title: 'Home', icon: '🏠' },
+    { id: 'school', title: 'School', icon: '🏫' },
+    { id: 'culture', title: 'Culture', icon: '🎭' },
+    { id: 'nature', title: 'Nature', icon: '🌳' },
+    { id: 'future', title: 'Future Tense', icon: '🔮' },
+    { id: 'past', title: 'Past Tense', icon: '📜' },
 ];
 
-export interface Unit {
-    unitNumber: number;
-    title: string;
-    lessons: LessonTopic[];
-    color: {
-        bg: string;
-        border: string;
-        text: string;
-        shadow: string;
-    };
-}
+export const LEARNING_PATH: Path = {
+    id: 'main-path',
+    title: 'Your Learning Path',
+    sections: [
+        {
+            sectionNumber: 1,
+            title: "Foundations",
+            cefrLevel: "A1",
+            phrase: "Hello! How are you?",
+            units: [
+                {
+                    unitNumber: 1,
+                    title: "Basic Greetings",
+                    lessons: [{ id: 'greetings', title: 'Greetings', icon: '👋' }],
+                    color: { bg: 'bg-green-500', border: 'border-green-700', text: 'text-green-700', shadow: 'shadow-green-500/50' }
+                },
+                {
+                    unitNumber: 2,
+                    title: "People & Family",
+                    lessons: [{ id: 'family', title: 'Family', icon: '👨‍👩‍👧‍👦' }],
+                    color: { bg: 'bg-sky-500', border: 'border-sky-700', text: 'text-sky-700', shadow: 'shadow-sky-500/50' }
+                },
+                {
+                    unitNumber: 3,
+                    title: "Food & Drink",
+                    lessons: [{ id: 'food', title: 'Food', icon: '🍕' }],
+                    color: { bg: 'bg-rose-500', border: 'border-rose-700', text: 'text-rose-700', shadow: 'shadow-rose-500/50' }
+                },
+                {
+                    unitNumber: 4,
+                    title: "Daily Activities",
+                    lessons: [{ id: 'hobbies', title: 'Hobbies', icon: '🎨' }],
+                    color: { bg: 'bg-amber-500', border: 'border-amber-700', text: 'text-amber-700', shadow: 'shadow-amber-500/50' }
+                }
+            ]
+        },
+        {
+            sectionNumber: 2,
+            title: "Building Blocks",
+            cefrLevel: "A2",
+            phrase: "I would like to order a coffee.",
+            units: [
+                {
+                    unitNumber: 5,
+                    title: "Navigating the World",
+                    lessons: [
+                        { id: 'travel', title: 'Travel', icon: '✈️' },
+                        { id: 'directions', title: 'Directions', icon: '🗺️' }
+                    ],
+                    color: { bg: 'bg-purple-500', border: 'border-purple-700', text: 'text-purple-700', shadow: 'shadow-purple-500/50' }
+                },
+                {
+                    unitNumber: 6,
+                    title: "Work & Shopping",
+                    lessons: [
+                        { id: 'work', title: 'Work', icon: '💼' },
+                        { id: 'shopping', title: 'Shopping', icon: '🛍️' }
+                    ],
+                    color: { bg: 'bg-fuchsia-500', border: 'border-fuchsia-700', text: 'text-fuchsia-700', shadow: 'shadow-fuchsia-500/50' }
+                },
+                {
+                    unitNumber: 7,
+                    title: "Home Life",
+                    lessons: [
+                        { id: 'home', title: 'Home', icon: '🏠' },
+                        { id: 'weather', title: 'Weather', icon: '☀️' }
+                    ],
+                    color: { bg: 'bg-cyan-500', border: 'border-cyan-700', text: 'text-cyan-700', shadow: 'shadow-cyan-500/50' }
+                },
+                {
+                    unitNumber: 8,
+                    title: "Education & Tech",
+                    lessons: [
+                        { id: 'school', title: 'School', icon: '🏫' },
+                        { id: 'tech', title: 'Technology', icon: '💻' }
+                    ],
+                    color: { bg: 'bg-lime-500', border: 'border-lime-700', text: 'text-lime-700', shadow: 'shadow-lime-500/50' }
+                }
+            ]
+        },
+        {
+            sectionNumber: 3,
+            title: "Expressing Yourself",
+            cefrLevel: "B1",
+            phrase: "Yesterday, I went to the park.",
+            units: [
+                {
+                    unitNumber: 9,
+                    title: "Health & Feelings",
+                    lessons: [
+                        { id: 'health', title: 'Health', icon: '🩺' },
+                        { id: 'emotions', title: 'Emotions', icon: '😊' }
+                    ],
+                    color: { bg: 'bg-teal-500', border: 'border-teal-700', text: 'text-teal-700', shadow: 'shadow-teal-500/50' }
+                },
+                {
+                    unitNumber: 10,
+                    title: "Culture & Nature",
+                    lessons: [
+                        { id: 'culture', title: 'Culture', icon: '🎭' },
+                        { id: 'nature', title: 'Nature', icon: '🌳' }
+                    ],
+                    color: { bg: 'bg-orange-500', border: 'border-orange-700', text: 'text-orange-700', shadow: 'shadow-orange-500/50' }
+                },
+                {
+                    unitNumber: 11,
+                    title: "Talking About Time",
+                    lessons: [
+                        { id: 'past', title: 'Past Tense', icon: '📜' },
+                        { id: 'future', title: 'Future Tense', icon: '🔮' }
+                    ],
+                    color: { bg: 'bg-indigo-500', border: 'border-indigo-700', text: 'text-indigo-700', shadow: 'shadow-indigo-500/50' }
+                }
+            ]
+        }
+    ]
+};
 
-export const UNITS: Unit[] = [
-    {
-        unitNumber: 1,
-        title: "Introduction",
-        lessons: [
-            { id: 'greetings', title: 'Greetings', icon: '👋' },
-            { id: 'family', title: 'Family', icon: '👨‍👩‍👧‍👦' },
-        ],
-        color: {
-            bg: 'bg-green-500',
-            border: 'border-green-700',
-            text: 'text-green-700',
-            shadow: 'shadow-green-500/50',
-        }
-    },
-    {
-        unitNumber: 2,
-        title: "Daily Life",
-        lessons: [
-            { id: 'food', title: 'Food', icon: '🍕' },
-            { id: 'hobbies', title: 'Hobbies', icon: '🎨' },
-        ],
-        color: {
-            bg: 'bg-blue-500',
-            border: 'border-blue-700',
-            text: 'text-blue-700',
-            shadow: 'shadow-blue-500/50',
-        }
-    },
-    {
-        unitNumber: 3,
-        title: "Out and About",
-        lessons: [
-            { id: 'travel', title: 'Travel', icon: '✈️' },
-            { id: 'work', title: 'Work', icon: '💼' },
-        ],
-        color: {
-            bg: 'bg-purple-500',
-            border: 'border-purple-700',
-            text: 'text-purple-700',
-            shadow: 'shadow-purple-500/50',
-        }
-    },
-];
 
 export const XP_PER_CORRECT_ANSWER = 10;
 
@@ -125,7 +199,12 @@ export const ACHIEVEMENTS: Achievement[] = [
     // Lesson Achievements
     { id: 'lessons_1', title: 'First Steps', description: 'Complete your first lesson.', tier: AchievementTier.Bronze, check: (p) => p.completedTopics.length >= 1 },
     { id: 'lessons_5', title: 'Bookworm', description: 'Complete 5 different lessons.', tier: AchievementTier.Silver, check: (p) => p.completedTopics.length >= 5 },
-    { id: 'lessons_all_unit1', title: 'Unit 1 Graduate', description: 'Complete all lessons in Unit 1.', tier: AchievementTier.Gold, check: (p) => UNITS[0].lessons.every(l => p.completedTopics.includes(l.id)) },
+    { id: 'lessons_all_unit1', title: 'Unit 1 Graduate', description: 'Complete all lessons in Unit 1.', tier: AchievementTier.Gold, check: (p) => {
+        const unit1 = LEARNING_PATH.sections.flatMap(s => s.units).find(u => u.unitNumber === 1);
+        if (!unit1) return false;
+        return unit1.lessons.every(l => p.completedTopics.includes(l.id));
+      }
+    },
     // Practice Achievements
     { id: 'practice_1', title: 'Practice Makes Perfect', description: 'Complete a practice session.', tier: AchievementTier.Bronze, check: (p) => (p.practiceSessions ?? 0) >= 1 },
     { id: 'practice_10', title: 'Dedicated Learner', description: 'Complete 10 practice sessions.', tier: AchievementTier.Silver, check: (p) => (p.practiceSessions ?? 0) >= 10 },

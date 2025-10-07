@@ -4,7 +4,7 @@ import React, { useState, useMemo } from 'react';
 import { User, Language, UserProgress, LessonTopic, Unit, Section } from '../types';
 import { LEARNING_PATH } from '../constants';
 import Mascot from './Mascot';
-import { CheckCircleIcon, GreetingsIcon, FoodIcon, TravelIcon, FamilyIcon, HobbiesIcon, WorkIcon, BookOpenIcon, ChestIcon, StarIcon, ShoppingIcon, DirectionsIcon, WeatherIcon, HealthIcon, EmotionsIcon, TechIcon, HomeTopicIcon, SchoolIcon, CultureIcon, NatureIcon, FutureIcon, PastIcon, LockIcon, BackIcon } from './icons';
+import { CheckCircleIcon, GreetingsIcon, FoodIcon, TravelIcon, FamilyIcon, HobbiesIcon, WorkIcon, BookOpenIcon, ChestIcon, StarIcon, ShoppingIcon, DirectionsIcon, WeatherIcon, HealthIcon, EmotionsIcon, TechIcon, HomeTopicIcon, SchoolIcon, CultureIcon, NatureIcon, FutureIcon, PastIcon, BackIcon } from './icons';
 
 interface DashboardPageProps {
     user: User | null;
@@ -35,6 +35,45 @@ const TopicIcon: React.FC<{ topicId: string, className?: string }> = ({ topicId,
         case 'past': return <PastIcon className={className} />;
         default: return <span className={className}></span>;
     }
+};
+
+interface SkipConfirmModalProps {
+    isOpen: boolean;
+    sectionTitle: string;
+    onConfirm: () => void;
+    onClose: () => void;
+}
+
+const SkipConfirmModal: React.FC<SkipConfirmModalProps> = ({ isOpen, sectionTitle, onConfirm, onClose }) => {
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex justify-center items-center animate-fade-in">
+            <div
+                className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl p-8 w-full max-w-md m-4 text-center transform transition-all animate-fade-in-up"
+                onClick={(e) => e.stopPropagation()}
+            >
+                <h2 className="text-2xl font-bold text-slate-800 dark:text-white mb-2">Skip Ahead?</h2>
+                <p className="text-slate-500 dark:text-slate-400 mb-6">
+                    You're about to jump to <strong>{`"${sectionTitle}"`}</strong>. We recommend completing sections in order, but you can skip ahead if you're ready.
+                </p>
+                <div className="flex justify-center gap-4">
+                    <button
+                        onClick={onClose}
+                        className="px-6 py-3 font-bold text-slate-700 dark:text-slate-200 bg-slate-200 dark:bg-slate-600 hover:bg-slate-300 dark:hover:bg-slate-500 rounded-lg transition-colors"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        onClick={onConfirm}
+                        className="px-6 py-3 font-bold text-white bg-teal-600 hover:bg-teal-700 rounded-lg transition-colors"
+                    >
+                        Yes, Skip Ahead
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
 };
 
 type NodeStatus = 'locked' | 'active' | 'completed';
@@ -176,37 +215,24 @@ const PathView: React.FC<PathViewProps> = ({ progress, onStartLesson, selectedSe
 };
 
 interface SectionsViewProps {
-    progress: UserProgress | null;
-    onSelectSection: (sectionNumber: number) => void;
+    sectionProgress: (Section & { completedUnits: number; totalUnits: number; })[];
+    onSelectSection: (section: Section) => void;
 }
 
-const SectionsView: React.FC<SectionsViewProps> = ({ progress, onSelectSection }) => {
-    const completedTopics = useMemo(() => new Set(progress?.completedTopics ?? []), [progress]);
-    
-    const sectionProgress = useMemo(() => {
-        return LEARNING_PATH.sections.map(section => {
-            const totalUnits = section.units.length;
-            const completedUnits = section.units.filter(unit => 
-                unit.lessons.every(lesson => completedTopics.has(lesson.id))
-            ).length;
-            return { ...section, completedUnits, totalUnits };
-        });
-    }, [completedTopics]);
-
+const SectionsView: React.FC<SectionsViewProps> = ({ sectionProgress, onSelectSection }) => {
     const activeSectionIndex = sectionProgress.findIndex(s => s.completedUnits < s.totalUnits);
 
-    const getSectionStatus = (index: number) => {
+    const getSectionStatus = (index: number): 'completed' | 'active' | 'upcoming' => {
         if (activeSectionIndex === -1) return 'completed';
         if (index < activeSectionIndex) return 'completed';
         if (index === activeSectionIndex) return 'active';
-        return 'locked';
+        return 'upcoming';
     };
 
     return (
         <div className="max-w-2xl mx-auto space-y-4">
             {sectionProgress.map((section, index) => {
                 const status = getSectionStatus(index);
-                const isLocked = status === 'locked';
                 const isActive = status === 'active';
                 const isCompleted = status === 'completed';
                 const progressPercentage = (section.completedUnits / section.totalUnits) * 100;
@@ -218,38 +244,34 @@ const SectionsView: React.FC<SectionsViewProps> = ({ progress, onSelectSection }
                                 <div className="flex items-center gap-2 text-sm font-bold uppercase text-sky-300">
                                     <span>{section.cefrLevel}</span>
                                     <span>•</span>
-                                    <button onClick={() => onSelectSection(section.sectionNumber)} disabled={isLocked} className="hover:underline disabled:cursor-not-allowed">SEE DETAILS</button>
+                                    <button onClick={() => onSelectSection(section)} className="hover:underline">SEE DETAILS</button>
                                 </div>
-                                <h3 className={`text-2xl font-extrabold ${isLocked ? 'text-slate-500' : 'text-white'}`}>Section {section.sectionNumber}</h3>
+                                <h3 className={`text-2xl font-extrabold text-white`}>Section {section.sectionNumber}</h3>
                                 
-                                {isActive && (
+                                {isActive ? (
                                     <>
                                         <div className="w-full bg-slate-900/50 rounded-full h-4 mt-2">
                                             <div className="bg-green-400 h-4 rounded-full" style={{width: `${progressPercentage}%`}}></div>
                                         </div>
                                         <p className="text-xs font-bold text-white/80 mt-1">{section.completedUnits} / {section.totalUnits} Units</p>
-                                        <button onClick={() => onSelectSection(section.sectionNumber)} className="mt-4 px-10 py-3 bg-sky-500 text-white font-bold rounded-xl border-b-4 border-sky-700 hover:bg-sky-600 transition-all uppercase">
+                                        <button onClick={() => onSelectSection(section)} className="mt-4 px-10 py-3 bg-sky-500 text-white font-bold rounded-xl border-b-4 border-sky-700 hover:bg-sky-600 transition-all uppercase">
                                             Continue
                                         </button>
                                     </>
-                                )}
-
-                                {!isActive && (
+                                ) : (
                                     <>
                                         <div className="flex items-center gap-2 text-slate-400 mt-2 font-bold">
-                                            {isLocked && <LockIcon className="w-4 h-4" />}
                                             <span>{section.totalUnits} Units</span>
                                         </div>
                                          <button 
-                                            disabled={isLocked}
-                                            onClick={() => onSelectSection(section.sectionNumber)}
+                                            onClick={() => onSelectSection(section)}
                                             className={`mt-4 px-10 py-3 font-bold rounded-xl border-b-4 transition-all uppercase ${
                                                 isCompleted 
                                                 ? 'bg-sky-500 text-white border-sky-700 hover:bg-sky-600'
-                                                : 'bg-slate-600 text-slate-400 border-slate-800 cursor-not-allowed'
+                                                : 'bg-slate-500 text-white border-slate-700 hover:bg-slate-600'
                                             }`}
                                         >
-                                            {isCompleted ? 'Review' : 'Locked'}
+                                            {isCompleted ? 'Review' : 'Start Here'}
                                         </button>
                                     </>
                                 )}
@@ -273,10 +295,55 @@ const SectionsView: React.FC<SectionsViewProps> = ({ progress, onSelectSection }
 const DashboardPage: React.FC<DashboardPageProps> = (props) => {
     const [viewMode, setViewMode] = useState<'sections' | 'path'>('sections');
     const [selectedSectionNumber, setSelectedSectionNumber] = useState<number | null>(null);
+    const [showSkipConfirm, setShowSkipConfirm] = useState(false);
+    const [targetSection, setTargetSection] = useState<Section | null>(null);
 
-    const handleSelectSection = (sectionNumber: number) => {
-        setSelectedSectionNumber(sectionNumber);
-        setViewMode('path');
+    const completedTopics = useMemo(() => new Set(props.progress?.completedTopics ?? []), [props.progress]);
+    
+    const sectionProgress = useMemo(() => {
+        return LEARNING_PATH.sections.map(section => {
+            const totalUnits = section.units.length;
+            const completedUnits = section.units.filter(unit => 
+                unit.lessons.every(lesson => completedTopics.has(lesson.id))
+            ).length;
+            return { ...section, completedUnits, totalUnits };
+        });
+    }, [completedTopics]);
+
+    const activeSectionIndex = sectionProgress.findIndex(s => s.completedUnits < s.totalUnits);
+
+    const getSectionStatus = (index: number): 'completed' | 'active' | 'upcoming' => {
+        if (activeSectionIndex === -1) return 'completed';
+        if (index < activeSectionIndex) return 'completed';
+        if (index === activeSectionIndex) return 'active';
+        return 'upcoming';
+    };
+
+    const handleSelectSection = (section: Section) => {
+        const sectionIndex = sectionProgress.findIndex(s => s.sectionNumber === section.sectionNumber);
+        const status = getSectionStatus(sectionIndex);
+
+        if (status === 'upcoming') {
+            setTargetSection(section);
+            setShowSkipConfirm(true);
+        } else {
+            setSelectedSectionNumber(section.sectionNumber);
+            setViewMode('path');
+        }
+    };
+
+    const handleConfirmSkip = () => {
+        if (targetSection) {
+            setSelectedSectionNumber(targetSection.sectionNumber);
+            setViewMode('path');
+        }
+        setShowSkipConfirm(false);
+        setTargetSection(null);
+    };
+
+    const handleCloseSkipModal = () => {
+        setShowSkipConfirm(false);
+        setTargetSection(null);
     };
 
     const handleBackToSections = () => {
@@ -284,11 +351,21 @@ const DashboardPage: React.FC<DashboardPageProps> = (props) => {
         setSelectedSectionNumber(null);
     };
     
-    if (viewMode === 'path' && selectedSectionNumber !== null) {
-        return <PathView {...props} selectedSectionNumber={selectedSectionNumber} onBackToSections={handleBackToSections} />;
-    }
-    
-    return <SectionsView progress={props.progress} onSelectSection={handleSelectSection} />;
+    return (
+        <>
+            {viewMode === 'path' && selectedSectionNumber !== null ? (
+                <PathView {...props} selectedSectionNumber={selectedSectionNumber} onBackToSections={handleBackToSections} />
+            ) : (
+                <SectionsView sectionProgress={sectionProgress} onSelectSection={handleSelectSection} />
+            )}
+             <SkipConfirmModal
+                isOpen={showSkipConfirm}
+                onClose={handleCloseSkipModal}
+                onConfirm={handleConfirmSkip}
+                sectionTitle={targetSection?.title || ''}
+            />
+        </>
+    );
 };
 
 export default DashboardPage;

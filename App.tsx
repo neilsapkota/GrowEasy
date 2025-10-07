@@ -1,4 +1,5 @@
 
+
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import HomePage from './components/HomePage';
 import LanguageSelectionPage from './components/LanguageSelectionPage';
@@ -580,7 +581,9 @@ const App: React.FC = () => {
             const totalQuestsCompleted = Object.values(prev)
                 .reduce((total: number, p: UserProgress) => total + (p.quests?.completedTodayCount || 0), 0);
 
-            if (totalQuestsCompleted >= challenge.target) {
+            // FIX: Resolve TS error by ensuring totalQuestsCompleted is treated as a number
+            // before comparison. In some TS environments, its type might be inferred as 'unknown'.
+            if (typeof totalQuestsCompleted === 'number' && totalQuestsCompleted >= challenge.target) {
                 const newProgress = { ...prev };
                 if (!newProgress[selectedLanguage.id].completedMonthlyChallenges) {
                     newProgress[selectedLanguage.id].completedMonthlyChallenges = [];

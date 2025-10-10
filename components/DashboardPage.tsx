@@ -4,7 +4,7 @@ import React, { useState, useMemo } from 'react';
 import { User, Language, UserProgress, LessonTopic, Unit, Section } from '../types';
 import { LEARNING_PATH } from '../constants';
 import Mascot from './Mascot';
-import { CheckCircleIcon, GreetingsIcon, FoodIcon, TravelIcon, FamilyIcon, HobbiesIcon, WorkIcon, BookOpenIcon, ChestIcon, StarIcon, ShoppingIcon, DirectionsIcon, WeatherIcon, HealthIcon, EmotionsIcon, TechIcon, HomeTopicIcon, SchoolIcon, CultureIcon, NatureIcon, FutureIcon, PastIcon, BackIcon } from './icons';
+import { CheckCircleIcon, BackIcon } from './icons';
 
 interface DashboardPageProps {
     user: User | null;
@@ -12,30 +12,6 @@ interface DashboardPageProps {
     progress: UserProgress | null;
     onStartLesson: (topic: LessonTopic) => void;
 }
-
-const TopicIcon: React.FC<{ topicId: string, className?: string }> = ({ topicId, className }) => {
-    switch (topicId) {
-        case 'greetings': return <GreetingsIcon className={className} />;
-        case 'food': return <FoodIcon className={className} />;
-        case 'travel': return <TravelIcon className={className} />;
-        case 'family': return <FamilyIcon className={className} />;
-        case 'hobbies': return <HobbiesIcon className={className} />;
-        case 'work': return <WorkIcon className={className} />;
-        case 'shopping': return <ShoppingIcon className={className} />;
-        case 'directions': return <DirectionsIcon className={className} />;
-        case 'weather': return <WeatherIcon className={className} />;
-        case 'health': return <HealthIcon className={className} />;
-        case 'emotions': return <EmotionsIcon className={className} />;
-        case 'tech': return <TechIcon className={className} />;
-        case 'home': return <HomeTopicIcon className={className} />;
-        case 'school': return <SchoolIcon className={className} />;
-        case 'culture': return <CultureIcon className={className} />;
-        case 'nature': return <NatureIcon className={className} />;
-        case 'future': return <FutureIcon className={className} />;
-        case 'past': return <PastIcon className={className} />;
-        default: return <span className={className}></span>;
-    }
-};
 
 interface SkipConfirmModalProps {
     isOpen: boolean;
@@ -118,7 +94,7 @@ const LessonNode: React.FC<{
                 aria-label={`${buttonLabel} lesson: ${topic.title}`}
             >
                 <div className={`${textColorClasses[status]}`}>
-                    {status === 'completed' ? <CheckCircleIcon className="w-12 h-12" /> : <TopicIcon topicId={topic.id} className="w-10 h-10" />}
+                    {status === 'completed' ? <CheckCircleIcon className="w-12 h-12" /> : <span className="text-4xl">{topic.icon}</span>}
                 </div>
             </button>
             <div className={`absolute -bottom-20 w-48 text-center p-2 rounded-lg bg-slate-800 shadow-lg border border-slate-700 opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${isLocked ? 'hidden' : ''} z-10`}>
@@ -230,61 +206,58 @@ const SectionsView: React.FC<SectionsViewProps> = ({ sectionProgress, onSelectSe
     };
 
     return (
-        <div className="max-w-2xl mx-auto space-y-4">
+        <div className="max-w-3xl mx-auto space-y-4">
             {sectionProgress.map((section, index) => {
                 const status = getSectionStatus(index);
                 const isActive = status === 'active';
                 const isCompleted = status === 'completed';
                 const progressPercentage = (section.completedUnits / section.totalUnits) * 100;
                 
+                const cardColor = isActive ? 'bg-sky-800' : isCompleted ? 'bg-emerald-900' : 'bg-[#2e3a4e]';
+                const buttonColor = isActive ? 'bg-sky-500 border-sky-700 hover:bg-sky-600' : isCompleted ? 'bg-slate-500 border-slate-700 hover:bg-slate-600' : 'bg-slate-500 border-slate-700 hover:bg-slate-600';
+                const buttonText = isActive ? 'Continue' : isCompleted ? 'Review' : 'Start Here';
+
                 return (
-                    <div key={section.sectionNumber} className={`p-4 rounded-2xl ${isActive ? 'bg-[#1b6391]' : isCompleted ? 'bg-teal-800' : 'bg-[#2e3a4e] border border-slate-700'}`}>
-                        <div className="flex justify-between items-center gap-4">
-                            <div className="flex-1">
+                    <button 
+                        key={section.sectionNumber} 
+                        onClick={() => onSelectSection(section)}
+                        className={`w-full p-4 rounded-2xl text-left transition-transform duration-300 hover:-translate-y-1 border border-slate-700 ${cardColor}`}
+                    >
+                        <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+                            <div className="flex-1 w-full">
                                 <div className="flex items-center gap-2 text-sm font-bold uppercase text-sky-300">
-                                    <span>{section.cefrLevel}</span>
+                                    <span>SECTION {section.sectionNumber}</span>
                                     <span>•</span>
-                                    <button onClick={() => onSelectSection(section)} className="hover:underline">SEE DETAILS</button>
+                                    <span>{section.cefrLevel}</span>
                                 </div>
-                                <h3 className={`text-2xl font-extrabold text-white`}>Section {section.sectionNumber}</h3>
+                                <h3 className={`text-2xl font-extrabold text-white mt-1`}>{section.title}</h3>
                                 
                                 {isActive ? (
-                                    <>
-                                        <div className="w-full bg-slate-900/50 rounded-full h-4 mt-2">
-                                            <div className="bg-green-400 h-4 rounded-full" style={{width: `${progressPercentage}%`}}></div>
+                                    <div className="mt-4">
+                                        <div className="w-full bg-slate-900/50 rounded-full h-2.5">
+                                            <div className="bg-green-400 h-2.5 rounded-full" style={{width: `${progressPercentage}%`}}></div>
                                         </div>
-                                        <p className="text-xs font-bold text-white/80 mt-1">{section.completedUnits} / {section.totalUnits} Units</p>
-                                        <button onClick={() => onSelectSection(section)} className="mt-4 px-10 py-3 bg-sky-500 text-white font-bold rounded-xl border-b-4 border-sky-700 hover:bg-sky-600 transition-all uppercase">
-                                            Continue
-                                        </button>
-                                    </>
+                                        <p className="text-xs font-bold text-white/80 mt-1">{section.completedUnits} / {section.totalUnits} Units Completed</p>
+                                    </div>
                                 ) : (
-                                    <>
-                                        <div className="flex items-center gap-2 text-slate-400 mt-2 font-bold">
-                                            <span>{section.totalUnits} Units</span>
-                                        </div>
-                                         <button 
-                                            onClick={() => onSelectSection(section)}
-                                            className={`mt-4 px-10 py-3 font-bold rounded-xl border-b-4 transition-all uppercase ${
-                                                isCompleted 
-                                                ? 'bg-sky-500 text-white border-sky-700 hover:bg-sky-600'
-                                                : 'bg-slate-500 text-white border-slate-700 hover:bg-slate-600'
-                                            }`}
-                                        >
-                                            {isCompleted ? 'Review' : 'Start Here'}
-                                        </button>
-                                    </>
+                                    <p className="text-slate-400 mt-2 font-bold">{section.totalUnits} Units</p>
                                 )}
+                                
+                                <div className="mt-4 sm:hidden"> {/* Mobile Button */}
+                                    <span className={`w-full block text-center px-10 py-3 font-bold rounded-xl border-b-4 text-white transition-all uppercase ${buttonColor}`}>
+                                        {buttonText}
+                                    </span>
+                                </div>
                             </div>
-                            <div className="relative w-32 h-32">
+                            <div className="relative w-32 h-32 flex-shrink-0">
                                 <Mascot className="w-full h-full" />
-                                <div className="absolute -top-4 -right-10 bg-slate-800 p-2 rounded-lg shadow-lg">
-                                    <p className="font-bold text-center text-white">{section.phrase}</p>
+                                <div className="absolute -top-4 -right-4 sm:-right-10 bg-slate-800 p-2 rounded-lg shadow-lg">
+                                    <p className="font-bold text-center text-white text-sm">{section.phrase}</p>
                                     <div className="absolute left-2 -bottom-2 w-0 h-0 border-l-[10px] border-l-transparent border-t-[10px] border-t-slate-800"></div>
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    </button>
                 )
             })}
         </div>

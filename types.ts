@@ -1,3 +1,4 @@
+
 export enum Page {
     Home,
     LanguageSelection,
@@ -11,9 +12,9 @@ export enum Page {
     Leaderboard,
     Dictionary,
     Quests,
+    Achievements,
     Settings,
     Help,
-    Upgrade,
     Friends,
     Messages,
 }
@@ -22,7 +23,7 @@ export interface User {
     name: string;
     email: string;
     avatarUrl: string;
-    isPro: boolean;
+    bio?: string;
 }
 
 export interface Language {

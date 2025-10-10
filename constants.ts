@@ -37,6 +37,7 @@ export const LANGUAGES: Language[] = [
 ];
 
 export const LESSON_TOPICS: LessonTopic[] = [
+    // Original Topics
     { id: 'greetings', title: 'Greetings', icon: '👋' },
     { id: 'family', title: 'Family', icon: '👨‍👩‍👧‍👦' },
     { id: 'food', title: 'Food', icon: '🍕' },
@@ -55,7 +56,45 @@ export const LESSON_TOPICS: LessonTopic[] = [
     { id: 'nature', title: 'Nature', icon: '🌳' },
     { id: 'future', title: 'Future Tense', icon: '🔮' },
     { id: 'past', title: 'Past Tense', icon: '📜' },
+    // New Topics
+    { id: 'present_tense', title: 'Present Tense', icon: '🏃‍♀️' },
+    { id: 'adjectives', title: 'Adjectives', icon: '✨' },
+    { id: 'questions', title: 'Questions', icon: '❓' },
+    { id: 'numbers', title: 'Numbers', icon: '🔢' },
+    { id: 'clothing', title: 'Clothing', icon: '👕' },
+    { id: 'animals', title: 'Animals', icon: '🐶' },
+    { id: 'body_parts', title: 'Body Parts', icon: '💪' },
+    { id: 'city', title: 'The City', icon: '🏙️' },
+    { id: 'present_continuous', title: 'Present Continuous', icon: '🕺' },
+    { id: 'possessives', title: 'Possessives', icon: '🤝' },
+    { id: 'prepositions', title: 'Prepositions', icon: '👉' },
+    { id: 'conjunctions', title: 'Conjunctions', icon: '🔗' },
+    { id: 'conditional', title: 'Conditional', icon: '🤔' },
+    { id: 'subjunctive', title: 'Subjunctive', icon: '🤯' },
+    { id: 'idioms', title: 'Idioms', icon: '🤪' },
+    { id: 'opinions', title: 'Opinions', icon: '💬' },
+    { id: 'environment', title: 'Environment', icon: '🌍' },
+    { id: 'politics', title: 'Politics', icon: '🏛️' },
+    { id: 'history', title: 'History', icon: '🏺' },
+    { id: 'media', title: 'Media', icon: '📺' },
+    { id: 'finance', title: 'Finance', icon: '💰' },
+    { id: 'science', title: 'Science', icon: '🔬' },
 ];
+
+const colors = {
+    green: { bg: 'bg-green-500', border: 'border-green-700', text: 'text-green-700', shadow: 'shadow-green-500/50' },
+    sky: { bg: 'bg-sky-500', border: 'border-sky-700', text: 'text-sky-700', shadow: 'shadow-sky-500/50' },
+    rose: { bg: 'bg-rose-500', border: 'border-rose-700', text: 'text-rose-700', shadow: 'shadow-rose-500/50' },
+    amber: { bg: 'bg-amber-500', border: 'border-amber-700', text: 'text-amber-700', shadow: 'shadow-amber-500/50' },
+    purple: { bg: 'bg-purple-500', border: 'border-purple-700', text: 'text-purple-700', shadow: 'shadow-purple-500/50' },
+    fuchsia: { bg: 'bg-fuchsia-500', border: 'border-fuchsia-700', text: 'text-fuchsia-700', shadow: 'shadow-fuchsia-500/50' },
+    cyan: { bg: 'bg-cyan-500', border: 'border-cyan-700', text: 'text-cyan-700', shadow: 'shadow-cyan-500/50' },
+    lime: { bg: 'bg-lime-500', border: 'border-lime-700', text: 'text-lime-700', shadow: 'shadow-lime-500/50' },
+    teal: { bg: 'bg-teal-500', border: 'border-teal-700', text: 'text-teal-700', shadow: 'shadow-teal-500/50' },
+    orange: { bg: 'bg-orange-500', border: 'border-orange-700', text: 'text-orange-700', shadow: 'shadow-orange-500/50' },
+    indigo: { bg: 'bg-indigo-500', border: 'border-indigo-700', text: 'text-indigo-700', shadow: 'shadow-indigo-500/50' },
+    pink: { bg: 'bg-pink-500', border: 'border-pink-700', text: 'text-pink-700', shadow: 'shadow-pink-500/50' }
+};
 
 export const LEARNING_PATH: Path = {
     id: 'main-path',
@@ -63,113 +102,96 @@ export const LEARNING_PATH: Path = {
     sections: [
         {
             sectionNumber: 1,
-            title: "Foundations",
+            title: "The Absolute Basics",
             cefrLevel: "A1",
-            phrase: "Hello! How are you?",
+            phrase: "Hello! My name is...",
             units: [
-                {
-                    unitNumber: 1,
-                    title: "Basic Greetings",
-                    lessons: [{ id: 'greetings', title: 'Greetings', icon: '👋' }],
-                    color: { bg: 'bg-green-500', border: 'border-green-700', text: 'text-green-700', shadow: 'shadow-green-500/50' }
-                },
-                {
-                    unitNumber: 2,
-                    title: "People & Family",
-                    lessons: [{ id: 'family', title: 'Family', icon: '👨‍👩‍👧‍👦' }],
-                    color: { bg: 'bg-sky-500', border: 'border-sky-700', text: 'text-sky-700', shadow: 'shadow-sky-500/50' }
-                },
-                {
-                    unitNumber: 3,
-                    title: "Food & Drink",
-                    lessons: [{ id: 'food', title: 'Food', icon: '🍕' }],
-                    color: { bg: 'bg-rose-500', border: 'border-rose-700', text: 'text-rose-700', shadow: 'shadow-rose-500/50' }
-                },
-                {
-                    unitNumber: 4,
-                    title: "Daily Activities",
-                    lessons: [{ id: 'hobbies', title: 'Hobbies', icon: '🎨' }],
-                    color: { bg: 'bg-amber-500', border: 'border-amber-700', text: 'text-amber-700', shadow: 'shadow-amber-500/50' }
-                }
+                { unitNumber: 1, title: "Greetings & Introductions", lessons: [{ id: 'greetings', title: 'Greetings', icon: '👋' }], color: colors.green },
+                { unitNumber: 2, title: "Numbers & Counting", lessons: [{ id: 'numbers', title: 'Numbers', icon: '🔢' }], color: colors.sky },
+                { unitNumber: 3, title: "Common Questions", lessons: [{ id: 'questions', title: 'Questions', icon: '❓' }], color: colors.rose },
             ]
         },
         {
             sectionNumber: 2,
-            title: "Building Blocks",
-            cefrLevel: "A2",
-            phrase: "I would like to order a coffee.",
+            title: "People & Things",
+            cefrLevel: "A1",
+            phrase: "This is my family.",
             units: [
-                {
-                    unitNumber: 5,
-                    title: "Navigating the World",
-                    lessons: [
-                        { id: 'travel', title: 'Travel', icon: '✈️' },
-                        { id: 'directions', title: 'Directions', icon: '🗺️' }
-                    ],
-                    color: { bg: 'bg-purple-500', border: 'border-purple-700', text: 'text-purple-700', shadow: 'shadow-purple-500/50' }
-                },
-                {
-                    unitNumber: 6,
-                    title: "Work & Shopping",
-                    lessons: [
-                        { id: 'work', title: 'Work', icon: '💼' },
-                        { id: 'shopping', title: 'Shopping', icon: '🛍️' }
-                    ],
-                    color: { bg: 'bg-fuchsia-500', border: 'border-fuchsia-700', text: 'text-fuchsia-700', shadow: 'shadow-fuchsia-500/50' }
-                },
-                {
-                    unitNumber: 7,
-                    title: "Home Life",
-                    lessons: [
-                        { id: 'home', title: 'Home', icon: '🏠' },
-                        { id: 'weather', title: 'Weather', icon: '☀️' }
-                    ],
-                    color: { bg: 'bg-cyan-500', border: 'border-cyan-700', text: 'text-cyan-700', shadow: 'shadow-cyan-500/50' }
-                },
-                {
-                    unitNumber: 8,
-                    title: "Education & Tech",
-                    lessons: [
-                        { id: 'school', title: 'School', icon: '🏫' },
-                        { id: 'tech', title: 'Technology', icon: '💻' }
-                    ],
-                    color: { bg: 'bg-lime-500', border: 'border-lime-700', text: 'text-lime-700', shadow: 'shadow-lime-500/50' }
-                }
+                { unitNumber: 4, title: "Family & Friends", lessons: [{ id: 'family', title: 'Family', icon: '👨‍👩‍👧‍👦' }], color: colors.amber },
+                { unitNumber: 5, title: "Describing Things", lessons: [{ id: 'adjectives', title: 'Adjectives', icon: '✨' }], color: colors.purple },
+                { unitNumber: 6, title: "Animals & Pets", lessons: [{ id: 'animals', title: 'Animals', icon: '🐶' }], color: colors.fuchsia },
             ]
         },
         {
             sectionNumber: 3,
-            title: "Expressing Yourself",
+            title: "Daily Life",
+            cefrLevel: "A2",
+            phrase: "I am eating a pizza.",
+            units: [
+                { unitNumber: 7, title: "Food & Drink", lessons: [{ id: 'food', title: 'Food', icon: '🍕' }], color: colors.cyan },
+                { unitNumber: 8, title: "Clothing & Shopping", lessons: [{ id: 'clothing', title: 'Clothing', icon: '👕' }, { id: 'shopping', title: 'Shopping', icon: '🛍️' }], color: colors.lime },
+                { unitNumber: 9, title: "Basic Verbs", lessons: [{ id: 'present_tense', title: 'Present Tense', icon: '🏃‍♀️' }], color: colors.teal },
+                { unitNumber: 10, title: "Present Action", lessons: [{ id: 'present_continuous', title: 'Present Continuous', icon: '🕺' }], color: colors.orange },
+            ]
+        },
+        {
+            sectionNumber: 4,
+            title: "Out and About",
+            cefrLevel: "A2",
+            phrase: "Where is the train station?",
+            units: [
+                { unitNumber: 11, title: "Places in the City", lessons: [{ id: 'city', title: 'The City', icon: '🏙️' }], color: colors.indigo },
+                { unitNumber: 12, title: "Hobbies & Activities", lessons: [{ id: 'hobbies', title: 'Hobbies', icon: '🎨' }], color: colors.pink },
+                { unitNumber: 13, title: "Giving Directions", lessons: [{ id: 'directions', title: 'Directions', icon: '🗺️' }], color: colors.green },
+                { unitNumber: 14, title: "My Things", lessons: [{ id: 'possessives', title: 'Possessives', icon: '🤝' }], color: colors.sky },
+            ]
+        },
+        {
+            sectionNumber: 5,
+            title: "Expanding Vocabulary",
+            cefrLevel: "B1",
+            phrase: "The weather is sunny today.",
+            units: [
+                { unitNumber: 15, title: "My Home", lessons: [{ id: 'home', title: 'Home', icon: '🏠' }], color: colors.rose },
+                { unitNumber: 16, title: "Weather Talk", lessons: [{ id: 'weather', title: 'Weather', icon: '☀️' }], color: colors.amber },
+                { unitNumber: 17, title: "Body & Health", lessons: [{ id: 'body_parts', title: 'Body Parts', icon: '💪' }, { id: 'health', title: 'Health', icon: '🩺' }], color: colors.purple },
+                { unitNumber: 18, title: "School & Work", lessons: [{ id: 'school', title: 'School', icon: '🏫' }, { id: 'work', title: 'Work', icon: '💼' }], color: colors.fuchsia },
+            ]
+        },
+        {
+            sectionNumber: 6,
+            title: "Talking About Time",
             cefrLevel: "B1",
             phrase: "Yesterday, I went to the park.",
             units: [
-                {
-                    unitNumber: 9,
-                    title: "Health & Feelings",
-                    lessons: [
-                        { id: 'health', title: 'Health', icon: '🩺' },
-                        { id: 'emotions', title: 'Emotions', icon: '😊' }
-                    ],
-                    color: { bg: 'bg-teal-500', border: 'border-teal-700', text: 'text-teal-700', shadow: 'shadow-teal-500/50' }
-                },
-                {
-                    unitNumber: 10,
-                    title: "Culture & Nature",
-                    lessons: [
-                        { id: 'culture', title: 'Culture', icon: '🎭' },
-                        { id: 'nature', title: 'Nature', icon: '🌳' }
-                    ],
-                    color: { bg: 'bg-orange-500', border: 'border-orange-700', text: 'text-orange-700', shadow: 'shadow-orange-500/50' }
-                },
-                {
-                    unitNumber: 11,
-                    title: "Talking About Time",
-                    lessons: [
-                        { id: 'past', title: 'Past Tense', icon: '📜' },
-                        { id: 'future', title: 'Future Tense', icon: '🔮' }
-                    ],
-                    color: { bg: 'bg-indigo-500', border: 'border-indigo-700', text: 'text-indigo-700', shadow: 'shadow-indigo-500/50' }
-                }
+                { unitNumber: 19, title: "The Past", lessons: [{ id: 'past', title: 'Past Tense', icon: '📜' }], color: colors.cyan },
+                { unitNumber: 20, title: "The Future", lessons: [{ id: 'future', title: 'Future Tense', icon: '🔮' }], color: colors.lime },
+                { unitNumber: 21, title: "Connecting Ideas", lessons: [{ id: 'prepositions', title: 'Prepositions', icon: '👉' }, { id: 'conjunctions', title: 'Conjunctions', icon: '🔗' }], color: colors.teal },
+                { unitNumber: 22, title: "Exploring Travel", lessons: [{ id: 'travel', title: 'Travel', icon: '✈️' }], color: colors.orange },
+            ]
+        },
+        {
+            sectionNumber: 7,
+            title: "Complex Thoughts",
+            cefrLevel: "B2",
+            phrase: "If I had more time, I would travel.",
+            units: [
+                { unitNumber: 23, title: "Opinions & Emotions", lessons: [{ id: 'opinions', title: 'Opinions', icon: '💬' }, { id: 'emotions', title: 'Emotions', icon: '😊' }], color: colors.indigo },
+                { unitNumber: 24, title: "Technology & Media", lessons: [{ id: 'tech', title: 'Technology', icon: '💻' }, { id: 'media', title: 'Media', icon: '📺' }], color: colors.pink },
+                { unitNumber: 25, title: "What If?", lessons: [{ id: 'conditional', title: 'Conditional', icon: '🤔' }], color: colors.green },
+                { unitNumber: 26, title: "Nature & Environment", lessons: [{ id: 'nature', title: 'Nature', icon: '🌳' }, { id: 'environment', title: 'Environment', icon: '🌍' }], color: colors.sky },
+            ]
+        },
+        {
+            sectionNumber: 8,
+            title: "Advanced Topics",
+            cefrLevel: "B2/C1",
+            phrase: "It is important that we understand culture.",
+            units: [
+                { unitNumber: 27, title: "Culture & History", lessons: [{ id: 'culture', title: 'Culture', icon: '🎭' }, { id: 'history', title: 'History', icon: '🏺' }], color: colors.rose },
+                { unitNumber: 28, title: "Money & Finance", lessons: [{ id: 'finance', title: 'Finance', icon: '💰' }], color: colors.amber },
+                { unitNumber: 29, title: "Science & Politics", lessons: [{ id: 'science', title: 'Science', icon: '🔬' }, { id: 'politics', title: 'Politics', icon: '🏛️' }], color: colors.purple },
+                { unitNumber: 30, title: "Advanced Moods", lessons: [{ id: 'subjunctive', title: 'Subjunctive', icon: '🤯' }, { id: 'idioms', title: 'Idioms', icon: '🤪' }], color: colors.fuchsia },
             ]
         }
     ]

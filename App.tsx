@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import HomePage from './components/HomePage';
 import LanguageSelectionPage from './components/LanguageSelectionPage';
@@ -8,18 +9,18 @@ import PracticeHubPage from './components/PracticeHubPage';
 import PracticeSessionPage from './components/PracticeSessionPage';
 import DictionaryPage from './components/DictionaryPage';
 import QuestsPage from './components/QuestsPage';
+import AchievementsPage from './components/AchievementsPage';
 import SettingsPage from './components/SettingsPage';
 import HelpPage from './components/HelpPage';
 import AuthModal from './components/AuthModal';
 import AchievementToast from './components/AchievementToast';
 import LivePlacementTestPage from './components/PlacementTestPage';
-import UpgradePage from './components/UpgradePage';
 import FriendsPage from './components/FriendsPage';
 import MessagesPage from './components/MessagesPage';
 import LeaderboardPage from './components/LeaderboardPage';
-import { Page, User, Language, LessonTopic, UserProgress, MistakeItem, VocabularyItem, PracticeMode, Quest, LeagueTier, Achievement, RegisteredUser, AppSettings, Theme, Message } from './types';
+import { Page, User, Language, LessonTopic, UserProgress, MistakeItem, VocabularyItem, PracticeMode, Quest, LeagueTier, Achievement, RegisteredUser, AppSettings, Theme, Message, AchievementTier } from './types';
 import { LANGUAGES, DAILY_QUESTS, ACHIEVEMENTS, MONTHLY_CHALLENGES } from './constants';
-import { HomeIcon, UserCircleIcon, ChartBarIcon, LogoutIcon, StarIcon, FireIcon, PracticeIcon, BookOpenIcon, TrophyIcon, QuestsIcon, SettingsIcon, HelpIcon, SparklesIcon, UsersIcon, ChatBubbleLeftRightIcon } from './components/icons';
+import { HomeIcon, UserCircleIcon, ChartBarIcon, LogoutIcon, StarIcon, FireIcon, PracticeIcon, BookOpenIcon, TrophyIcon, QuestsIcon, SettingsIcon, HelpIcon, UsersIcon, ChatBubbleLeftRightIcon } from './components/icons';
 
 const QUESTS_MAP = new Map(DAILY_QUESTS.map(q => [q.id, q]));
 
@@ -46,6 +47,7 @@ const Sidebar: React.FC<{
         { page: Page.PracticeHub, icon: PracticeIcon, label: 'PRACTICE' },
         { page: Page.Dictionary, icon: BookOpenIcon, label: 'DICTIONARY' },
         { page: Page.Quests, icon: QuestsIcon, label: 'QUESTS' },
+        { page: Page.Achievements, icon: TrophyIcon, label: 'ACHIEVEMENTS' },
         { page: Page.Leaderboard, icon: ChartBarIcon, label: 'LEADERBOARD' },
         { page: Page.Friends, icon: UsersIcon, label: 'FRIENDS', count: friendRequestCount },
         { page: Page.Messages, icon: ChatBubbleLeftRightIcon, label: 'MESSAGES', count: unreadMessageCount },
@@ -88,17 +90,6 @@ const Sidebar: React.FC<{
                            <NavButton item={item} isActive={currentPage === item.page} />
                         </li>
                     ))}
-                     {!user?.isPro && (
-                        <li>
-                            <button
-                                onClick={() => onNavigate(Page.Upgrade)}
-                                className="w-full flex items-center space-x-4 py-3 px-4 rounded-lg transition-all duration-200 text-md font-extrabold uppercase bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:opacity-90 transform hover:scale-105"
-                            >
-                                <SparklesIcon className="w-8 h-8" />
-                                <span>UPGRADE</span>
-                            </button>
-                        </li>
-                    )}
                 </ul>
             </nav>
             <div className="space-y-2">
@@ -121,7 +112,6 @@ const Sidebar: React.FC<{
                         <img src={user.avatarUrl} alt={user.name} className="w-10 h-10 rounded-full" />
                         <div className="flex-grow truncate">
                             <span className="font-bold text-slate-200">{user.name}</span>
-                           {user.isPro && <span className="ml-2 text-xs font-bold bg-yellow-400 text-yellow-900 px-2 py-0.5 rounded-full">PRO</span>}
                         </div>
                         <button onClick={onLogout} title="Log Out" className="p-2 rounded-md text-slate-400 hover:bg-slate-700">
                             <LogoutIcon className="w-6 h-6" />
@@ -133,27 +123,81 @@ const Sidebar: React.FC<{
     );
 };
 
-const RightSidebar: React.FC<{
+const Header: React.FC<{
+    page: Page;
+    user: User | null;
     progress: UserProgress | null;
-    onNavigate: (page: Page) => void;
-}> = ({ progress, onNavigate }) => {
+    selectedLanguage: Language | null;
+    onChangeLanguage: () => void;
+}> = ({ page, user, progress, selectedLanguage, onChangeLanguage }) => {
+    const pageTitles: Record<Page, string> = {
+        [Page.Dashboard]: "Learn",
+        [Page.PracticeHub]: "Practice",
+        [Page.Dictionary]: "Dictionary",
+        [Page.Quests]: "Quests",
+        [Page.Achievements]: "Achievements",
+        [Page.Leaderboard]: "Leaderboard",
+        [Page.Friends]: "Friends",
+        [Page.Messages]: "Messages",
+        [Page.Profile]: "Profile",
+        [Page.Settings]: "Settings",
+        [Page.Help]: "Help",
+        [Page.Home]: "",
+        [Page.LanguageSelection]: "",
+        [Page.Onboarding]: "",
+        [Page.LivePlacementTest]: "",
+        [Page.Lesson]: "",
+        [Page.PracticeSession]: "",
+    };
+    
     return (
-        <aside className="w-96 flex-shrink-0 p-6 hidden xl:block">
-            <div className="space-y-6 sticky top-6">
-                <div className="bg-[#2e3a4e] border border-slate-700 rounded-2xl p-4 flex justify-around">
-                    <div className="flex items-center space-x-2 text-amber-400">
-                        <StarIcon className="w-6 h-6" />
-                        <span className="text-lg font-bold">{progress?.xp ?? 0}</span>
-                    </div>
-                     <div className="flex items-center space-x-2 text-orange-400">
-                        <FireIcon className="w-6 h-6" />
-                        <span className="text-lg font-bold">{progress?.streak ?? 0}</span>
-                    </div>
+        <header className="flex justify-between items-center p-4">
+             <h2 className="text-2xl font-bold text-slate-100 hidden lg:block">{pageTitles[page]}</h2>
+             <div className="flex-grow flex items-center justify-end lg:hidden gap-4">
+                 <div className="flex items-center space-x-2 text-amber-400">
+                    <StarIcon className="w-6 h-6" />
+                    <span className="text-lg font-bold">{progress?.xp ?? 0}</span>
                 </div>
-            </div>
-        </aside>
+                 <div className="flex items-center space-x-2 text-orange-400">
+                    <FireIcon className="w-6 h-6" />
+                    <span className="text-lg font-bold">{progress?.streak ?? 0}</span>
+                </div>
+                 {selectedLanguage && (
+                    <button onClick={onChangeLanguage} className="text-3xl">
+                        {selectedLanguage.flag}
+                    </button>
+                 )}
+             </div>
+        </header>
+    );
+}
+
+const BottomNavBar: React.FC<{ currentPage: Page; onNavigate: (page: Page) => void }> = ({ currentPage, onNavigate }) => {
+    const navItems = [
+        { page: Page.Dashboard, icon: HomeIcon, label: 'Learn' },
+        { page: Page.PracticeHub, icon: PracticeIcon, label: 'Practice' },
+        { page: Page.Quests, icon: QuestsIcon, label: 'Quests' },
+        { page: Page.Profile, icon: UserCircleIcon, label: 'Profile' },
+    ];
+    
+    return (
+        <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-[#141a24] border-t border-slate-700 flex justify-around z-50">
+            {navItems.map(item => (
+                <button
+                    key={item.label}
+                    onClick={() => onNavigate(item.page)}
+                    className={`flex flex-col items-center justify-center pt-2 pb-1 w-full transition-colors ${
+                        currentPage === item.page ? 'text-sky-400' : 'text-slate-400'
+                    }`}
+                >
+                    <item.icon className="w-7 h-7" />
+                    <span className="text-xs font-bold mt-1">{item.label}</span>
+                </button>
+            ))}
+        </nav>
     );
 };
+
 
 const ProfilePage: React.FC<{
     user: User | null;
@@ -171,6 +215,13 @@ const ProfilePage: React.FC<{
         )
     }
     
+// FIX: Define tierColors to resolve reference error.
+    const tierColors: Record<AchievementTier, string> = {
+        [AchievementTier.Bronze]: 'text-amber-600 dark:text-amber-500',
+        [AchievementTier.Silver]: 'text-slate-500 dark:text-slate-400',
+        [AchievementTier.Gold]: 'text-yellow-500 dark:text-yellow-400',
+    };
+    
     const languagesWithProgress = Object.entries(userProgress)
         .map(([langId, progress]: [string, UserProgress]) => {
             const langInfo = languages.find(l => l.id === langId);
@@ -180,18 +231,21 @@ const ProfilePage: React.FC<{
             return null;
         })
         .filter(Boolean) as (Language & UserProgress)[];
+        
+    const getLatestAchievements = (progress: UserProgress) => {
+        const unlockedIds = progress.unlockedAchievements ?? [];
+        return unlockedIds
+            .slice(-4)
+            .map(id => ACHIEVEMENTS.find(a => a.id === id))
+            .filter(Boolean) as Achievement[];
+    };
 
     return (
         <div className="p-4 sm:p-6 lg:p-8 animate-fade-in">
             <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-8 mb-8 text-center relative">
                 <img src={user.avatarUrl} alt={user.name} className="w-24 h-24 rounded-full mx-auto mb-4 border-4 border-teal-500" />
                 <h3 className="text-2xl font-bold">{user.name}</h3>
-                {user.isPro && (
-                    <div className="absolute top-4 right-4 flex items-center gap-1 bg-yellow-400 text-yellow-900 font-bold px-3 py-1 rounded-full text-sm">
-                        <SparklesIcon className="w-4 h-4" />
-                        <span>PRO</span>
-                    </div>
-                )}
+                {user.bio && <p className="mt-2 text-slate-500 dark:text-slate-400 max-w-md mx-auto">{user.bio}</p>}
             </div>
             
             <h3 className="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-4">Your Language Progress</h3>
@@ -203,8 +257,25 @@ const ProfilePage: React.FC<{
                                 <span className="text-4xl mr-4">{langProgress.flag}</span>
                                 <h4 className="text-xl font-bold">{langProgress.name}</h4>
                             </div>
-                            <div className="space-y-3">
-                                {/* Stats */}
+                            <div className="space-y-4">
+                               <div className="flex justify-around text-center">
+                                    <div>
+                                        <p className="text-2xl font-bold text-amber-500">{langProgress.xp}</p>
+                                        <p className="text-sm text-slate-500">XP</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-2xl font-bold text-orange-500">{langProgress.streak}</p>
+                                        <p className="text-sm text-slate-500">Day Streak</p>
+                                    </div>
+                                </div>
+                                <div className="pt-4 border-t border-slate-200 dark:border-slate-700">
+                                    <h5 className="font-bold text-center mb-2">Recent Achievements</h5>
+                                    <div className="flex justify-center items-center gap-3 h-8">
+                                        {getLatestAchievements(langProgress).length > 0 ? getLatestAchievements(langProgress).map(ach => (
+                                            <TrophyIcon key={ach.id} className={`w-7 h-7 ${tierColors[ach.tier]}`} title={`${ach.title} (${ach.tier})`} />
+                                        )) : <p className="text-sm text-slate-400">No achievements yet.</p>}
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     ))}
@@ -343,16 +414,19 @@ const App: React.FC = () => {
     }, [messages]);
 
 
-    // Keep registered user data in sync with the current user's progress and pro status
+    // Keep registered user data in sync with the current user's progress
     useEffect(() => {
         if (user) {
             setRegisteredUsers(prev => {
-                return prev.map(ru => {
+                const updatedUsers = prev.map(ru => {
                     if (ru.user.email === user.email) {
-                        return { ...ru, user: user, progress: userProgress };
+                        // Ensure all properties of user are updated
+                        const updatedRuUser = { ...ru.user, ...user };
+                        return { ...ru, user: updatedRuUser, progress: userProgress };
                     }
                     return ru;
                 });
+                return updatedUsers;
             });
         }
     }, [user, userProgress]);
@@ -394,7 +468,7 @@ const App: React.FC = () => {
 
 
     const handleNavigate = useCallback((targetPage: Page) => {
-        if (!user && [Page.Profile, Page.Leaderboard, Page.Quests, Page.Settings, Page.Friends, Page.Messages].includes(targetPage)) {
+        if (!user && [Page.Profile, Page.Leaderboard, Page.Quests, Page.Achievements, Page.Settings, Page.Friends, Page.Messages].includes(targetPage)) {
             setIsAuthModalOpen(true);
         } else {
             setPage(targetPage);
@@ -413,10 +487,6 @@ const App: React.FC = () => {
     const handleStartPractice = useCallback((mode: PracticeMode) => {
         if (!user) {
             setIsAuthModalOpen(true);
-            return;
-        }
-        if (mode === 'vision' && !user.isPro) {
-            setPage(Page.Upgrade);
             return;
         }
         setPracticeMode(mode);
@@ -472,13 +542,6 @@ const App: React.FC = () => {
         setSelectedLanguage(null);
         setPage(Page.Home);
     }, []);
-
-    const handleUpgrade = () => {
-        if (user) {
-            setUser(prev => prev ? { ...prev, isPro: true } : null);
-        }
-        setPage(Page.Dashboard);
-    };
     
     const handleUpdateMistakes = (mistakes: MistakeItem[]) => {
         // ... existing mistake update logic
@@ -512,12 +575,9 @@ const App: React.FC = () => {
     }, []);
 
     const handleUpdateUser = useCallback((updatedUser: Partial<User>) => {
-        setUser(prev => {
-            if (!prev) return null;
-            const newUser = { ...prev, ...updatedUser };
-            setRegisteredUsers(prevReg => prevReg.map(ru => 
-                ru.user.email === prev.email ? { ...ru, user: { name: newUser.name, email: newUser.email, avatarUrl: newUser.avatarUrl, isPro: newUser.isPro } } : ru
-            ));
+        setUser(prevUser => {
+            if (!prevUser) return null;
+            const newUser = { ...prevUser, ...updatedUser };
             return newUser;
         });
     }, []);
@@ -660,6 +720,8 @@ const App: React.FC = () => {
                 return <ProfilePage user={user} userProgress={userProgress} languages={LANGUAGES} />;
             case Page.Quests:
                 return <QuestsPage user={user} userProgress={userProgress} selectedLanguage={selectedLanguage} />;
+            case Page.Achievements:
+                return <AchievementsPage userProgress={userProgress} selectedLanguage={selectedLanguage} />;
             case Page.Leaderboard:
                 return <LeaderboardPage user={user} registeredUsers={registeredUsers} selectedLanguage={selectedLanguage} />;
             case Page.Dictionary:
@@ -681,8 +743,6 @@ const App: React.FC = () => {
                 return <SettingsPage user={user} appSettings={appSettings} onUpdateUser={handleUpdateUser} onUpdateSettings={handleUpdateSettings} onLogout={handleLogout} />;
             case Page.Help:
                 return <HelpPage />;
-            case Page.Upgrade:
-                return <UpgradePage onUpgrade={handleUpgrade} onBack={() => setPage(Page.Dashboard)} />;
             default:
                  // Fallback for any unhandled page state
                 break;
@@ -698,22 +758,25 @@ const App: React.FC = () => {
         return <HomePage onGetStarted={() => setPage(Page.LanguageSelection)} />;
     }
 
-    const isMainView = [Page.Dashboard, Page.PracticeHub, Page.PracticeSession, Page.Profile, Page.Leaderboard, Page.Dictionary, Page.Quests, Page.Settings, Page.Help, Page.Upgrade, Page.Friends, Page.Messages].includes(page);
+    const isMainView = [Page.Dashboard, Page.PracticeHub, Page.PracticeSession, Page.Profile, Page.Leaderboard, Page.Dictionary, Page.Quests, Page.Achievements, Page.Settings, Page.Help, Page.Friends, Page.Messages].includes(page);
     const currentProgress = selectedLanguage ? userProgress[selectedLanguage.id] : null;
 
     return (
         <div className="min-h-screen transition-colors duration-500">
-            <div className={isMainView ? "flex container mx-auto max-w-[1536px]" : ""}>
+            <div className={isMainView ? "lg:flex" : ""}>
                 {isMainView && <Sidebar user={user} currentPage={page} onNavigate={handleNavigate} onChangeLanguage={handleChangeLanguage} onLogout={handleLogout} friendRequestCount={friendRequestCount} unreadMessageCount={unreadMessageCount} />}
                 
-                <main className={isMainView ? "flex-grow py-6" : "container mx-auto max-w-5xl p-4 sm:p-6 lg:p-8"}>
-                    <div key={`${page}-${practiceMode}`} className="animate-fade-in">
-                        {renderPageContent()}
-                    </div>
-                </main>
-                
-                {isMainView && page === Page.Dashboard && <RightSidebar progress={currentProgress} onNavigate={handleNavigate} />}
+                <div className="flex-1 flex flex-col">
+                    {isMainView && <Header page={page} user={user} progress={currentProgress} selectedLanguage={selectedLanguage} onChangeLanguage={handleChangeLanguage} />}
+                    <main className={isMainView ? "flex-grow p-4 sm:p-6 pb-24 lg:pb-6" : "container mx-auto max-w-5xl p-4 sm:p-6 lg:p-8"}>
+                        <div key={`${page}-${practiceMode}`} className="animate-fade-in">
+                            {renderPageContent()}
+                        </div>
+                    </main>
+                </div>
             </div>
+            
+             {isMainView && <BottomNavBar currentPage={page} onNavigate={handleNavigate} />}
             
             <AuthModal
                 isOpen={isAuthModalOpen}

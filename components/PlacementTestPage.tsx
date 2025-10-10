@@ -1,3 +1,5 @@
+
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Language, PlacementTestResult } from '../types';
 // Fix: Removed 'LiveSession' as it is not an exported member of '@google/genai'.

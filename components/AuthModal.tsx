@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { User, RegisteredUser } from '../types';
 import { SpinnerIcon, EyeIcon, EyeSlashIcon, BackIcon } from './icons';
@@ -70,11 +71,12 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onAuthSuccess, r
                 return;
             }
 
+// FIX: Remove isPro property as it does not exist on the User type.
             const newUser: User = {
                 name: name.trim(),
                 email: email.trim().toLowerCase(),
                 avatarUrl: `https://api.dicebear.com/8.x/initials/svg?seed=${encodeURIComponent(name.trim())}`,
-                isPro: false,
+                bio: '',
             };
             
             const newUserDetails = { user: newUser, password };

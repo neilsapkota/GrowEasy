@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 
 export const StarIcon: React.FC<{ className?: string }> = ({ className }) => (
@@ -178,8 +179,18 @@ export const ShieldCheckIcon: React.FC<{ className?: string }> = ({ className })
     </svg>
 );
 
-export const TrophyIcon: React.FC<{ className?: string }> = ({ className }) => (
+// FIX: Add SparklesIcon for UpgradePage.
+export const SparklesIcon: React.FC<{ className?: string }> = ({ className }) => (
     <svg xmlns="http://www.w3.org/2000/svg" className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path fillRule="evenodd" d="M9.315 7.584C12.195 3.883 16.695 1.5 21.75 1.5a.75.75 0 01.75.75c0 5.056-2.383 9.555-6.084 12.436A6.75 6.75 0 019.75 22.5a.75.75 0 01-.75-.75c0-5.056 2.383-9.555 6.084-12.436A6.75 6.75 0 019.315 7.584z" clipRule="evenodd" />
+      <path fillRule="evenodd" d="M3.085 13.584C5.965 9.883 10.465 7.5 15.51 7.5a.75.75 0 01.75.75c0 5.056-2.383 9.555-6.084 12.436A6.75 6.75 0 013.51 22.5a.75.75 0 01-.75-.75c0-5.056 2.383-9.555 6.084-12.436A6.75 6.75 0 013.085 13.584z" clipRule="evenodd" />
+    </svg>
+);
+
+// FIX: Add title prop for accessibility, fixing a type error in App.tsx.
+export const TrophyIcon: React.FC<{ className?: string; title?: string }> = ({ className, title }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} viewBox="0 0 24 24" fill="currentColor">
+        {title && <title>{title}</title>}
         <path d="M16.5 2.25a.75.75 0 00-1.5 0v2.079a25.286 25.286 0 00-3.328 0V2.25a.75.75 0 00-1.5 0v2.079a25.286 25.286 0 00-3.328 0V2.25a.75.75 0 00-1.5 0v2.079c-2.433.504-4.333 2.193-4.333 4.171 0 1.954 1.769 3.61 4.12 4.133.456.091.92.16 1.388.204v2.518a.75.75 0 00.75.75h6a.75.75 0 00.75-.75v-2.518c.468-.044.932-.113 1.388-.204 2.351-.523 4.12-2.18 4.12-4.133 0-1.978-1.9-3.667-4.333-4.171V2.25zM12 11.25a2.25 2.25 0 100-4.5 2.25 2.25 0 000 4.5z" />
         <path d="M4.5 15.75a.75.75 0 00.75.75h13.5a.75.75 0 00.75-.75V15c-2.433-.504-4.333-2.193-4.333-4.171 0-.312.042-.618.12-.916a25.343 25.343 0 00-9.874 0c.078.298.12.604.12.916 0 1.978-1.9 3.667-4.333 4.171v.75z" />
     </svg>
@@ -263,12 +274,6 @@ export const UsersIcon: React.FC<{ className?: string }> = ({ className }) => (
 export const CameraIcon: React.FC<{ className?: string }> = ({ className }) => (
     <svg xmlns="http://www.w3.org/2000/svg" className={className} viewBox="0 0 24 24" fill="currentColor">
       <path fillRule="evenodd" d="M1.5 6a2.25 2.25 0 012.25-2.25h16.5A2.25 2.25 0 0122.5 6v12a2.25 2.25 0 01-2.25 2.25H3.75A2.25 2.25 0 011.5 18V6zM3 16.06V6c0-.414.336-.75.75-.75h16.5c.414 0 .75.336.75.75v10.06l-3.57-3.57a.75.75 0 00-1.06 0l-3.001 3.002-1.51-1.51a.75.75 0 00-1.06 0l-4.5 4.5a.75.75 0 001.06 1.06l3.97-3.97 1.51 1.51a.75.75 0 001.06 0l3.001-3.002 2.51 2.51A.75.75 0 0021 18v.75c0 .414-.336.75-.75.75H3.75a.75.75 0 01-.75-.75V16.06zM7.5 9a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" clipRule="evenodd" />
-    </svg>
-);
-
-export const SparklesIcon: React.FC<{ className?: string }> = ({ className }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className={className} viewBox="0 0 24 24" fill="currentColor">
-      <path fillRule="evenodd" d="M9.315 7.584C10.633 6.51 12 5.25 12 5.25s1.367 1.26 2.685 2.334c1.144.935 2.16 1.66 2.16 2.416 0 .966-.606 1.842-1.631 2.403V14.25a1.5 1.5 0 01-1.5 1.5h-1.5a1.5 1.5 0 01-1.5-1.5v-1.843c-1.025-.56-1.631-1.437-1.631-2.403 0-.756 1.016-1.481 2.16-2.416zM12 3c-1.892 0-3.64.79-4.943 2.093-1.628 1.628-2.557 3.844-2.557 6.157 0 2.527 1.22 4.783 3.194 6.344a3 3 0 002.306 1.156h3.998a3 3 0 002.306-1.156c1.974-1.56 3.194-3.817 3.194-6.344 0-2.313-.929-4.529-2.557-6.157A6.696 6.696 0 0012 3z" clipRule="evenodd" />
     </svg>
 );
 

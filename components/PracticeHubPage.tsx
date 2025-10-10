@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { Language, User, UserProgress, PracticeMode } from '../types';
-import { MicrophoneIcon, HeadphonesIcon, TargetIcon, CardsIcon, BookOpenIcon, RoleplayIcon, WritingIcon, SparklesIcon, CameraIcon } from './icons';
+import { MicrophoneIcon, HeadphonesIcon, TargetIcon, CardsIcon, BookOpenIcon, RoleplayIcon, WritingIcon, CameraIcon } from './icons';
 
 interface PracticeHubPageProps {
     language: Language;

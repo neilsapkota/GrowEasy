@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+
+import React, { useState, useRef } from 'react';
 import { User, AppSettings, Theme } from '../types';
+import { WritingIcon } from './icons';
 
 interface SettingsPageProps {
     user: User | null;
@@ -11,14 +13,29 @@ interface SettingsPageProps {
 
 const SettingsPage: React.FC<SettingsPageProps> = ({ user, appSettings, onUpdateUser, onUpdateSettings, onLogout }) => {
     const [name, setName] = useState(user?.name || '');
-    const [nameFeedback, setNameFeedback] = useState('');
+    const [bio, setBio] = useState(user?.bio || '');
+    const [feedback, setFeedback] = useState('');
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const handleNameSave = (e: React.FormEvent) => {
+    const handleProfileSave = (e: React.FormEvent) => {
         e.preventDefault();
-        if (name.trim() && name.trim() !== user?.name) {
-            onUpdateUser({ name: name.trim() });
-            setNameFeedback('Name updated successfully!');
-            setTimeout(() => setNameFeedback(''), 2000);
+        if (name.trim() !== user?.name || bio.trim() !== (user?.bio || '')) {
+            onUpdateUser({ name: name.trim(), bio: bio.trim() });
+            setFeedback('Profile updated successfully!');
+            setTimeout(() => setFeedback(''), 2000);
+        }
+    };
+
+    const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                onUpdateUser({ avatarUrl: reader.result as string });
+                setFeedback('Avatar updated!');
+                setTimeout(() => setFeedback(''), 2000);
+            };
+            reader.readAsDataURL(file);
         }
     };
     
@@ -46,25 +63,60 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ user, appSettings, onUpdate
             <h2 className="text-3xl font-bold text-slate-800 dark:text-slate-100 mb-8">Settings</h2>
 
             <div className="space-y-10">
-                {/* Account Section */}
+                {/* Profile Section */}
                 <section>
-                    <h3 className="text-xl font-bold text-slate-700 dark:text-slate-200 border-b border-slate-200 dark:border-slate-700 pb-2 mb-4">Account</h3>
+                    <h3 className="text-xl font-bold text-slate-700 dark:text-slate-200 border-b border-slate-200 dark:border-slate-700 pb-2 mb-4">Profile</h3>
                     <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-md">
-                        <form onSubmit={handleNameSave} className="flex items-center gap-4">
-                            <div className="flex-grow">
-                                <label htmlFor="name" className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Your Name</label>
+                        <div className="flex flex-col sm:flex-row items-center gap-6">
+                            <div className="relative w-24 h-24 flex-shrink-0">
+                                <img src={user.avatarUrl} alt={user.name} className="w-24 h-24 rounded-full object-cover" />
+                                <button
+                                    onClick={() => fileInputRef.current?.click()}
+                                    className="absolute -bottom-1 -right-1 p-2 bg-teal-600 rounded-full text-white hover:bg-teal-700 transition-colors"
+                                    aria-label="Change profile picture"
+                                >
+                                    <WritingIcon className="w-5 h-5" />
+                                </button>
                                 <input
-                                    id="name"
-                                    type="text"
-                                    value={name}
-                                    onChange={(e) => setName(e.target.value)}
-                                    className="w-full px-4 py-2 text-lg bg-slate-100 dark:bg-slate-700 border-2 border-transparent rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                                    type="file"
+                                    ref={fileInputRef}
+                                    onChange={handleAvatarChange}
+                                    hidden
+                                    accept="image/*"
                                 />
                             </div>
-                            <button type="submit" className="self-end px-6 py-2 bg-teal-600 text-white font-bold rounded-lg hover:bg-teal-700 transition-colors">Save</button>
-                        </form>
-                        {nameFeedback && <p className="text-sm text-green-600 mt-2">{nameFeedback}</p>}
-                        <button onClick={onLogout} className="mt-6 text-sm text-rose-500 hover:underline">Log Out</button>
+                            <form onSubmit={handleProfileSave} className="flex-grow w-full">
+                                <div className="space-y-4">
+                                    <div>
+                                        <label htmlFor="name" className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Your Name</label>
+                                        <input
+                                            id="name"
+                                            type="text"
+                                            value={name}
+                                            onChange={(e) => setName(e.target.value)}
+                                            className="w-full px-4 py-2 text-lg bg-slate-100 dark:bg-slate-700 border-2 border-transparent rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label htmlFor="bio" className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Your Bio</label>
+                                        <textarea
+                                            id="bio"
+                                            value={bio}
+                                            onChange={(e) => setBio(e.target.value)}
+                                            placeholder="Write a short caption..."
+                                            rows={3}
+                                            maxLength={150}
+                                            className="w-full px-4 py-2 text-lg bg-slate-100 dark:bg-slate-700 border-2 border-transparent rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none"
+                                        />
+                                    </div>
+                                    <button type="submit" className="w-full sm:w-auto px-6 py-2 bg-teal-600 text-white font-bold rounded-lg hover:bg-teal-700 transition-colors">Save Profile</button>
+                                </div>
+                            </form>
+                        </div>
+                        {feedback && <p className="text-sm text-green-600 mt-4 text-center sm:text-left">{feedback}</p>}
+                        <div className="mt-6 pt-4 border-t border-slate-200 dark:border-slate-700">
+                             <button onClick={onLogout} className="text-sm text-rose-500 hover:underline">Log Out</button>
+                        </div>
                     </div>
                 </section>
                 

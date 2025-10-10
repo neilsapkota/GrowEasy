@@ -1,8 +1,6 @@
-
-
 import React from 'react';
 import { User, UserProgress, Language, Quest, QuestProgress } from '../types';
-import { DAILY_QUESTS, MONTHLY_CHALLENGES } from '../constants';
+import { DAILY_QUESTS, MONTHLY_CHALLENGES, LEARNING_PATH } from '../constants';
 import ProgressBar from './ProgressBar';
 import { ChestIcon, ClockIcon, StarIcon, CheckCircleIcon, TrophyIcon } from './icons';
 
@@ -67,6 +65,10 @@ const QuestsPage: React.FC<QuestsPageProps> = ({ user, userProgress, selectedLan
     
     const hasCompletedCurrentMonthChallenge = (currentProgress?.completedMonthlyChallenges ?? []).includes(currentMonthId);
 
+    const totalLessons = LEARNING_PATH.sections.flatMap(s => s.units.flatMap(u => u.lessons)).length;
+    const completedLessons = currentProgress?.completedTopics.length ?? 0;
+    const masteryPercentage = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
+
     if (!user) {
         return (
             <div className="p-4 sm:p-6 lg:p-8 text-center">
@@ -80,17 +82,26 @@ const QuestsPage: React.FC<QuestsPageProps> = ({ user, userProgress, selectedLan
     
     return (
         <div className="p-4 sm:p-6 lg:p-8 animate-fade-in">
-            <h2 className="text-3xl font-bold text-slate-800 dark:text-slate-100 mb-8">Quests</h2>
+            <h2 className="text-3xl font-bold text-slate-800 dark:text-slate-100 mb-8">Quests & Progress</h2>
 
-            {/* Header Banner */}
-            <div className="p-6 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white mb-10 shadow-lg">
-                <h3 className="text-2xl font-extrabold">Earn rewards with quests!</h3>
-                <p className="text-white/80 mt-1">You've completed {completedQuestsCount} of {quests.length} quests today.</p>
-            </div>
+            {/* Language Mastery */}
+            {selectedLanguage && (
+                 <div className="mb-12">
+                    <h3 className="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-4">Language Mastery</h3>
+                     <div className="p-6 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700">
+                         <p className="font-bold text-lg mb-2">You've mastered {masteryPercentage}% of the {selectedLanguage.name} course!</p>
+                        <ProgressBar value={completedLessons} max={totalLessons} label={`${completedLessons} / ${totalLessons} lessons`} />
+                    </div>
+                </div>
+            )}
+
 
             {/* Daily Quests */}
             <div className="mb-12">
                 <h3 className="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-4">Daily Quests</h3>
+                 <div className="p-4 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white mb-6 shadow-lg">
+                    <p>You've completed {completedQuestsCount} of {quests.length} quests today.</p>
+                </div>
                 <div className="space-y-4">
                     {quests.length > 0 ? (
                         quests.map(q => <QuestCard key={q.questId} questProgress={q} />)

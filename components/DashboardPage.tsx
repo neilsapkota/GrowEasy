@@ -217,11 +217,11 @@ const PathView: React.FC<PathViewProps> = ({ progress, onStartLesson, selectedSe
 interface SectionsViewProps {
     sectionProgress: (Section & { completedUnits: number; totalUnits: number; })[];
     onSelectSection: (section: Section) => void;
+    activeSectionIndex: number;
 }
 
-const SectionsView: React.FC<SectionsViewProps> = ({ sectionProgress, onSelectSection }) => {
-    const activeSectionIndex = sectionProgress.findIndex(s => s.completedUnits < s.totalUnits);
-
+const SectionsView: React.FC<SectionsViewProps> = ({ sectionProgress, onSelectSection, activeSectionIndex }) => {
+    
     const getSectionStatus = (index: number): 'completed' | 'active' | 'upcoming' => {
         if (activeSectionIndex === -1) return 'completed';
         if (index < activeSectionIndex) return 'completed';
@@ -312,18 +312,11 @@ const DashboardPage: React.FC<DashboardPageProps> = (props) => {
 
     const activeSectionIndex = sectionProgress.findIndex(s => s.completedUnits < s.totalUnits);
 
-    const getSectionStatus = (index: number): 'completed' | 'active' | 'upcoming' => {
-        if (activeSectionIndex === -1) return 'completed';
-        if (index < activeSectionIndex) return 'completed';
-        if (index === activeSectionIndex) return 'active';
-        return 'upcoming';
-    };
-
     const handleSelectSection = (section: Section) => {
-        const sectionIndex = sectionProgress.findIndex(s => s.sectionNumber === section.sectionNumber);
-        const status = getSectionStatus(sectionIndex);
-
-        if (status === 'upcoming') {
+        const sectionIndex = LEARNING_PATH.sections.findIndex(s => s.sectionNumber === section.sectionNumber);
+        const isUpcoming = activeSectionIndex !== -1 && sectionIndex > activeSectionIndex;
+        
+        if (isUpcoming) {
             setTargetSection(section);
             setShowSkipConfirm(true);
         } else {
@@ -356,7 +349,11 @@ const DashboardPage: React.FC<DashboardPageProps> = (props) => {
             {viewMode === 'path' && selectedSectionNumber !== null ? (
                 <PathView {...props} selectedSectionNumber={selectedSectionNumber} onBackToSections={handleBackToSections} />
             ) : (
-                <SectionsView sectionProgress={sectionProgress} onSelectSection={handleSelectSection} />
+                <SectionsView 
+                    sectionProgress={sectionProgress} 
+                    onSelectSection={handleSelectSection} 
+                    activeSectionIndex={activeSectionIndex}
+                />
             )}
              <SkipConfirmModal
                 isOpen={showSkipConfirm}

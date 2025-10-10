@@ -1,36 +1,94 @@
-
-import React, { useState, useEffect } from 'react';
-import { Language, PlacementTestQuestion, PlacementTestResult } from '../types';
-import { generatePlacementTestQuestion, evaluatePlacementTest } from '../services/geminiService';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Language, PlacementTestResult } from '../types';
+// Fix: Removed 'LiveSession' as it is not an exported member of '@google/genai'.
+import { GoogleGenAI, LiveServerMessage, Modality, Blob } from "@google/genai";
+import { evaluateLiveConversation } from '../services/geminiService';
 import Loader from './Loader';
-import { CheckCircleIcon, XCircleIcon, StarIcon, ShieldCheckIcon } from './icons';
+import { CheckCircleIcon, StarIcon, ShieldCheckIcon, SpinnerIcon, MicrophoneIcon } from './icons';
 
-const TEST_LENGTH = 5;
+if (!process.env.API_KEY) {
+    throw new Error("API_KEY environment variable not set");
+}
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
-interface PlacementTestPageProps {
+// --- Audio Helper Functions ---
+function encode(bytes: Uint8Array) {
+    let binary = '';
+    const len = bytes.byteLength;
+    for (let i = 0; i < len; i++) {
+        binary += String.fromCharCode(bytes[i]);
+    }
+    return btoa(binary);
+}
+
+function decode(base64: string) {
+    const binaryString = atob(base64);
+    const len = binaryString.length;
+    const bytes = new Uint8Array(len);
+    for (let i = 0; i < len; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+    }
+    return bytes;
+}
+
+async function decodeAudioData(data: Uint8Array, ctx: AudioContext, sampleRate: number, numChannels: number): Promise<AudioBuffer> {
+    const dataInt16 = new Int16Array(data.buffer);
+    const frameCount = dataInt16.length / numChannels;
+    const buffer = ctx.createBuffer(numChannels, frameCount, sampleRate);
+    for (let channel = 0; channel < numChannels; channel++) {
+        const channelData = buffer.getChannelData(channel);
+        for (let i = 0; i < frameCount; i++) {
+            channelData[i] = dataInt16[i * numChannels + channel] / 32768.0;
+        }
+    }
+    return buffer;
+}
+
+function createBlob(data: Float32Array): Blob {
+    const l = data.length;
+    const int16 = new Int16Array(l);
+    for (let i = 0; i < l; i++) {
+        int16[i] = data[i] * 32768;
+    }
+    return {
+        data: encode(new Uint8Array(int16.buffer)),
+        mimeType: 'audio/pcm;rate=16000',
+    };
+}
+
+// --- Component Types ---
+
+interface LivePlacementTestPageProps {
     language: Language;
     onComplete: (completedTopics: string[]) => void;
     onSkip: () => void;
+    soundEffectsEnabled: boolean;
 }
+
+type TranscriptItem = {
+    author: 'user' | 'ai';
+    text: string;
+};
+
+// --- Sub-components ---
 
 const IntroScreen: React.FC<{ onStart: () => void, onSkip: () => void, name: string }> = ({ onStart, onSkip, name }) => (
     <div className="text-center p-8 bg-white dark:bg-slate-800 rounded-2xl shadow-xl max-w-md mx-auto animate-fade-in">
         <ShieldCheckIcon className="w-20 h-20 text-teal-500 mx-auto mb-4" />
-        {/* FIX: Use the 'name' prop passed from the parent component instead of an undefined variable. */}
         <h2 className="text-3xl font-extrabold text-slate-800 dark:text-white">New to {name}?</h2>
-        <p className="text-slate-500 dark:text-slate-400 mt-2 mb-6">Take a short test to find your level. It only takes a minute!</p>
+        <p className="text-slate-500 dark:text-slate-400 mt-2 mb-6">Let's find your level with a quick chat. It only takes a minute!</p>
         <div className="space-y-4">
             <button
                 onClick={onStart}
                 className="w-full px-6 py-4 text-lg font-bold text-white uppercase bg-teal-500 rounded-2xl border-b-4 border-teal-700 hover:bg-teal-600 transition-all active:translate-y-0.5"
             >
-                Find my level
+                Start Chat
             </button>
             <button
                 onClick={onSkip}
                 className="w-full px-6 py-3 font-bold text-teal-600 dark:text-teal-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-2xl transition-colors"
             >
-                No thanks, start from scratch
+                No thanks, I'll start from scratch
             </button>
         </div>
     </div>
@@ -62,149 +120,220 @@ const ResultsScreen: React.FC<{ result: PlacementTestResult, onContinue: () => v
     );
 };
 
-const PlacementTestPage: React.FC<PlacementTestPageProps> = ({ language, onComplete, onSkip }) => {
-    const [status, setStatus] = useState<'intro' | 'testing' | 'evaluating' | 'results'>('intro');
-    const [history, setHistory] = useState<{ question: PlacementTestQuestion; userAnswer: string; isCorrect: boolean }[]>([]);
-    const [currentQuestion, setCurrentQuestion] = useState<PlacementTestQuestion | null>(null);
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const [result, setResult] = useState<PlacementTestResult | null>(null);
-    const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
-    const [answerState, setAnswerState] = useState<'idle' | 'correct' | 'incorrect'>('idle');
 
-    const fetchNextQuestion = async () => {
-        setIsLoading(true);
-        setError(null);
-        try {
-            const question = await generatePlacementTestQuestion(language, history);
-            setCurrentQuestion(question);
-        } catch (err) {
-            setError("Failed to load the next question. Please try again.");
-            console.error(err);
-        } finally {
-            setIsLoading(false);
+const LivePlacementTestPage: React.FC<LivePlacementTestPageProps> = ({ language, onComplete, onSkip }) => {
+    const [status, setStatus] = useState<'intro' | 'testing' | 'evaluating' | 'results'>('intro');
+    const [connectionState, setConnectionState] = useState<'connecting' | 'connected' | 'disconnected' | 'error'>('connecting');
+    const [statusText, setStatusText] = useState('Connecting to AI tutor...');
+    const [transcript, setTranscript] = useState<TranscriptItem[]>([]);
+    const [result, setResult] = useState<PlacementTestResult | null>(null);
+    
+    const turnCountRef = useRef(0);
+    const currentInputRef = useRef('');
+    const currentOutputRef = useRef('');
+    // Fix: Using `any` because `LiveSession` is not an exported type.
+    const sessionPromiseRef = useRef<any>(null);
+
+    // Audio processing refs
+    const inputAudioContextRef = useRef<AudioContext>();
+    const outputAudioContextRef = useRef<AudioContext>();
+    const scriptProcessorRef = useRef<ScriptProcessorNode>();
+    const mediaStreamSourceRef = useRef<MediaStreamAudioSourceNode>();
+    const outputNodeRef = useRef<GainNode>();
+    const nextStartTimeRef = useRef(0);
+    const audioSourcesRef = useRef(new Set<AudioBufferSourceNode>());
+
+    const messagesEndRef = useRef<HTMLDivElement>(null);
+    useEffect(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, [transcript]);
+
+    const disconnect = useCallback(() => {
+        sessionPromiseRef.current?.then((session: any) => session.close());
+        inputAudioContextRef.current?.close().catch(console.error);
+        outputAudioContextRef.current?.close().catch(console.error);
+        if (scriptProcessorRef.current) {
+            scriptProcessorRef.current.onaudioprocess = null;
+            // FIX: Pass argument to disconnect to resolve potential tooling errors.
+            scriptProcessorRef.current.disconnect(0);
         }
-    };
+        // FIX: Pass argument to disconnect to resolve potential tooling errors.
+        mediaStreamSourceRef.current?.disconnect(0);
+        setConnectionState('disconnected');
+    }, []);
+
+    const endTestAndEvaluate = useCallback(async () => {
+        disconnect();
+        setStatus('evaluating');
+        setStatusText("Evaluating your proficiency...");
+        try {
+            const fullTranscript = transcript.map(t => `${t.author === 'ai' ? 'AI' : 'User'}: ${t.text}`).join('\n');
+            const finalResult = await evaluateLiveConversation(language, fullTranscript);
+            setResult(finalResult);
+            setStatus('results');
+        } catch (err) {
+            console.error(err);
+            setStatusText("Error evaluating. Starting from basics.");
+            setTimeout(() => onSkip(), 2000);
+        }
+    }, [disconnect, transcript, language, onSkip]);
+
+    const connect = useCallback(async () => {
+        try {
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                throw new Error('Your browser does not support the necessary audio APIs.');
+            }
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+            inputAudioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
+            if (inputAudioContextRef.current.state === 'suspended') {
+                await inputAudioContextRef.current.resume();
+            }
+
+            outputAudioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
+            if (outputAudioContextRef.current.state === 'suspended') {
+                await outputAudioContextRef.current.resume();
+            }
+
+            outputNodeRef.current = outputAudioContextRef.current.createGain();
+            outputNodeRef.current.connect(outputAudioContextRef.current.destination);
+
+            sessionPromiseRef.current = ai.live.connect({
+                model: 'gemini-2.5-flash-native-audio-preview-09-2025',
+                callbacks: {
+                    onopen: () => {
+                        setConnectionState('connected');
+                        setStatusText('Connected! AI will start the conversation.');
+                        mediaStreamSourceRef.current = inputAudioContextRef.current!.createMediaStreamSource(stream);
+                        scriptProcessorRef.current = inputAudioContextRef.current!.createScriptProcessor(4096, 1, 1);
+                        scriptProcessorRef.current.onaudioprocess = (audioProcessingEvent) => {
+                            const inputData = audioProcessingEvent.inputBuffer.getChannelData(0);
+                            const pcmBlob = createBlob(inputData);
+                            sessionPromiseRef.current?.then(((session: any) => session.sendRealtimeInput({ media: pcmBlob })));
+                        };
+                        mediaStreamSourceRef.current.connect(scriptProcessorRef.current);
+                        scriptProcessorRef.current.connect(inputAudioContextRef.current!.destination);
+                    },
+                    onmessage: async (message: LiveServerMessage) => {
+                        if (message.serverContent?.inputTranscription) {
+                            currentInputRef.current += message.serverContent.inputTranscription.text;
+                        }
+                        if (message.serverContent?.outputTranscription) {
+                            setStatusText('AI is speaking...');
+                            currentOutputRef.current += message.serverContent.outputTranscription.text;
+                        }
+                        if (message.serverContent?.turnComplete) {
+                            const fullInput = currentInputRef.current.trim();
+                            const fullOutput = currentOutputRef.current.trim();
+                            
+                            setTranscript(prev => {
+                                const newTranscript = [...prev];
+                                if(fullInput) newTranscript.push({ author: 'user', text: fullInput });
+                                if(fullOutput) newTranscript.push({ author: 'ai', text: fullOutput });
+                                return newTranscript;
+                            });
+
+                            if(fullInput && fullOutput) turnCountRef.current += 1;
+                            
+                            currentInputRef.current = '';
+                            currentOutputRef.current = '';
+                            setStatusText('Your turn. You can speak now.');
+
+                            if(turnCountRef.current >= 2) {
+                                endTestAndEvaluate();
+                            }
+                        }
+                        const audioData = message.serverContent?.modelTurn?.parts[0]?.inlineData?.data;
+                        if (audioData && outputAudioContextRef.current && outputNodeRef.current) {
+                            nextStartTimeRef.current = Math.max(nextStartTimeRef.current, outputAudioContextRef.current.currentTime);
+                            const audioBuffer = await decodeAudioData(decode(audioData), outputAudioContextRef.current, 24000, 1);
+                            const source = outputAudioContextRef.current.createBufferSource();
+                            source.buffer = audioBuffer;
+                            source.connect(outputNodeRef.current);
+                            source.addEventListener('ended', () => { audioSourcesRef.current.delete(source); });
+                            source.start(nextStartTimeRef.current);
+                            nextStartTimeRef.current += audioBuffer.duration;
+                            audioSourcesRef.current.add(source);
+                        }
+                    },
+                    onerror: (e: ErrorEvent) => {
+                        console.error('Live session error:', e);
+                        setStatusText('A connection error occurred.');
+                        setConnectionState('error');
+                        disconnect();
+                    },
+                    onclose: (e: CloseEvent) => {
+                        console.log('Live session closed');
+                        stream.getTracks().forEach(track => track.stop());
+                    },
+                },
+                config: {
+                    responseModalities: [Modality.AUDIO],
+                    inputAudioTranscription: {},
+                    outputAudioTranscription: {},
+                    speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Zephyr' } } },
+                    systemInstruction: `You are a friendly language examiner for a placement test. Your goal is to assess a beginner's proficiency in ${language.name}. Start by greeting them and asking a simple question like "What is your name?" or "How are you?". Keep your responses very short (1 sentence). After their response, ask another simple, common question.`,
+                },
+            });
+        } catch (error) {
+            console.error('Failed to initialize live conversation:', error);
+            setStatusText('Could not access microphone. Please check permissions.');
+            setConnectionState('error');
+        }
+    }, [language, disconnect, endTestAndEvaluate]);
 
     const handleStartTest = () => {
         setStatus('testing');
-        fetchNextQuestion();
+        connect();
     };
-
-    const handleCheckAnswer = () => {
-        if (!currentQuestion || !selectedAnswer) return;
-        const isCorrect = selectedAnswer === currentQuestion.correctAnswer;
-        setAnswerState(isCorrect ? 'correct' : 'incorrect');
-        setHistory(prev => [...prev, { question: currentQuestion, userAnswer: selectedAnswer, isCorrect }]);
-    };
-
-    const handleContinue = async () => {
-        setSelectedAnswer(null);
-        setAnswerState('idle');
-        if (history.length < TEST_LENGTH) {
-            fetchNextQuestion();
-        } else {
-            setStatus('evaluating');
-            try {
-                const finalResult = await evaluatePlacementTest(language, history);
-                setResult(finalResult);
-                setStatus('results');
-            } catch (err) {
-                setError("There was an error evaluating your results. Starting from the beginning.");
-                setTimeout(() => onSkip(), 3000);
-            }
-        }
-    };
-
-    const progress = (history.length / TEST_LENGTH) * 100;
 
     if (status === 'intro') {
         return <div className="min-h-[calc(100vh-2rem)] flex items-center justify-center"><IntroScreen onStart={handleStartTest} onSkip={onSkip} name={language.name} /></div>;
     }
 
     if (status === 'evaluating') {
-        return <Loader message="Evaluating your level..." />;
+        return <Loader message={statusText} />;
     }
 
     if (status === 'results' && result) {
         return <div className="min-h-[calc(100vh-2rem)] flex items-center justify-center"><ResultsScreen result={result} onContinue={() => onComplete(result.completedTopics)} /></div>;
     }
 
-    if (error) {
-        return <div className="text-center p-4 text-red-500">{error} <button onClick={onSkip} className="underline">Exit</button></div>;
-    }
-
-    if (isLoading || !currentQuestion) {
-        return <Loader message="Building your test..." />;
-    }
-
     return (
-        <div className="flex flex-col h-full min-h-[calc(100vh-2rem)] max-w-3xl mx-auto">
-            <div className="px-4 sm:px-8 pt-4">
-                <div className="flex items-center gap-4 mb-8">
-                    <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-4">
-                        <div
-                            className="bg-green-500 h-4 rounded-full transition-all duration-300"
-                            style={{ width: `${progress}%` }}
-                        />
-                    </div>
-                    <div className="font-bold text-slate-500">{history.length} / {TEST_LENGTH}</div>
+        <div className="p-4 sm:p-6 bg-white dark:bg-slate-800 rounded-2xl shadow-xl flex flex-col h-[75vh] max-w-2xl mx-auto">
+             <div className="flex justify-between items-center mb-4 pb-4 border-b border-slate-200 dark:border-slate-700">
+                <div>
+                    <h2 className="text-xl sm:text-2xl font-bold">Placement Test</h2>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">Have a quick chat with your AI tutor.</p>
                 </div>
+                <button onClick={onSkip} className="font-bold text-slate-500 hover:underline">Skip Test</button>
             </div>
-            <main className="flex-grow flex flex-col px-4 sm:px-8">
-                <div className="flex-grow flex flex-col justify-center items-center">
-                    <div className="w-full text-center">
-                        <h2 className="text-2xl sm:text-3xl font-bold mb-8">{currentQuestion.question}</h2>
-                        <div className="grid grid-cols-2 gap-3">
-                            {currentQuestion.options.map((option) => {
-                                const isSelected = selectedAnswer === option;
-                                const isCorrect = currentQuestion.correctAnswer === option;
-                                let buttonClass = "w-full text-center p-4 rounded-xl font-bold text-lg transition-all duration-200 border-b-4 disabled:cursor-not-allowed ";
-
-                                if (answerState !== 'idle') {
-                                    if (isCorrect) buttonClass += 'bg-green-400 border-green-600 text-white';
-                                    else if (isSelected) buttonClass += 'bg-red-400 border-red-600 text-white';
-                                    else buttonClass += 'bg-slate-200 dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-400 opacity-50';
-                                } else {
-                                    buttonClass += isSelected ? 'bg-sky-300 border-sky-500 text-white' : 'bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-600';
-                                }
-                                
-                                return (
-                                    <button key={option} onClick={() => setSelectedAnswer(option)} disabled={answerState !== 'idle'} className={buttonClass}>
-                                        {option}
-                                    </button>
-                                );
-                            })}
-                        </div>
+            
+            <div className="flex flex-col flex-grow justify-center items-center">
+                 <div className={`relative w-40 h-40 rounded-full flex items-center justify-center transition-all duration-300 ${connectionState === 'connected' ? 'bg-teal-500/20' : 'bg-slate-500/20'}`}>
+                    <div className={`absolute w-full h-full rounded-full animate-ping-slow ${connectionState === 'connected' ? 'bg-teal-500/30' : 'bg-slate-500/30'}`} />
+                    <div className={`w-24 h-24 rounded-full flex items-center justify-center transition-colors duration-300 ${connectionState === 'connected' ? 'bg-teal-500' : 'bg-slate-500'}`}>
+                        {connectionState === 'connecting' ? <SpinnerIcon className="w-12 h-12 text-white animate-spin" /> : <MicrophoneIcon className="w-12 h-12 text-white" />}
                     </div>
                 </div>
-            </main>
-            <footer className="mt-auto">
-                {answerState === 'idle' ? (
-                     <div className="h-32 flex items-center justify-center border-t-2 border-slate-200 dark:border-slate-700">
-                        <button onClick={handleCheckAnswer} disabled={!selectedAnswer} className="w-full max-w-xs px-6 py-4 text-xl font-bold text-white uppercase bg-green-500 rounded-2xl border-b-4 border-green-700 hover:bg-green-600 disabled:bg-slate-300 dark:disabled:bg-slate-600 disabled:border-slate-400 dark:disabled:border-slate-700 disabled:cursor-not-allowed transition-all">
-                            Check
-                        </button>
-                    </div>
-                ) : (
-                    <div className={`h-32 p-4 transition-colors ${answerState === 'correct' ? 'bg-green-100 dark:bg-green-900/50' : 'bg-red-100 dark:bg-red-900/50'}`}>
-                        <div className="max-w-4xl mx-auto flex justify-between items-center h-full">
-                            <div className="flex items-center">
-                                {answerState === 'correct' ? <CheckCircleIcon className="w-10 h-10 mr-4 text-green-600" /> : <XCircleIcon className="w-10 h-10 mr-4 text-red-600" />}
-                                <div>
-                                    <p className={`font-bold text-xl ${answerState === 'correct' ? 'text-green-600' : 'text-red-600'}`}>{answerState === 'correct' ? "Correct!" : "Correct solution:"}</p>
-                                    {answerState === 'incorrect' && <p className="font-semibold text-lg">{currentQuestion.correctAnswer}</p>}
-                                </div>
-                            </div>
-                            <button onClick={handleContinue} className={`px-8 py-4 text-xl font-bold text-white uppercase rounded-2xl border-b-4 ${answerState === 'correct' ? 'bg-green-500 border-green-700' : 'bg-red-500 border-red-700'}`}>
-                                Continue
-                            </button>
+                <p className="mt-4 text-lg font-semibold text-slate-600 dark:text-slate-300 h-6">{statusText}</p>
+            </div>
+
+             <div className="h-48 overflow-y-auto pr-2 space-y-4 mb-4 border-t border-slate-200 dark:border-slate-700 pt-4">
+                {transcript.map((msg, index) => (
+                    <div key={index} className={`flex flex-col ${msg.author === 'user' ? 'items-end' : 'items-start'}`}>
+                        <div className={`max-w-[80%] p-3 rounded-2xl ${
+                            msg.author === 'user' ? 'bg-teal-500 text-white rounded-br-none' : 
+                            'bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 rounded-bl-none'
+                        }`}>
+                           {msg.text}
                         </div>
                     </div>
-                )}
-            </footer>
+                ))}
+                <div ref={messagesEndRef} />
+            </div>
         </div>
     );
 };
 
-export default PlacementTestPage;
+export default LivePlacementTestPage;

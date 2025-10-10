@@ -1,7 +1,8 @@
 export enum Page {
     Home,
     LanguageSelection,
-    PlacementTest,
+    Onboarding, // New page for new user setup
+    LivePlacementTest,
     Dashboard,
     Lesson,
     PracticeHub,
@@ -12,11 +13,16 @@ export enum Page {
     Quests,
     Settings,
     Help,
+    Upgrade,
+    Friends,
+    Messages,
 }
 
 export interface User {
     name: string;
+    email: string;
     avatarUrl: string;
+    isPro: boolean;
 }
 
 export interface Language {
@@ -108,6 +114,12 @@ export interface MonthlyChallenge {
     icon: string;
 }
 
+export interface Activity {
+    id: string;
+    timestamp: string; // ISO string
+    description: string;
+    icon: string; // emoji or icon component name
+}
 
 export interface UserProgress {
     xp: number;
@@ -126,6 +138,7 @@ export interface UserProgress {
     practiceSessions?: number;
     perfectLessons?: number;
     completedMonthlyChallenges?: string[]; // e.g., ['2024-06', '2024-07']
+    activityLog: Activity[];
 }
 
 export interface Story {
@@ -135,12 +148,20 @@ export interface Story {
     level: string;
 }
 
-export interface RegisteredUser {
-    user: User;
-    progress: Record<string, UserProgress>;
+export interface FriendRequest {
+    from: string; // email of the user who sent the request
+    status: 'pending';
 }
 
-export type PracticeMode = 'conversation' | 'listening' | 'mistakes' | 'vocabulary' | 'stories' | 'pronunciation' | 'roleplay' | 'writing';
+export interface RegisteredUser {
+    user: User; // The base user info
+    password?: string; // Optional for Google sign-in users
+    progress: Record<string, UserProgress>;
+    friends: string[]; // array of user emails
+    friendRequests?: FriendRequest[]; // array of incoming friend requests
+}
+
+export type PracticeMode = 'conversation' | 'listening' | 'mistakes' | 'vocabulary' | 'stories' | 'pronunciation' | 'roleplay' | 'writing' | 'vision';
 
 export interface DictionaryEntry {
     word: string;
@@ -222,4 +243,20 @@ export interface Path {
     id: string;
     title: string;
     sections: Section[];
+}
+
+// New type for Vision Practice
+export interface VisionFeedback {
+    feedback: string;
+    correction: string | null;
+}
+
+// New type for Messaging
+export interface Message {
+    id: string;
+    from: string; // user email
+    to: string; // user email
+    content: string;
+    timestamp: string; // ISO date string
+    read: boolean;
 }

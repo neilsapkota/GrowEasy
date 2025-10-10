@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from 'react';
 import { Language, LessonTopic, LessonContent, MistakeItem, VocabularyItem, Challenge } from '../types';
 import { XP_PER_CORRECT_ANSWER } from '../constants';
@@ -7,9 +8,9 @@ import Loader from './Loader';
 import { CheckCircleIcon, XCircleIcon, StarIcon } from './icons';
 
 const SOUND_URLS = {
-    CORRECT: 'https://actions.google.com/sounds/v1/positive/success.ogg',
-    INCORRECT: 'https://actions.google.com/sounds/v1/negative/failure.ogg',
-    LESSON_COMPLETE: 'https://actions.google.com/sounds/v1/impacts/wind_chimes.ogg',
+    CORRECT: 'https://cdn.pixabay.com/audio/2022/03/15/audio_2b28b0308c.mp3',
+    INCORRECT: 'https://cdn.pixabay.com/audio/2021/08/04/audio_c6ccf34812.mp3',
+    LESSON_COMPLETE: 'https://cdn.pixabay.com/audio/2022/01/18/audio_82c292a8b3.mp3',
 };
 
 const playSound = (url: string, enabled: boolean) => {
@@ -151,7 +152,6 @@ const LessonCompletionSummary: React.FC<{ xpGained: number, onFinish: () => void
     );
 };
 
-// FIX: Define missing LessonPageProps interface.
 interface LessonPageProps {
     language: Language;
     topic: LessonTopic;

@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type, Chat } from "@google/genai";
-import { Language, LessonContent, Feedback, Story, DictionaryEntry, ChatResponse, PronunciationFeedback, PlacementTestQuestion, PlacementTestResult, WritingFeedback } from '../types';
+import { Language, LessonContent, Feedback, Story, DictionaryEntry, ChatResponse, PronunciationFeedback, PlacementTestQuestion, PlacementTestResult, WritingFeedback, VisionFeedback } from '../types';
 
 if (!process.env.API_KEY) {
     throw new Error("API_KEY environment variable not set");
@@ -136,6 +136,82 @@ const writingFeedbackSchema = {
         },
     },
     required: ['score', 'summary', 'suggestions'],
+};
+
+const interactiveStorySchema = {
+    type: Type.OBJECT,
+    properties: {
+        storySegment: { type: Type.STRING, description: 'A 2-3 sentence segment of an interactive story.' },
+        choices: {
+            type: Type.ARRAY,
+            items: { type: Type.STRING },
+            description: 'An array of 2-3 choices for the user to continue the story. If the story is over, this can be an empty array.'
+        },
+    },
+    required: ['storySegment', 'choices'],
+};
+
+const visionFeedbackSchema = {
+    type: Type.OBJECT,
+    properties: {
+        feedback: { type: Type.STRING, description: "Encouraging feedback about the user's description. Mention something they described well." },
+        correction: { type: Type.STRING, description: "A corrected version of their sentence if there were grammatical errors. If no correction is needed, this should be null." }
+    },
+    required: ['feedback'],
+};
+
+export const generateInitialStory = async (language: Language): Promise<{ storySegment: string; choices: string[] }> => {
+    const prompt = `You are a creative storyteller for a language learning app. Create the beginning of a simple, engaging, interactive story for a beginner learning ${language.name}.
+    The story should be a single paragraph (2-3 sentences).
+    After the story segment, provide 2-3 choices for the user to decide what happens next. The choices should also be in ${language.name}.
+    The story should be set in a common, simple scenario (e.g., a park, a market, a café).
+    Respond ONLY with a JSON object.`;
+
+    try {
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: prompt,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: interactiveStorySchema,
+            },
+        });
+        const jsonText = response.text.trim();
+        return JSON.parse(jsonText);
+    } catch (error) {
+        console.error("Error generating initial story:", error);
+        throw new Error("Failed to start an interactive story.");
+    }
+};
+
+export const continueInteractiveStory = async (language: Language, storyHistory: string, userChoice: string): Promise<{ storySegment: string; choices: string[] }> => {
+    const prompt = `You are a creative storyteller for a language learning app, continuing an interactive story for a beginner learning ${language.name}.
+    Here is the story so far:
+    ---
+    ${storyHistory}
+    ---
+    The user has just made this choice: "${userChoice}"
+
+    Continue the story with a new paragraph (2-3 sentences) in ${language.name} based on the user's choice.
+    After the story segment, provide 2-3 new choices for the user.
+    If this is a natural ending point for the story, you can provide an empty array for the choices.
+    Respond ONLY with a JSON object.`;
+    
+    try {
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: prompt,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: interactiveStorySchema,
+            },
+        });
+        const jsonText = response.text.trim();
+        return JSON.parse(jsonText);
+    } catch (error) {
+        console.error("Error continuing story:", error);
+        throw new Error("Failed to continue the interactive story.");
+    }
 };
 
 
@@ -449,6 +525,42 @@ Return your evaluation as a JSON object with 'completedTopics' (an array of topi
     }
 };
 
+export const evaluateLiveConversation = async (
+    language: Language,
+    transcript: string
+): Promise<PlacementTestResult> => {
+    const prompt = `A user has completed a live conversational placement test in ${language.name}. Here is the full transcript of the conversation: 
+    ---
+    ${transcript}
+    ---
+    Based on their performance in the conversation (grammar, vocabulary, fluency), what is their proficiency level?
+    Determine which of the following topics they can skip. The available topics correspond to different levels:
+    - A1 Level (Beginner): 'greetings', 'family'
+    - A2 Level (Elementary): 'food', 'hobbies'
+    - If they struggled with basic greetings, they should skip nothing (return an empty array for 'completedTopics').
+    - If they handled greetings and introductions well, they can skip 'greetings' and 'family'.
+    - If they showed a broader vocabulary and could form slightly more complex sentences (e.g., about food or hobbies), they can also skip 'food' and 'hobbies'.
+    
+    Be conservative. This is for beginners, so only mark the most basic topics as completed if they showed clear mastery.
+    Return your evaluation as a JSON object with 'completedTopics' (an array of topic IDs to skip) and a 'summary' (a brief, encouraging sentence about their level, e.g., "You've got a great handle on the basics!").`;
+
+    try {
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: prompt,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: placementTestResultSchema,
+            },
+        });
+        const jsonText = response.text.trim();
+        return JSON.parse(jsonText) as PlacementTestResult;
+    } catch (error) {
+        console.error("Error evaluating live conversation:", error);
+        throw new Error("Failed to evaluate the live placement test results.");
+    }
+};
+
 export const generateWritingPrompt = async (language: Language): Promise<string> => {
     const prompt = `Generate one simple and engaging writing prompt for a beginner learning ${language.name}. The prompt should be in English and encourage them to write 2-3 sentences. For example: "Describe your family." or "What did you do yesterday?". Return only the prompt text as a single string.`;
 
@@ -486,5 +598,42 @@ export const evaluateWriting = async (language: Language, prompt: string, userTe
     } catch (error) {
         console.error("Error evaluating writing:", error);
         throw new Error("Failed to get writing feedback from the AI.");
+    }
+};
+
+export const generateVisionFeedback = async (language: Language, imageBase64: string, userText: string): Promise<VisionFeedback> => {
+    const prompt = `You are a language teacher. A user learning ${language.name} is describing the attached image.
+    Their description is: "${userText}"
+    
+    Evaluate their description. Provide encouraging feedback and, if necessary, correct their grammar or vocabulary.
+    Respond in JSON format with:
+    - 'feedback': A positive and encouraging sentence about their description.
+    - 'correction': A corrected version of their sentence in ${language.name}. If their sentence is perfect, make this null.`;
+
+    try {
+        const imagePart = {
+            inlineData: {
+                mimeType: 'image/jpeg',
+                data: imageBase64,
+            },
+        };
+        const textPart = {
+            text: prompt
+        };
+
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: { parts: [imagePart, textPart] },
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: visionFeedbackSchema,
+            },
+        });
+
+        const jsonText = response.text.trim();
+        return JSON.parse(jsonText) as VisionFeedback;
+    } catch (error) {
+        console.error("Error generating vision feedback:", error);
+        throw new Error("Failed to get feedback for the image description.");
     }
 };

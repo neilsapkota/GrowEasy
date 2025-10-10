@@ -8,6 +8,7 @@ import StoriesPractice from './practice/StoriesPractice';
 import PronunciationPractice from './practice/PronunciationPractice';
 import RoleplayPractice from './practice/RoleplayPractice';
 import WritingPractice from './practice/WritingPractice';
+import { VisionPractice } from './practice/VisionPractice';
 
 interface PracticeSessionPageProps {
     mode: PracticeMode;
@@ -37,6 +38,8 @@ const PracticeSessionPage: React.FC<PracticeSessionPageProps> = ({ mode, languag
                 return <RoleplayPractice language={language} onEnd={onEndPractice} />;
             case 'writing':
                 return <WritingPractice language={language} onEnd={onEndPractice} />;
+            case 'vision':
+                return <VisionPractice language={language} onEnd={onEndPractice} />;
             default:
                 return (
                     <div>

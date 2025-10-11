@@ -2,7 +2,6 @@
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { User, RegisteredUser, Message } from '../types';
-// FIX: Import ChatBubbleLeftRightIcon to be used in the component.
 import { PaperAirplaneIcon, ChatBubbleLeftRightIcon } from './icons';
 
 interface MessagesPageProps {

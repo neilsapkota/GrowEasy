@@ -1,4 +1,5 @@
 
+
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import HomePage from './components/HomePage';
 import LanguageSelectionPage from './components/LanguageSelectionPage';
@@ -18,18 +19,127 @@ import LivePlacementTestPage from './components/PlacementTestPage';
 import FriendsPage from './components/FriendsPage';
 import MessagesPage from './components/MessagesPage';
 import LeaderboardPage from './components/LeaderboardPage';
-import { Page, User, Language, LessonTopic, UserProgress, MistakeItem, VocabularyItem, PracticeMode, Quest, LeagueTier, Achievement, RegisteredUser, AppSettings, Theme, Message, AchievementTier } from './types';
+import FlashcardDecksPage from './components/FlashcardDecksPage'; // New Import
+// FIX: Added missing type imports
+import { Page, User, Language, LessonTopic, UserProgress, MistakeItem, VocabularyItem, PracticeMode, Quest, LeagueTier, Achievement, RegisteredUser, AppSettings, Theme, Message, AchievementTier, FlashcardDeck } from './types';
 import { LANGUAGES, DAILY_QUESTS, ACHIEVEMENTS, MONTHLY_CHALLENGES } from './constants';
 import { HomeIcon, UserCircleIcon, ChartBarIcon, LogoutIcon, StarIcon, FireIcon, PracticeIcon, BookOpenIcon, TrophyIcon, QuestsIcon, SettingsIcon, HelpIcon, UsersIcon, ChatBubbleLeftRightIcon } from './components/icons';
+import ProfilePage from './components/ProfilePage';
 
 const QUESTS_MAP = new Map(DAILY_QUESTS.map(q => [q.id, q]));
 
-const DUMMY_REGISTERED_USERS: RegisteredUser[] = [];
+const DUMMY_REGISTERED_USERS: RegisteredUser[] = [
+  {
+    user: {
+      name: "Alice",
+      email: "alice@groweasy.com",
+      avatarUrl: "https://api.dicebear.com/8.x/initials/svg?seed=Alice",
+      bio: "Learning Spanish for my trip to Colombia!"
+    },
+    password: "password123",
+    progress: {
+      "es": {
+        xp: 125,
+        streak: 3,
+        // FIX: Removed trailing quote from property key `completedTopics"`
+        completedTopics: [
+          "greetings",
+          "numbers"
+        ],
+        mistakes: [],
+        learnedVocabulary: [],
+        league: LeagueTier.Bronze,
+        // FIX: Removed trailing quote from property key `unlockedAchievements"`
+        unlockedAchievements: [
+          "xp_100",
+          "streak_3",
+          "lessons_1"
+        ],
+        practiceSessions: 2,
+        perfectLessons: 1,
+        activityLog: [],
+        // FIX: Removed trailing quote from property key `flashcardDecks"`
+        flashcardDecks: []
+      }
+    },
+    friends: [
+      "bob@groweasy.com"
+    ],
+    // FIX: Removed trailing quote from property key `friendRequests"`
+    friendRequests: []
+  },
+  {
+    user: {
+      name: "Bob",
+      email: "bob@groweasy.com",
+      avatarUrl: "https://api.dicebear.com/8.x/initials/svg?seed=Bob",
+      bio: "Trying to learn French."
+    },
+    password: "password123",
+    progress: {
+      "fr": {
+        xp: 80,
+        streak: 1,
+        // FIX: Removed trailing quote from property key `completedTopics"`
+        completedTopics: [
+          "greetings"
+        ],
+        mistakes: [],
+        learnedVocabulary: [],
+        league: LeagueTier.Bronze,
+        // FIX: Removed trailing quote from property key `unlockedAchievements"`
+        unlockedAchievements: [],
+        practiceSessions: 0,
+        perfectLessons: 0,
+        activityLog: [],
+        // FIX: Removed trailing quote from property key `flashcardDecks"`
+        flashcardDecks: []
+      }
+    },
+    friends: [
+      "alice@groweasy.com"
+    ],
+    // FIX: Removed trailing quote from property key `friendRequests"`
+    friendRequests: []
+  },
+  {
+    user: {
+      name: "Neil",
+      email: "neilsapkota@gmail.com",
+      avatarUrl: "https://api.dicebear.com/8.x/initials/svg?seed=Neil",
+      bio: ""
+    },
+    password: "neil9212",
+    progress: {
+      "de": {
+        xp: 0,
+        streak: 0,
+        // FIX: Removed trailing quote from property key `completedTopics"`
+        completedTopics: [],
+        mistakes: [],
+        learnedVocabulary: [],
+        league: LeagueTier.Bronze,
+        // FIX: Removed trailing quote from property key `unlockedAchievements"`
+        unlockedAchievements: [],
+        practiceSessions: 0,
+        perfectLessons: 0,
+        activityLog: [],
+        // FIX: Removed trailing quote from property key `flashcardDecks"`
+        flashcardDecks: []
+      }
+    },
+    friends: [],
+    // FIX: Removed trailing quote from property key `friendRequests"`
+    friendRequests: []
+  }
+];
 
 const DUMMY_MESSAGES: Message[] = [
-    { id: '1', from: 'alice@groeasy.com', to: 'bob@groeasy.com', content: 'Hey Bob, ready for the weekly leaderboard race?', timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), read: true },
-    { id: '2', from: 'bob@groeasy.com', to: 'alice@groeasy.com', content: 'You bet! I\'ve been practicing my Spanish. Watch out!', timestamp: new Date(Date.now() - 1000 * 60 * 60 * 1).toISOString(), read: false },
+    { id: '1', from: 'alice@groeasy.com', to: 'bob@groweasy.com', content: 'Hey Bob, ready for the weekly leaderboard race?', timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), read: true },
+    { id: '2', from: 'bob@groweasy.com', to: 'alice@groweasy.com', content: 'You bet! I\'ve been practicing my Spanish. Watch out!', timestamp: new Date(Date.now() - 1000 * 60 * 60 * 1).toISOString(), read: false },
 ];
+
+const MISTAKE_LIMIT = 100;
 
 
 const Sidebar: React.FC<{
@@ -62,16 +172,18 @@ const Sidebar: React.FC<{
     const NavButton: React.FC<{item: {page: Page; icon: React.ElementType; label: string; count?: number}; isActive: boolean;}> = ({ item, isActive }) => (
         <button
             onClick={() => onNavigate(item.page)}
-            className={`w-full flex items-center space-x-4 py-3 px-4 rounded-lg transition-all duration-200 text-md font-extrabold uppercase relative ${
+            className={`w-full flex items-center space-x-4 py-3 px-4 rounded-lg transition-all duration-200 text-md font-bold uppercase relative group ${
                 isActive 
-                ? 'bg-sky-500/20 text-sky-400 border-l-4 border-sky-500' 
-                : 'text-slate-400 hover:bg-slate-800'
+                ? 'bg-gradient-to-r from-sky-500/20 to-teal-500/20 text-sky-300 shadow-lg' 
+                : 'text-slate-400 hover:bg-slate-800/50'
             }`}
         >
-            <item.icon className={`w-8 h-8 ${isActive ? 'text-sky-400' : 'text-slate-400'}`} />
-            <span>{item.label}</span>
+            <span className={`absolute inset-0 bg-gradient-to-r from-sky-500 to-teal-500 rounded-lg opacity-0 group-hover:opacity-10 transition-opacity duration-300 ${isActive ? 'opacity-100' : ''}`}></span>
+             <span className={`absolute left-0 top-0 h-full w-1 bg-gradient-to-b from-sky-400 to-teal-400 transition-transform duration-300 scale-y-0 group-hover:scale-y-50 ${isActive ? 'scale-y-100' : ''}`}></span>
+            <item.icon className={`w-8 h-8 z-10 ${isActive ? 'text-sky-300' : 'text-slate-400'}`} />
+            <span className="z-10">{item.label}</span>
             {item.count !== undefined && item.count > 0 && (
-                 <span className="absolute right-4 top-1/2 -translate-y-1/2 w-6 h-6 bg-rose-500 rounded-full flex items-center justify-center text-xs font-bold text-white">
+                 <span className="absolute right-4 top-1/2 -translate-y-1/2 w-6 h-6 bg-rose-500 rounded-full flex items-center justify-center text-xs font-bold text-white z-10 shadow-lg">
                     {item.count}
                 </span>
             )}
@@ -79,8 +191,8 @@ const Sidebar: React.FC<{
     );
 
     return (
-        <aside className="w-64 bg-[#141a24] flex-shrink-0 p-4 hidden lg:flex flex-col">
-            <h1 className="text-3xl font-extrabold text-emerald-400 mb-10 px-2 pt-2">
+        <aside className="w-64 bg-slate-900/70 backdrop-blur-sm flex-shrink-0 p-4 hidden lg:flex flex-col border-r border-slate-800">
+            <h1 className="text-3xl font-extrabold gradient-text mb-10 px-2 pt-2">
                 GrowEasy
             </h1>
             <nav className="flex-grow">
@@ -93,7 +205,7 @@ const Sidebar: React.FC<{
                 </ul>
             </nav>
             <div className="space-y-2">
-                <ul className="space-y-2 pt-4 border-t border-slate-700">
+                <ul className="space-y-2 pt-4 border-t border-slate-800">
                     {bottomNavItems.map(item => (
                          <li key={item.label}>
                            <NavButton item={item} isActive={currentPage === item.page} />
@@ -102,14 +214,14 @@ const Sidebar: React.FC<{
                 </ul>
                 <button 
                     onClick={onChangeLanguage} 
-                    className="w-full text-left flex items-center space-x-4 py-3 px-4 rounded-lg transition-colors text-md font-extrabold uppercase text-slate-400 hover:bg-slate-800"
+                    className="w-full text-left flex items-center space-x-4 py-3 px-4 rounded-lg transition-colors text-md font-bold uppercase text-slate-400 hover:bg-slate-800/50"
                 >
                     <span className="text-2xl">🌐</span>
                     <span>Language</span>
                 </button>
                  {user && (
-                    <div className="flex items-center space-x-3 p-2 rounded-xl mt-4 border-t border-slate-700 pt-4">
-                        <img src={user.avatarUrl} alt={user.name} className="w-10 h-10 rounded-full" />
+                    <div className="flex items-center space-x-3 p-2 rounded-xl mt-4 border-t border-slate-800 pt-4">
+                        <img src={user.avatarUrl} alt={user.name} className="w-10 h-10 rounded-full ring-2 ring-slate-700" />
                         <div className="flex-grow truncate">
                             <span className="font-bold text-slate-200">{user.name}</span>
                         </div>
@@ -142,6 +254,7 @@ const Header: React.FC<{
         [Page.Profile]: "Profile",
         [Page.Settings]: "Settings",
         [Page.Help]: "Help",
+        [Page.FlashcardDecks]: "Flashcard Decks",
         [Page.Home]: "",
         [Page.LanguageSelection]: "",
         [Page.Onboarding]: "",
@@ -181,7 +294,7 @@ const BottomNavBar: React.FC<{ currentPage: Page; onNavigate: (page: Page) => vo
     ];
     
     return (
-        <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-[#141a24] border-t border-slate-700 flex justify-around z-50">
+        <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-slate-900/80 backdrop-blur-sm border-t border-slate-800 flex justify-around z-50">
             {navItems.map(item => (
                 <button
                     key={item.label}
@@ -199,96 +312,6 @@ const BottomNavBar: React.FC<{ currentPage: Page; onNavigate: (page: Page) => vo
 };
 
 
-const ProfilePage: React.FC<{
-    user: User | null;
-    userProgress: Record<string, UserProgress>;
-    languages: Language[];
-}> = ({ user, userProgress, languages }) => {
-    if (!user) {
-        return (
-             <div className="p-4 sm:p-6 lg:p-8 animate-fade-in text-center">
-                <h2 className="text-3xl font-bold text-slate-800 dark:text-slate-100 mb-6">Profile</h2>
-                <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-8">
-                    <p className="text-lg">Please create an account to view your profile and track your progress.</p>
-                </div>
-            </div>
-        )
-    }
-    
-// FIX: Define tierColors to resolve reference error.
-    const tierColors: Record<AchievementTier, string> = {
-        [AchievementTier.Bronze]: 'text-amber-600 dark:text-amber-500',
-        [AchievementTier.Silver]: 'text-slate-500 dark:text-slate-400',
-        [AchievementTier.Gold]: 'text-yellow-500 dark:text-yellow-400',
-    };
-    
-    const languagesWithProgress = Object.entries(userProgress)
-        .map(([langId, progress]: [string, UserProgress]) => {
-            const langInfo = languages.find(l => l.id === langId);
-            if (langInfo && (progress.xp > 0 || progress.completedTopics.length > 0)) {
-                return { ...langInfo, ...progress };
-            }
-            return null;
-        })
-        .filter(Boolean) as (Language & UserProgress)[];
-        
-    const getLatestAchievements = (progress: UserProgress) => {
-        const unlockedIds = progress.unlockedAchievements ?? [];
-        return unlockedIds
-            .slice(-4)
-            .map(id => ACHIEVEMENTS.find(a => a.id === id))
-            .filter(Boolean) as Achievement[];
-    };
-
-    return (
-        <div className="p-4 sm:p-6 lg:p-8 animate-fade-in">
-            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-8 mb-8 text-center relative">
-                <img src={user.avatarUrl} alt={user.name} className="w-24 h-24 rounded-full mx-auto mb-4 border-4 border-teal-500" />
-                <h3 className="text-2xl font-bold">{user.name}</h3>
-                {user.bio && <p className="mt-2 text-slate-500 dark:text-slate-400 max-w-md mx-auto">{user.bio}</p>}
-            </div>
-            
-            <h3 className="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-4">Your Language Progress</h3>
-             {languagesWithProgress.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {languagesWithProgress.map(langProgress => (
-                        <div key={langProgress.id} className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-6">
-                            <div className="flex items-center mb-4">
-                                <span className="text-4xl mr-4">{langProgress.flag}</span>
-                                <h4 className="text-xl font-bold">{langProgress.name}</h4>
-                            </div>
-                            <div className="space-y-4">
-                               <div className="flex justify-around text-center">
-                                    <div>
-                                        <p className="text-2xl font-bold text-amber-500">{langProgress.xp}</p>
-                                        <p className="text-sm text-slate-500">XP</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-2xl font-bold text-orange-500">{langProgress.streak}</p>
-                                        <p className="text-sm text-slate-500">Day Streak</p>
-                                    </div>
-                                </div>
-                                <div className="pt-4 border-t border-slate-200 dark:border-slate-700">
-                                    <h5 className="font-bold text-center mb-2">Recent Achievements</h5>
-                                    <div className="flex justify-center items-center gap-3 h-8">
-                                        {getLatestAchievements(langProgress).length > 0 ? getLatestAchievements(langProgress).map(ach => (
-                                            <TrophyIcon key={ach.id} className={`w-7 h-7 ${tierColors[ach.tier]}`} title={`${ach.title} (${ach.tier})`} />
-                                        )) : <p className="text-sm text-slate-400">No achievements yet.</p>}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            ) : (
-                <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-8 text-center">
-                    <p className="text-lg text-slate-500 dark:text-slate-400">Start a lesson to see your progress here!</p>
-                </div>
-            )}
-        </div>
-    );
-};
-
 const App: React.FC = () => {
     const [page, setPage] = useState<Page>(Page.Home);
     const [user, setUser] = useState<User | null>(null);
@@ -296,6 +319,7 @@ const App: React.FC = () => {
     const [selectedTopic, setSelectedTopic] = useState<LessonTopic | null>(null);
     const [userProgress, setUserProgress] = useState<Record<string, UserProgress>>({});
     const [practiceMode, setPracticeMode] = useState<PracticeMode | null>(null);
+    const [selectedFlashcardDeck, setSelectedFlashcardDeck] = useState<FlashcardDeck | null>(null);
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
     const [toasts, setToasts] = useState<{ id: number; achievement: Achievement }[]>([]);
     const [appSettings, setAppSettings] = useState<AppSettings>(() => {
@@ -307,6 +331,7 @@ const App: React.FC = () => {
         }
     });
 
+    const [languageChoiceForOnboarding, setLanguageChoiceForOnboarding] = useState<Language | null>(null);
     
     const [registeredUsers, setRegisteredUsers] = useState<RegisteredUser[]>(() => {
         try {
@@ -384,12 +409,16 @@ const App: React.FC = () => {
 
     useEffect(() => {
         if (user) {
-            const dataToSave = {
-                user,
-                selectedLanguageId: selectedLanguage?.id,
-                userProgress,
-            };
-            localStorage.setItem('growEasySession', JSON.stringify(dataToSave));
+            try {
+                const dataToSave = {
+                    user,
+                    selectedLanguageId: selectedLanguage?.id,
+                    userProgress,
+                };
+                localStorage.setItem('growEasySession', JSON.stringify(dataToSave));
+            } catch (error) {
+                console.error("Failed to save session to localStorage", error);
+            }
         }
     }, [user, selectedLanguage, userProgress]);
     
@@ -414,22 +443,19 @@ const App: React.FC = () => {
     }, [messages]);
 
 
-    // Keep registered user data in sync with the current user's progress
+    // Syncs user progress changes (like completing a lesson) to the master user list.
     useEffect(() => {
         if (user) {
             setRegisteredUsers(prev => {
-                const updatedUsers = prev.map(ru => {
+                return prev.map(ru => {
                     if (ru.user.email === user.email) {
-                        // Ensure all properties of user are updated
-                        const updatedRuUser = { ...ru.user, ...user };
-                        return { ...ru, user: updatedRuUser, progress: userProgress };
+                        return { ...ru, progress: userProgress };
                     }
                     return ru;
                 });
-                return updatedUsers;
             });
         }
-    }, [user, userProgress]);
+    }, [userProgress, user]);
 
     const updateQuestProgress = useCallback((updates: { type: 'xp' | 'lesson' | 'practice' | 'perfect_lesson', amount: number }[]) => {
         // ... existing quest logic
@@ -441,22 +467,32 @@ const App: React.FC = () => {
     }, [user, selectedLanguage, userProgress]);
     
     const handleSelectLanguage = useCallback((language: Language) => {
-        setSelectedLanguage(language);
-        const langProgress = userProgress[language.id];
-
-        if (!langProgress) {
-             setUserProgress(prev => ({
-                ...prev,
-                [language.id]: { xp: 0, streak: 0, completedTopics: [], mistakes: [], learnedVocabulary: [], league: LeagueTier.Bronze, unlockedAchievements: [], practiceSessions: 0, perfectLessons: 0, activityLog: [] }
-            }));
-        }
-        
-        if (!langProgress || langProgress.completedTopics.length === 0) {
-            setPage(Page.Onboarding);
+        if (!user) {
+            // New user flow: set choice and open auth modal
+            setLanguageChoiceForOnboarding(language);
+            setIsAuthModalOpen(true);
         } else {
-            setPage(Page.Dashboard);
+            // Logged-in user is selecting a language
+            setSelectedLanguage(language);
+            const langProgress = userProgress[language.id];
+    
+            if (!langProgress) {
+                // Create progress for new language
+                 setUserProgress(prev => ({
+                    ...prev,
+                    [language.id]: { xp: 0, streak: 0, completedTopics: [], mistakes: [], learnedVocabulary: [], league: LeagueTier.Bronze, unlockedAchievements: [], practiceSessions: 0, perfectLessons: 0, activityLog: [], flashcardDecks: [] }
+                }));
+                // Go to onboarding for the new language
+                setPage(Page.Onboarding);
+            } else if (langProgress.completedTopics.length === 0) {
+                // Go to onboarding if they haven't started
+                setPage(Page.Onboarding);
+            } else {
+                // Go to dashboard if they have progress
+                setPage(Page.Dashboard);
+            }
         }
-    }, [userProgress]);
+    }, [user, userProgress]);
 
     const handleCompleteOnboarding = useCallback((startWithTest: boolean) => {
         if(startWithTest) {
@@ -468,7 +504,7 @@ const App: React.FC = () => {
 
 
     const handleNavigate = useCallback((targetPage: Page) => {
-        if (!user && [Page.Profile, Page.Leaderboard, Page.Quests, Page.Achievements, Page.Settings, Page.Friends, Page.Messages].includes(targetPage)) {
+        if (!user && [Page.Profile, Page.Leaderboard, Page.Quests, Page.Achievements, Page.Settings, Page.Friends, Page.Messages, Page.FlashcardDecks].includes(targetPage)) {
             setIsAuthModalOpen(true);
         } else {
             setPage(targetPage);
@@ -493,13 +529,85 @@ const App: React.FC = () => {
         setPage(Page.PracticeSession);
     }, [user]);
     
+    const handleStartFlashcardPractice = useCallback((deck: FlashcardDeck) => {
+        if (!user) {
+            setIsAuthModalOpen(true);
+            return;
+        }
+        setPracticeMode('flashcards');
+        setSelectedFlashcardDeck(deck);
+        setPage(Page.PracticeSession);
+    }, [user]);
+
     const handleEndPractice = useCallback(() => {
-        // ... existing practice end logic
+        if (user && selectedLanguage) {
+            updateQuestProgress([{ type: 'practice', amount: 1 }]);
+    
+            const langId = selectedLanguage.id;
+            setUserProgress(prev => {
+                const currentLangProgress = prev[langId] || { xp: 0, streak: 0, completedTopics: [], mistakes: [], learnedVocabulary: [], league: LeagueTier.Bronze, unlockedAchievements: [], practiceSessions: 0, perfectLessons: 0, activityLog: [], flashcardDecks: [] };
+                return {
+                    ...prev,
+                    [langId]: {
+                        ...currentLangProgress,
+                        practiceSessions: (currentLangProgress.practiceSessions ?? 0) + 1,
+                    }
+                }
+            });
+        }
+        setPage(Page.PracticeHub);
     }, [user, selectedLanguage, updateQuestProgress]);
 
-    const handleCompleteLesson = useCallback((xpGained: number, newMistakes: MistakeItem[], newVocabulary: Omit<VocabularyItem, 'nextReview' | 'interval'>[]) => {
-        // ... existing lesson completion logic
-    }, [user, selectedLanguage, selectedTopic, updateQuestProgress]);
+    const handleCompleteLesson = useCallback((xpGained: number, newMistakes: MistakeItem[], newVocabulary: Omit<VocabularyItem, 'nextReview' | 'interval'>[], isPerfect: boolean) => {
+        if (!user || !selectedLanguage || !selectedTopic) return;
+
+        const langId = selectedLanguage.id;
+        const currentProgress = userProgress[langId];
+
+        // Update mistakes: add new ones, but don't duplicate
+        const existingMistakeQuestions = new Set(currentProgress.mistakes.map(m => m.question));
+        const uniqueNewMistakes = newMistakes.filter(m => !existingMistakeQuestions.has(m.question));
+        
+        const combinedMistakes = [...currentProgress.mistakes, ...uniqueNewMistakes];
+        const prunedMistakes = combinedMistakes.slice(-MISTAKE_LIMIT);
+
+        // Update vocabulary: add new ones with spaced repetition initial values
+        const existingVocabularyWords = new Set(currentProgress.learnedVocabulary.map(v => v.word));
+        const uniqueNewVocabulary = newVocabulary
+            .filter(v => !existingVocabularyWords.has(v.word))
+            .map(v => ({
+                ...v,
+                nextReview: new Date().toISOString(),
+                interval: 1,
+            }));
+            
+        let perfectLessonCount = currentProgress.perfectLessons ?? 0;
+        if (isPerfect) {
+            perfectLessonCount += 1;
+        }
+
+        const updatedProgress: UserProgress = {
+            ...currentProgress,
+            xp: currentProgress.xp + xpGained,
+            completedTopics: [...new Set([...currentProgress.completedTopics, selectedTopic.id])],
+            mistakes: prunedMistakes,
+            learnedVocabulary: [...currentProgress.learnedVocabulary, ...uniqueNewVocabulary],
+            perfectLessons: perfectLessonCount,
+        };
+
+        setUserProgress(prev => ({ ...prev, [langId]: updatedProgress }));
+        setPage(Page.Dashboard);
+
+        const questUpdates: { type: 'xp' | 'lesson' | 'practice' | 'perfect_lesson', amount: number }[] = [
+            { type: 'xp', amount: xpGained },
+            { type: 'lesson', amount: 1 },
+        ];
+        if (isPerfect) {
+            questUpdates.push({ type: 'perfect_lesson', amount: 1 });
+        }
+        updateQuestProgress(questUpdates);
+
+    }, [user, selectedLanguage, selectedTopic, userProgress, updateQuestProgress]);
     
     const handleChangeLanguage = useCallback(() => {
         setSelectedLanguage(null);
@@ -507,6 +615,9 @@ const App: React.FC = () => {
     }, []);
     
     const handleAuthSuccess = (authedUser: User, isNewUser: boolean, newUserDetails?: { user: User; password?: string }) => {
+        let finalUser: User;
+        let finalProgress: Record<string, UserProgress>;
+
         if (isNewUser && newUserDetails) {
             // New user registration
             const newRegisteredUser: RegisteredUser = {
@@ -517,22 +628,50 @@ const App: React.FC = () => {
                 friendRequests: [],
             };
             setRegisteredUsers(prev => [...prev, newRegisteredUser]);
-            setUserProgress(newRegisteredUser.progress);
-            setUser(newRegisteredUser.user);
+            finalUser = newRegisteredUser.user;
+            finalProgress = newRegisteredUser.progress;
         } else {
             // Existing user login
             const existingRegisteredUser = registeredUsers.find(ru => ru.user.email === authedUser.email);
             if (existingRegisteredUser) {
-                setUserProgress(existingRegisteredUser.progress);
-                setUser(existingRegisteredUser.user);
+                finalUser = existingRegisteredUser.user;
+                finalProgress = existingRegisteredUser.progress;
             } else {
                 // This case should not be reached with email/pass login but is a safe fallback
-                setUserProgress({});
-                setUser(authedUser);
+                finalUser = authedUser;
+                finalProgress = {};
+                const fallbackUser: RegisteredUser = { user: authedUser, progress: {}, friends: [], friendRequests: [] };
+                setRegisteredUsers(prev => [...prev, fallbackUser]);
             }
         }
     
         setIsAuthModalOpen(false);
+        setUser(finalUser);
+        setUserProgress(finalProgress);
+
+        // Continue the onboarding flow after successful authentication
+        if (languageChoiceForOnboarding) {
+            const language = languageChoiceForOnboarding;
+            setSelectedLanguage(language);
+            setLanguageChoiceForOnboarding(null); // Clear temporary state
+
+            const langProgress = finalProgress[language.id];
+
+            if (!langProgress) {
+                // User doesn't have progress for this language yet, create it and go to onboarding
+                setUserProgress(prev => ({
+                    ...prev,
+                    [language.id]: { xp: 0, streak: 0, completedTopics: [], mistakes: [], learnedVocabulary: [], league: LeagueTier.Bronze, unlockedAchievements: [], practiceSessions: 0, perfectLessons: 0, activityLog: [], flashcardDecks: [] }
+                }));
+                setPage(Page.Onboarding);
+            } else if (langProgress.completedTopics.length === 0) {
+                // Progress exists but is empty, go to onboarding
+                setPage(Page.Onboarding);
+            } else {
+                // User has existing progress, go to dashboard
+                setPage(Page.Dashboard);
+            }
+        }
     };
 
     const handleLogout = useCallback(() => {
@@ -551,6 +690,18 @@ const App: React.FC = () => {
         // ... existing vocab update logic
     }, [selectedLanguage]);
 
+    const handleUpdateFlashcardDecks = useCallback((decks: FlashcardDeck[]) => {
+        if (!user || !selectedLanguage) return;
+        const langId = selectedLanguage.id;
+        setUserProgress(prev => ({
+            ...prev,
+            [langId]: {
+                ...prev[langId],
+                flashcardDecks: decks,
+            }
+        }));
+    }, [user, selectedLanguage]);
+
     const handleSkipPlacementTest = useCallback(() => {
         setPage(Page.Dashboard);
     }, []);
@@ -561,7 +712,7 @@ const App: React.FC = () => {
             setUserProgress(prev => ({
                 ...prev,
                 [selectedLanguage.id]: {
-                    ...(prev[selectedLanguage.id] || { xp: 0, streak: 0, completedTopics: [], mistakes: [], learnedVocabulary: [], league: LeagueTier.Bronze, unlockedAchievements: [], practiceSessions: 0, perfectLessons: 0, activityLog: [] }),
+                    ...(prev[selectedLanguage.id] || { xp: 0, streak: 0, completedTopics: [], mistakes: [], learnedVocabulary: [], league: LeagueTier.Bronze, unlockedAchievements: [], practiceSessions: 0, perfectLessons: 0, activityLog: [], flashcardDecks: [] }),
                     xp: (prev[selectedLanguage.id]?.xp || 0) + xpGained,
                     completedTopics: [...new Set(completedTopics)],
                 }
@@ -575,12 +726,22 @@ const App: React.FC = () => {
     }, []);
 
     const handleUpdateUser = useCallback((updatedUser: Partial<User>) => {
-        setUser(prevUser => {
-            if (!prevUser) return null;
-            const newUser = { ...prevUser, ...updatedUser };
-            return newUser;
-        });
-    }, []);
+        if (!user) return; // Can't update if no user is logged in
+    
+        const newUser = { ...user, ...updatedUser };
+        
+        // 1. Update the main 'user' state for the active session.
+        setUser(newUser);
+    
+        // 2. Update the 'registeredUsers' array, which is the master list.
+        setRegisteredUsers(prevRegisteredUsers => 
+            prevRegisteredUsers.map(ru => 
+                ru.user.email === user.email 
+                    ? { ...ru, user: newUser } // Replace the user object for the matching user
+                    : ru
+            )
+        );
+    }, [user]); // Dependency on user is needed to have the correct starting point for the update
 
     // --- Social Handlers ---
     const handleSendFriendRequest = useCallback((toEmail: string) => {
@@ -603,13 +764,13 @@ const App: React.FC = () => {
             return prev.map(ru => {
                 // Add friend to current user
                 if (ru.user.email === currentUserEmail) {
-                    const updatedFriends = [...ru.friends, fromEmail];
+                    const updatedFriends = [...(ru.friends || []), fromEmail];
                     const updatedRequests = (ru.friendRequests || []).filter(req => req.from !== fromEmail);
                     return { ...ru, friends: updatedFriends, friendRequests: updatedRequests };
                 }
                 // Add current user to the sender's friend list
                 if (ru.user.email === fromEmail) {
-                    const updatedFriends = [...ru.friends, currentUserEmail];
+                    const updatedFriends = [...(ru.friends || []), currentUserEmail];
                     return { ...ru, friends: updatedFriends };
                 }
                 return ru;
@@ -684,6 +845,15 @@ const App: React.FC = () => {
     }, [user, messages]);
 
     const renderPageContent = () => {
+        if (!user && (page !== Page.LanguageSelection)) {
+             // If user is logged out, but not on the language selection page, force them there.
+             // This avoids getting stuck on a page that requires a user.
+            if(page !== Page.Home) { // HomePage is the initial entry point, so allow it.
+                 setPage(Page.LanguageSelection);
+                 return null;
+            }
+        }
+
         const currentProgress = selectedLanguage ? userProgress[selectedLanguage.id] : null;
 
         switch (page) {
@@ -708,16 +878,21 @@ const App: React.FC = () => {
                 break;
             case Page.PracticeHub:
                 if (selectedLanguage) {
-                    return <PracticeHubPage language={selectedLanguage} progress={currentProgress} user={user} onStartPractice={handleStartPractice} />;
+                    return <PracticeHubPage language={selectedLanguage} progress={currentProgress} user={user} onStartPractice={handleStartPractice} onNavigate={handleNavigate} />;
                 }
                 break;
              case Page.PracticeSession:
                 if (selectedLanguage && practiceMode) {
-                    return <PracticeSessionPage mode={practiceMode} language={selectedLanguage} progress={currentProgress} onEndPractice={handleEndPractice} onUpdateMistakes={handleUpdateMistakes} onUpdateVocabularyReview={handleUpdateVocabularyReview} />;
+                    return <PracticeSessionPage mode={practiceMode} language={selectedLanguage} progress={currentProgress} onEndPractice={handleEndPractice} onUpdateMistakes={handleUpdateMistakes} onUpdateVocabularyReview={handleUpdateVocabularyReview} selectedFlashcardDeck={selectedFlashcardDeck} onUpdateFlashcardDecks={handleUpdateFlashcardDecks} />;
+                }
+                break;
+            case Page.FlashcardDecks:
+                if (selectedLanguage && currentProgress) {
+                    return <FlashcardDecksPage language={selectedLanguage} progress={currentProgress} onUpdateDecks={handleUpdateFlashcardDecks} onStartPractice={handleStartFlashcardPractice} onBack={() => setPage(Page.PracticeHub)} />;
                 }
                 break;
             case Page.Profile:
-                return <ProfilePage user={user} userProgress={userProgress} languages={LANGUAGES} />;
+                return <ProfilePage user={user} userProgress={userProgress} languages={LANGUAGES} onUpdateUser={handleUpdateUser} />;
             case Page.Quests:
                 return <QuestsPage user={user} userProgress={userProgress} selectedLanguage={selectedLanguage} />;
             case Page.Achievements:
@@ -740,7 +915,7 @@ const App: React.FC = () => {
                 }
                 break;
             case Page.Settings:
-                return <SettingsPage user={user} appSettings={appSettings} onUpdateUser={handleUpdateUser} onUpdateSettings={handleUpdateSettings} onLogout={handleLogout} />;
+                return <SettingsPage appSettings={appSettings} onUpdateSettings={handleUpdateSettings} onLogout={handleLogout} registeredUsers={registeredUsers} />;
             case Page.Help:
                 return <HelpPage />;
             default:
@@ -749,8 +924,9 @@ const App: React.FC = () => {
         }
         
         // If a page requires a selected language but none is present, redirect to language selection.
-        // The pages that fall through the switch above are the ones that need a selected language.
-        setPage(Page.LanguageSelection);
+        if (user) {
+            setPage(Page.LanguageSelection);
+        }
         return null;
     };
     
@@ -758,7 +934,7 @@ const App: React.FC = () => {
         return <HomePage onGetStarted={() => setPage(Page.LanguageSelection)} />;
     }
 
-    const isMainView = [Page.Dashboard, Page.PracticeHub, Page.PracticeSession, Page.Profile, Page.Leaderboard, Page.Dictionary, Page.Quests, Page.Achievements, Page.Settings, Page.Help, Page.Friends, Page.Messages].includes(page);
+    const isMainView = [Page.Dashboard, Page.PracticeHub, Page.PracticeSession, Page.Profile, Page.Leaderboard, Page.Dictionary, Page.Quests, Page.Achievements, Page.Settings, Page.Help, Page.Friends, Page.Messages, Page.FlashcardDecks].includes(page);
     const currentProgress = selectedLanguage ? userProgress[selectedLanguage.id] : null;
 
     return (

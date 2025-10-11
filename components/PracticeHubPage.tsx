@@ -1,12 +1,13 @@
 import React, { useMemo } from 'react';
-import { Language, User, UserProgress, PracticeMode } from '../types';
-import { MicrophoneIcon, HeadphonesIcon, TargetIcon, CardsIcon, BookOpenIcon, RoleplayIcon, WritingIcon, CameraIcon } from './icons';
+import { Language, User, UserProgress, PracticeMode, Page } from '../types';
+import { MicrophoneIcon, HeadphonesIcon, TargetIcon, CardsIcon, BookOpenIcon, RoleplayIcon, WritingIcon } from './icons';
 
 interface PracticeHubPageProps {
     language: Language;
     progress: UserProgress | null;
     user: User | null;
     onStartPractice: (mode: PracticeMode) => void;
+    onNavigate: (page: Page) => void;
 }
 
 interface PracticeCardProps {
@@ -22,36 +23,39 @@ interface PracticeCardProps {
 const PracticeCard: React.FC<PracticeCardProps> = ({ title, description, icon: Icon, color, count, onClick, disabled = false }) => {
     
     return (
-        <button
-            onClick={onClick}
-            disabled={disabled}
-            className={`relative p-6 rounded-2xl text-left transition-all duration-300 transform hover:-translate-y-1 w-full overflow-hidden ${disabled ? 'bg-slate-100 dark:bg-slate-800 cursor-not-allowed' : 'bg-white dark:bg-slate-800 shadow-lg hover:shadow-xl'}`}
-        >
-            {disabled && <div className="absolute inset-0 bg-slate-200/50 dark:bg-slate-900/50 z-10"></div>}
-            
-            <div className="relative z-0">
-                <div className={`p-3 rounded-lg inline-block mb-4 ${color}`}>
-                    <Icon className="w-8 h-8 text-white" />
+        <div className="relative group">
+             <div className={`absolute -inset-0.5 bg-gradient-to-r from-sky-600 to-teal-600 rounded-2xl blur opacity-0 group-hover:opacity-75 transition duration-300 ${disabled ? 'hidden' : ''}`}></div>
+            <button
+                onClick={onClick}
+                disabled={disabled}
+                className={`relative p-6 rounded-2xl text-left transition-all duration-300 w-full overflow-hidden h-full ${disabled ? 'bg-slate-800/50 cursor-not-allowed' : 'bg-slate-800/80 backdrop-blur-sm shadow-lg group-hover:bg-slate-900'}`}
+            >
+                {disabled && <div className="absolute inset-0 bg-slate-900/50 z-10"></div>}
+                
+                <div className="relative z-0">
+                    <div className={`p-3 rounded-lg inline-block mb-4 ${color} shadow-lg`}>
+                        <Icon className="w-8 h-8 text-white" />
+                    </div>
+                    <h3 className={`text-xl font-bold ${disabled ? 'text-slate-500' : 'text-white'}`}>{title}</h3>
+                    <p className="text-slate-400 mb-4">{description}</p>
+                    {count !== undefined && (
+                        <span className="font-bold text-sm text-slate-300 bg-slate-700 px-3 py-1 rounded-full">
+                            {count} item{count !== 1 ? 's' : ''} to review
+                        </span>
+                    )}
+                     {disabled && count === 0 && (
+                         <span className="font-bold text-sm text-slate-400">
+                            Nothing to practice yet!
+                        </span>
+                     )}
                 </div>
-                <h3 className={`text-xl font-bold ${disabled ? 'text-slate-400 dark:text-slate-500' : 'text-slate-800 dark:text-white'}`}>{title}</h3>
-                <p className="text-slate-500 dark:text-slate-400 mb-4">{description}</p>
-                {count !== undefined && (
-                    <span className="font-bold text-sm text-slate-600 dark:text-slate-300 bg-slate-200 dark:bg-slate-700 px-3 py-1 rounded-full">
-                        {count} item{count !== 1 ? 's' : ''} to review
-                    </span>
-                )}
-                 {disabled && count === 0 && (
-                     <span className="font-bold text-sm text-slate-500 dark:text-slate-400">
-                        Nothing to practice yet!
-                    </span>
-                 )}
-            </div>
-        </button>
+            </button>
+        </div>
     );
 };
 
 
-const PracticeHubPage: React.FC<PracticeHubPageProps> = ({ language, progress, user, onStartPractice }) => {
+const PracticeHubPage: React.FC<PracticeHubPageProps> = ({ language, progress, user, onStartPractice, onNavigate }) => {
     const mistakeCount = progress?.mistakes?.length ?? 0;
     
     const vocabularyToReviewCount = useMemo(() => {
@@ -66,12 +70,6 @@ const PracticeHubPage: React.FC<PracticeHubPageProps> = ({ language, progress, u
 
 
     const practiceOptions: Omit<PracticeCardProps, 'onClick'>[] = [
-        {
-            title: 'Vision Practice',
-            description: 'Describe images and get AI feedback.',
-            icon: CameraIcon,
-            color: 'bg-amber-500',
-        },
         {
             title: 'Live Conversation',
             description: 'Speak directly with an AI tutor in real-time.',
@@ -89,6 +87,12 @@ const PracticeHubPage: React.FC<PracticeHubPageProps> = ({ language, progress, u
             description: 'Hone your writing skills with AI-graded prompts.',
             icon: WritingIcon,
             color: 'bg-indigo-500',
+        },
+        {
+            title: 'Flashcard Decks',
+            description: 'Create and study your own custom flashcards.',
+            icon: CardsIcon,
+            color: 'bg-cyan-500',
         },
         {
             title: 'Pronunciation',
@@ -127,7 +131,6 @@ const PracticeHubPage: React.FC<PracticeHubPageProps> = ({ language, progress, u
     ];
 
     const modeMap: Record<string, PracticeMode> = {
-        'Vision Practice': 'vision',
         'Live Conversation': 'conversation',
         'Listening': 'listening',
         'Your Mistakes': 'mistakes',
@@ -140,15 +143,21 @@ const PracticeHubPage: React.FC<PracticeHubPageProps> = ({ language, progress, u
 
     return (
         <div className="px-4 animate-fade-in">
-            <h2 className="text-3xl font-bold text-slate-800 dark:text-slate-100 mb-2">Practice Hub</h2>
-            <p className="text-slate-500 dark:text-slate-400 mb-10">Sharpen your {language.name} skills!</p>
+            <h2 className="text-3xl font-bold text-slate-100 mb-2">Practice Hub</h2>
+            <p className="text-slate-400 mb-10">Sharpen your {language.name} skills!</p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {practiceOptions.map(opt => (
                     <PracticeCard
                         key={opt.title}
                         {...opt}
-                        onClick={() => onStartPractice(modeMap[opt.title])}
+                        onClick={() => {
+                            if (opt.title === 'Flashcard Decks') {
+                                onNavigate(Page.FlashcardDecks);
+                            } else {
+                                onStartPractice(modeMap[opt.title]);
+                            }
+                        }}
                     />
                 ))}
             </div>

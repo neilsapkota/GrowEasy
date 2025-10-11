@@ -1,5 +1,5 @@
 import React from 'react';
-import { Language, UserProgress, PracticeMode, MistakeItem, VocabularyItem } from '../types';
+import { Language, UserProgress, PracticeMode, MistakeItem, VocabularyItem, FlashcardDeck } from '../types';
 import ConversationPractice from './practice/ConversationPractice';
 import ListeningPractice from './practice/ListeningPractice';
 import MistakesPractice from './practice/MistakesPractice';
@@ -8,7 +8,7 @@ import StoriesPractice from './practice/StoriesPractice';
 import PronunciationPractice from './practice/PronunciationPractice';
 import RoleplayPractice from './practice/RoleplayPractice';
 import WritingPractice from './practice/WritingPractice';
-import { VisionPractice } from './practice/VisionPractice';
+import FlashcardPractice from './practice/FlashcardPractice';
 
 interface PracticeSessionPageProps {
     mode: PracticeMode;
@@ -17,9 +17,11 @@ interface PracticeSessionPageProps {
     onEndPractice: () => void;
     onUpdateMistakes: (mistakes: MistakeItem[]) => void;
     onUpdateVocabularyReview: (word: string, performance: 'again' | 'good' | 'easy') => void;
+    selectedFlashcardDeck?: FlashcardDeck | null;
+    onUpdateFlashcardDecks?: (decks: FlashcardDeck[]) => void;
 }
 
-const PracticeSessionPage: React.FC<PracticeSessionPageProps> = ({ mode, language, progress, onEndPractice, onUpdateMistakes, onUpdateVocabularyReview }) => {
+const PracticeSessionPage: React.FC<PracticeSessionPageProps> = ({ mode, language, progress, onEndPractice, onUpdateMistakes, onUpdateVocabularyReview, selectedFlashcardDeck, onUpdateFlashcardDecks }) => {
     const renderPracticeMode = () => {
         switch (mode) {
             case 'conversation':
@@ -38,8 +40,16 @@ const PracticeSessionPage: React.FC<PracticeSessionPageProps> = ({ mode, languag
                 return <RoleplayPractice language={language} onEnd={onEndPractice} />;
             case 'writing':
                 return <WritingPractice language={language} onEnd={onEndPractice} />;
-            case 'vision':
-                return <VisionPractice language={language} onEnd={onEndPractice} />;
+            case 'flashcards':
+                if (selectedFlashcardDeck && onUpdateFlashcardDecks && progress?.flashcardDecks) {
+                    return <FlashcardPractice 
+                                deck={selectedFlashcardDeck} 
+                                allDecks={progress.flashcardDecks}
+                                onEnd={onEndPractice} 
+                                onUpdateDecks={onUpdateFlashcardDecks} 
+                            />;
+                }
+                return <div>Error: No flashcard deck selected.</div>;
             default:
                 return (
                     <div>

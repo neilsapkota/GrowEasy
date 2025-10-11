@@ -71,7 +71,6 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onAuthSuccess, r
                 return;
             }
 
-// FIX: Remove isPro property as it does not exist on the User type.
             const newUser: User = {
                 name: name.trim(),
                 email: email.trim().toLowerCase(),

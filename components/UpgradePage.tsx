@@ -11,7 +11,7 @@ const UpgradePage: React.FC<UpgradePageProps> = ({ onUpgrade, onBack }) => {
     const [billingCycle, setBillingCycle] = useState<'monthly' | 'annually'>('annually');
 
     const proFeatures = [
-        { icon: SparklesIcon, text: 'Unlock all practice modes, including Vision AI' },
+        { icon: SparklesIcon, text: 'Unlock all advanced AI practice modes' },
         { icon: CheckCircleIcon, text: 'Unlimited practice sessions' },
         { icon: UsersIcon, text: 'Access to exclusive community features' },
         { icon: LockIcon, text: 'Early access to new features' },

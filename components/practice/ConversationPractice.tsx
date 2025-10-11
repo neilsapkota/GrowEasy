@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Language } from '../../types';
-// Fix: Removed 'LiveSession' as it is not an exported member of '@google/genai'.
 import { GoogleGenAI, LiveServerMessage, Modality, Blob } from "@google/genai";
 import { SpinnerIcon, MicrophoneIcon } from '../icons';
 
@@ -76,7 +75,6 @@ const LiveConversationPractice: React.FC<LiveConversationPracticeProps> = ({ lan
     
     const currentInputRef = useRef('');
     const currentOutputRef = useRef('');
-    // Fix: Using `any` because `LiveSession` is not an exported type.
     const sessionPromiseRef = useRef<any>(null);
 
     // Audio processing refs
@@ -96,15 +94,19 @@ const LiveConversationPractice: React.FC<LiveConversationPracticeProps> = ({ lan
 
     const disconnect = useCallback(() => {
         sessionPromiseRef.current?.then((session: any) => session.close());
-        inputAudioContextRef.current?.close().catch(console.error);
-        outputAudioContextRef.current?.close().catch(console.error);
         if(scriptProcessorRef.current) {
             scriptProcessorRef.current.onaudioprocess = null;
-            // FIX: Pass argument to disconnect to resolve potential tooling errors.
-            scriptProcessorRef.current.disconnect(0);
+            // FIX: The disconnect method on AudioNode was being called without arguments, but the type definitions expect one.
+            if (inputAudioContextRef.current) {
+                scriptProcessorRef.current.disconnect(inputAudioContextRef.current.destination);
+            }
         }
-        // FIX: Pass argument to disconnect to resolve potential tooling errors.
-        mediaStreamSourceRef.current?.disconnect(0);
+        // FIX: The disconnect method on AudioNode was being called without arguments.
+        if (mediaStreamSourceRef.current && scriptProcessorRef.current) {
+            mediaStreamSourceRef.current.disconnect(scriptProcessorRef.current);
+        }
+        inputAudioContextRef.current?.close().catch(console.error);
+        outputAudioContextRef.current?.close().catch(console.error);
         setConnectionState('disconnected');
     }, []);
 

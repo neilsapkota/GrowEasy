@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Language, PronunciationFeedback } from '../../types';
 import { generatePracticeContent, getPronunciationFeedback } from '../../services/geminiService';
@@ -57,6 +58,7 @@ const PronunciationPractice: React.FC<PronunciationPracticeProps> = ({ language,
     const [feedback, setFeedback] = useState<PronunciationFeedback | null>(null);
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
     const audioChunksRef = useRef<Blob[]>([]);
+    const streamRef = useRef<MediaStream | null>(null);
 
     useEffect(() => {
         const fetchPhrases = async () => {
@@ -77,6 +79,18 @@ const PronunciationPractice: React.FC<PronunciationPracticeProps> = ({ language,
         fetchPhrases();
     }, [language]);
 
+    // Robust cleanup effect
+    useEffect(() => {
+        return () => {
+            if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+                mediaRecorderRef.current.stop();
+            }
+            if (streamRef.current) {
+                streamRef.current.getTracks().forEach(track => track.stop());
+            }
+        };
+    }, []);
+
     const currentPhrase = phrases[currentIndex];
 
     const handleSpeak = () => {
@@ -92,11 +106,13 @@ const PronunciationPractice: React.FC<PronunciationPracticeProps> = ({ language,
         setError(null);
         if (isRecording) {
             mediaRecorderRef.current?.stop();
+            setIsRecording(false);
             return;
         }
 
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            streamRef.current = stream; // Store the stream for cleanup
             mediaRecorderRef.current = new MediaRecorder(stream);
             audioChunksRef.current = [];
 
@@ -119,6 +135,7 @@ const PronunciationPractice: React.FC<PronunciationPracticeProps> = ({ language,
                 }
                 // Clean up stream
                 stream.getTracks().forEach(track => track.stop());
+                streamRef.current = null;
                 setIsRecording(false);
             };
 
@@ -187,7 +204,7 @@ const PronunciationPractice: React.FC<PronunciationPracticeProps> = ({ language,
            
             <div className="mt-6 flex flex-col items-center gap-4 w-full">
                 {!feedback && !isAnalyzing && (
-                    <button onClick={startRecording} className={`w-24 h-24 rounded-full flex items-center justify-center transition-colors duration-300 ${isRecording ? 'bg-red-500 animate-pulse-live' : 'bg-blue-500 hover:bg-blue-600'}`}>
+                    <button onClick={startRecording} className={`w-24 h-24 rounded-full flex items-center justify-center transition-colors duration-300 ${isRecording ? 'bg-red-500 animate-pulse' : 'bg-blue-500 hover:bg-blue-600'}`}>
                         <MicrophoneIcon className="w-12 h-12 text-white" />
                     </button>
                 )}

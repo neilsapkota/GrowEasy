@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import HomePage from './components/HomePage';
 import LanguageSelectionPage from './components/LanguageSelectionPage';
@@ -464,21 +465,16 @@ const App: React.FC = () => {
             setSelectedLanguage(language);
             const langProgress = userProgress[language.id];
     
+            // If progress for this language doesn't exist, create it.
             if (!langProgress) {
-                // Create progress for new language
                  setUserProgress(prev => ({
                     ...prev,
                     [language.id]: { xp: 0, streak: 0, completedTopics: [], mistakes: [], learnedVocabulary: [], league: LeagueTier.Bronze, unlockedAchievements: [], practiceSessions: 0, perfectLessons: 0, activityLog: [], flashcardDecks: [] }
                 }));
-                // Go to onboarding for the new language
-                setPage(Page.Onboarding);
-            } else if (langProgress.completedTopics.length === 0) {
-                // Go to onboarding if they haven't started
-                setPage(Page.Onboarding);
-            } else {
-                // Go to dashboard if they have progress
-                setPage(Page.Dashboard);
             }
+            // ALWAYS go to the dashboard for a logged-in user.
+            // The dashboard will correctly display their progress (or lack thereof) for the selected language.
+            setPage(Page.Dashboard);
         }
     }, [user, userProgress]);
 
@@ -877,7 +873,7 @@ const App: React.FC = () => {
                 }
                 break;
             case Page.Settings:
-                return <SettingsPage appSettings={appSettings} onUpdateSettings={handleUpdateSettings} onLogout={handleLogout} registeredUsers={registeredUsers} />;
+                return <SettingsPage appSettings={appSettings} onUpdateSettings={handleUpdateSettings} onLogout={handleLogout} />;
             case Page.Help:
                 return <HelpPage />;
             case Page.About:

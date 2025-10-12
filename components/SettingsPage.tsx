@@ -1,15 +1,14 @@
+
 import React from 'react';
-import { AppSettings, Theme, RegisteredUser } from '../types';
+import { AppSettings, Theme } from '../types';
 
 interface SettingsPageProps {
     appSettings: AppSettings;
     onUpdateSettings: (newSettings: Partial<AppSettings>) => void;
     onLogout: () => void;
-    // Add registeredUsers to props to be able to export it
-    registeredUsers: RegisteredUser[];
 }
 
-const SettingsPage: React.FC<SettingsPageProps> = ({ appSettings, onUpdateSettings, onLogout, registeredUsers }) => {
+const SettingsPage: React.FC<SettingsPageProps> = ({ appSettings, onUpdateSettings, onLogout }) => {
     
     const handleThemeChange = (theme: Theme) => {
         onUpdateSettings({ theme });
@@ -17,13 +16,6 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ appSettings, onUpdateSettin
 
     const handleSoundToggle = () => {
         onUpdateSettings({ soundEffectsEnabled: !appSettings.soundEffectsEnabled });
-    };
-
-    const handleExportUsers = () => {
-        // The `null, 2` argument formats the JSON string with an indent of 2 spaces for readability.
-        console.log("--- COPY AND PASTE THIS INTO DUMMY_REGISTERED_USERS in App.tsx ---");
-        console.log(JSON.stringify(registeredUsers, null, 2));
-        alert("User data has been printed to the developer console. Open the console (F12) to copy it.");
     };
 
     return (
@@ -80,18 +72,6 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ appSettings, onUpdateSettin
                         </button>
                      </div>
                 </section>
-                
-                {/* Developer Tools Section */}
-                <section>
-                    <h3 className="text-xl font-bold text-red-500 border-b border-slate-200 dark:border-slate-700 pb-2 mb-4">Developer Tools</h3>
-                     <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-md border-2 border-red-500/50">
-                        <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">This allows you to create a "save state" of your test users. Click this before ending a session, copy the console output, and paste it into `DUMMY_REGISTERED_USERS` in `App.tsx`.</p>
-                        <button onClick={handleExportUsers} className="px-4 py-2 font-bold text-white bg-red-600 rounded-lg hover:bg-red-700">
-                            Export Users to Console
-                        </button>
-                     </div>
-                </section>
-
             </div>
         </div>
     );

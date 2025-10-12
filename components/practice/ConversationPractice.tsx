@@ -66,9 +66,24 @@ type TranscriptItem = {
     text: string;
 };
 
+const StartScreen: React.FC<{ onStart: () => void, languageName: string }> = ({ onStart, languageName }) => (
+    <div className="text-center p-8 bg-white dark:bg-slate-800 rounded-2xl shadow-xl max-w-md mx-auto animate-fade-in flex flex-col items-center">
+        <MicrophoneIcon className="w-20 h-20 text-teal-500 mx-auto mb-4" />
+        <h2 className="text-3xl font-extrabold text-slate-800 dark:text-white">Live Conversation</h2>
+        <p className="text-slate-500 dark:text-slate-400 mt-2 mb-6">Ready to practice speaking {languageName}?</p>
+        <button
+            onClick={onStart}
+            className="w-full max-w-xs px-6 py-4 text-lg font-bold text-white uppercase bg-teal-500 rounded-2xl border-b-4 border-teal-700 hover:bg-teal-600 transition-all active:translate-y-0.5"
+        >
+            Start Chat
+        </button>
+    </div>
+);
+
+
 const LiveConversationPractice: React.FC<LiveConversationPracticeProps> = ({ language, onEnd }) => {
-    const [connectionState, setConnectionState] = useState<'connecting' | 'connected' | 'disconnected' | 'error'>('connecting');
-    const [statusText, setStatusText] = useState('Connecting to AI tutor...');
+    const [connectionState, setConnectionState] = useState<'idle' | 'connecting' | 'connected' | 'disconnected' | 'error'>('idle');
+    const [statusText, setStatusText] = useState('Ready when you are!');
     const [transcript, setTranscript] = useState<TranscriptItem[]>([]);
     
     const currentInputRef = useRef('');
@@ -76,11 +91,12 @@ const LiveConversationPractice: React.FC<LiveConversationPracticeProps> = ({ lan
     const sessionPromiseRef = useRef<any>(null);
 
     // Audio processing refs
-    const inputAudioContextRef = useRef<AudioContext>();
-    const outputAudioContextRef = useRef<AudioContext>();
-    const scriptProcessorRef = useRef<ScriptProcessorNode>();
-    const mediaStreamSourceRef = useRef<MediaStreamAudioSourceNode>();
-    const outputNodeRef = useRef<GainNode>();
+    const streamRef = useRef<MediaStream | null>(null);
+    const inputAudioContextRef = useRef<AudioContext | null>(null);
+    const outputAudioContextRef = useRef<AudioContext | null>(null);
+    const scriptProcessorRef = useRef<ScriptProcessorNode | null>(null);
+    const mediaStreamSourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
+    const outputNodeRef = useRef<GainNode | null>(null);
     const nextStartTimeRef = useRef(0);
     const audioSourcesRef = useRef(new Set<AudioBufferSourceNode>());
 
@@ -92,130 +108,174 @@ const LiveConversationPractice: React.FC<LiveConversationPracticeProps> = ({ lan
 
     const disconnect = useCallback(() => {
         sessionPromiseRef.current?.then((session: any) => session.close());
-        // FIX: The disconnect method on AudioNode was being called without arguments. This has been fixed by providing the correct destination nodes to disconnect from.
-        if (mediaStreamSourceRef.current && scriptProcessorRef.current) {
-            mediaStreamSourceRef.current.disconnect(scriptProcessorRef.current);
+        
+        if (streamRef.current) {
+            streamRef.current.getTracks().forEach(track => track.stop());
         }
+        
         if (scriptProcessorRef.current) {
             scriptProcessorRef.current.onaudioprocess = null;
-            if (inputAudioContextRef.current) {
-                scriptProcessorRef.current.disconnect(inputAudioContextRef.current.destination);
-            }
+            scriptProcessorRef.current.disconnect();
         }
-        inputAudioContextRef.current?.close().catch(console.error);
-        outputAudioContextRef.current?.close().catch(console.error);
+        if (mediaStreamSourceRef.current) {
+            mediaStreamSourceRef.current.disconnect();
+        }
+        
+        inputAudioContextRef.current?.close().catch(e => console.error("Error closing input audio context:", e));
+        outputAudioContextRef.current?.close().catch(e => console.error("Error closing output audio context:", e));
+        
+        // Explicitly nullify all refs to prevent stale references
+        streamRef.current = null;
+        inputAudioContextRef.current = null;
+        outputAudioContextRef.current = null;
+        scriptProcessorRef.current = null;
+        mediaStreamSourceRef.current = null;
+        outputNodeRef.current = null;
+        sessionPromiseRef.current = null;
+
         setConnectionState('disconnected');
     }, []);
 
-    useEffect(() => {
-        const connect = async () => {
-            try {
-                 if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                    throw new Error('Your browser does not support the necessary audio APIs.');
-                }
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                
-                inputAudioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
-                if (inputAudioContextRef.current.state === 'suspended') {
-                    await inputAudioContextRef.current.resume();
-                }
-
-                outputAudioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
-                 if (outputAudioContextRef.current.state === 'suspended') {
-                    await outputAudioContextRef.current.resume();
-                }
-                
-                outputNodeRef.current = outputAudioContextRef.current.createGain();
-                outputNodeRef.current.connect(outputAudioContextRef.current.destination);
-
-                sessionPromiseRef.current = ai.live.connect({
-                    model: 'gemini-2.5-flash-native-audio-preview-09-2025',
-                    callbacks: {
-                        onopen: () => {
-                            setConnectionState('connected');
-                            setStatusText('Connected! You can start speaking.');
-                            mediaStreamSourceRef.current = inputAudioContextRef.current!.createMediaStreamSource(stream);
-                            scriptProcessorRef.current = inputAudioContextRef.current!.createScriptProcessor(4096, 1, 1);
-                            scriptProcessorRef.current.onaudioprocess = (audioProcessingEvent) => {
-                                const inputData = audioProcessingEvent.inputBuffer.getChannelData(0);
-                                const pcmBlob = createBlob(inputData);
-                                sessionPromiseRef.current?.then(((session: any) => session.sendRealtimeInput({ media: pcmBlob })));
-                            };
-                            mediaStreamSourceRef.current.connect(scriptProcessorRef.current);
-                            scriptProcessorRef.current.connect(inputAudioContextRef.current!.destination);
-                        },
-                        onmessage: async (message: LiveServerMessage) => {
-                            if (message.serverContent?.inputTranscription) {
-                                currentInputRef.current += message.serverContent.inputTranscription.text;
-                            }
-                            if (message.serverContent?.outputTranscription) {
-                                setStatusText('AI is speaking...');
-                                currentOutputRef.current += message.serverContent.outputTranscription.text;
-                            }
-                            if (message.serverContent?.turnComplete) {
-                                const fullInput = currentInputRef.current.trim();
-                                const fullOutput = currentOutputRef.current.trim();
-                                
-                                setTranscript(prev => {
-                                    const newTranscript = [...prev];
-                                    if(fullInput) newTranscript.push({ author: 'user', text: fullInput });
-                                    if(fullOutput) newTranscript.push({ author: 'ai', text: fullOutput });
-                                    return newTranscript;
-                                });
-                                
-                                currentInputRef.current = '';
-                                currentOutputRef.current = '';
-                                setStatusText('Your turn. You can speak now.');
-                            }
-                            const audioData = message.serverContent?.modelTurn?.parts[0]?.inlineData?.data;
-                            if (audioData && outputAudioContextRef.current && outputNodeRef.current) {
-                                nextStartTimeRef.current = Math.max(nextStartTimeRef.current, outputAudioContextRef.current.currentTime);
-                                const audioBuffer = await decodeAudioData(decode(audioData), outputAudioContextRef.current, 24000, 1);
-                                const source = outputAudioContextRef.current.createBufferSource();
-                                source.buffer = audioBuffer;
-                                source.connect(outputNodeRef.current);
-                                source.addEventListener('ended', () => { audioSourcesRef.current.delete(source); });
-                                source.start(nextStartTimeRef.current);
-                                nextStartTimeRef.current += audioBuffer.duration;
-                                audioSourcesRef.current.add(source);
-                            }
-                        },
-                        onerror: (e: ErrorEvent) => {
-                            console.error('Live session error:', e);
-                            setStatusText('A connection error occurred.');
-                            setConnectionState('error');
-                            disconnect();
-                        },
-                        onclose: (e: CloseEvent) => {
-                            console.log('Live session closed');
-                            stream.getTracks().forEach(track => track.stop());
-                        },
-                    },
-                    config: {
-                        responseModalities: [Modality.AUDIO],
-                        inputAudioTranscription: {},
-                        outputAudioTranscription: {},
-                        speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Zephyr' } } },
-                        systemInstruction: `You are Alex, a friendly and patient language practice partner. You are talking to a beginner learning ${language.name}. Your goal is to have a simple, natural conversation. Start by saying "Hello!" in ${language.name} and ask them how they are.`,
-                    },
-                });
-            } catch (error) {
-                console.error('Failed to initialize live conversation:', error);
-                let errorMessage = 'Could not access microphone. Please check permissions.';
-                if (error instanceof Error) {
-                    errorMessage = error.message;
-                }
-                setStatusText(errorMessage);
-                setConnectionState('error');
+    const connect = useCallback(async () => {
+        setConnectionState('connecting');
+        setStatusText('Connecting to AI tutor...');
+        let stream: MediaStream;
+        try {
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                throw new Error('Your browser does not support the necessary audio APIs for this feature.');
             }
-        };
+            // Get microphone access first to ensure a stream is active.
+            stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            streamRef.current = stream;
 
+        } catch (error) {
+            console.error('Microphone access error:', error);
+            let errorMessage = "Could not access the microphone. Please check your browser and system settings.";
+            if (error instanceof DOMException) {
+                if (error.name === 'NotAllowedError') {
+                    errorMessage = "Microphone permission was denied. Please enable it in your browser settings.";
+                } else if (error.name === 'NotFoundError') {
+                    errorMessage = "No microphone was found. Please ensure one is connected.";
+                }
+            }
+            // Add a specific check for iframe/preview limitations
+            if (window.self !== window.top) {
+                errorMessage += " Note: Microphone may not work in preview panes or sandboxed environments.";
+            }
+            setStatusText(errorMessage);
+            setConnectionState('error');
+            return; // Stop execution if we can't get a stream
+        }
+
+        try {
+            // Then, create and resume AudioContexts.
+            inputAudioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
+            if (inputAudioContextRef.current.state === 'suspended') {
+                await inputAudioContextRef.current.resume();
+            }
+            outputAudioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
+            if (outputAudioContextRef.current.state === 'suspended') {
+                await outputAudioContextRef.current.resume();
+            }
+            
+            outputNodeRef.current = outputAudioContextRef.current.createGain();
+            outputNodeRef.current.connect(outputAudioContextRef.current.destination);
+
+            sessionPromiseRef.current = ai.live.connect({
+                model: 'gemini-2.5-flash-native-audio-preview-09-2025',
+                callbacks: {
+                    onopen: () => {
+                        setConnectionState('connected');
+                        setStatusText('Connected! You can start speaking.');
+                        mediaStreamSourceRef.current = inputAudioContextRef.current!.createMediaStreamSource(stream);
+                        scriptProcessorRef.current = inputAudioContextRef.current!.createScriptProcessor(4096, 1, 1);
+                        scriptProcessorRef.current.onaudioprocess = (audioProcessingEvent) => {
+                            const inputData = audioProcessingEvent.inputBuffer.getChannelData(0);
+                            const pcmBlob = createBlob(inputData);
+                            sessionPromiseRef.current?.then(((session: any) => session.sendRealtimeInput({ media: pcmBlob })));
+                        };
+                        mediaStreamSourceRef.current.connect(scriptProcessorRef.current);
+                        scriptProcessorRef.current.connect(inputAudioContextRef.current!.destination);
+                    },
+                    onmessage: async (message: LiveServerMessage) => {
+                        if (message.serverContent?.inputTranscription) {
+                            currentInputRef.current += message.serverContent.inputTranscription.text;
+                        }
+                        if (message.serverContent?.outputTranscription) {
+                            setStatusText('AI is speaking...');
+                            currentOutputRef.current += message.serverContent.outputTranscription.text;
+                        }
+                        if (message.serverContent?.turnComplete) {
+                            const fullInput = currentInputRef.current.trim();
+                            const fullOutput = currentOutputRef.current.trim();
+                            
+                            setTranscript(prev => {
+                                const newTranscript = [...prev];
+                                if(fullInput) newTranscript.push({ author: 'user', text: fullInput });
+                                if(fullOutput) newTranscript.push({ author: 'ai', text: fullOutput });
+                                return newTranscript;
+                            });
+                            
+                            currentInputRef.current = '';
+                            currentOutputRef.current = '';
+                            setStatusText('Your turn. You can speak now.');
+                        }
+                        const audioData = message.serverContent?.modelTurn?.parts[0]?.inlineData?.data;
+                        if (audioData && outputAudioContextRef.current && outputNodeRef.current) {
+                            nextStartTimeRef.current = Math.max(nextStartTimeRef.current, outputAudioContextRef.current.currentTime);
+                            const audioBuffer = await decodeAudioData(decode(audioData), outputAudioContextRef.current, 24000, 1);
+                            const source = outputAudioContextRef.current.createBufferSource();
+                            source.buffer = audioBuffer;
+                            source.connect(outputNodeRef.current);
+                            source.addEventListener('ended', () => { audioSourcesRef.current.delete(source); });
+                            source.start(nextStartTimeRef.current);
+                            nextStartTimeRef.current += audioBuffer.duration;
+                            audioSourcesRef.current.add(source);
+                        }
+                    },
+                    onerror: (e: ErrorEvent) => {
+                        console.error('Live session error:', e);
+                        setStatusText('A connection error occurred.');
+                        setConnectionState('error');
+                        disconnect();
+                    },
+                    onclose: (e: CloseEvent) => {
+                        console.log('Live session closed');
+                    },
+                },
+                config: {
+                    responseModalities: [Modality.AUDIO],
+                    inputAudioTranscription: {},
+                    outputAudioTranscription: {},
+                    speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Zephyr' } } },
+                    systemInstruction: `You are Alex, a friendly and patient language practice partner. You are talking to a beginner learning ${language.name}. Your goal is to have a simple, natural conversation. Start by saying "Hello!" in ${language.name} and ask them how they are.`,
+                },
+            });
+        } catch (error) {
+            console.error('Failed to initialize audio contexts or live connection:', error);
+            setStatusText('Could not start audio source. Please try again.');
+            setConnectionState('error');
+            disconnect(); // Ensure cleanup
+        }
+    }, [language, disconnect]);
+
+    const handleStart = useCallback(() => {
         connect();
+    }, [connect]);
 
+    useEffect(() => {
         return () => {
             disconnect();
         };
-    }, [disconnect, language]);
+    }, [disconnect]);
+
+    if (connectionState === 'idle') {
+        return (
+             <div className="p-4 sm:p-6 h-[75vh] max-w-2xl mx-auto flex items-center justify-center">
+                <StartScreen onStart={handleStart} languageName={language.name} />
+            </div>
+        )
+    }
 
     return (
         <div className="p-4 sm:p-6 bg-white dark:bg-slate-800 rounded-2xl shadow-xl flex flex-col h-[75vh] max-w-2xl mx-auto">

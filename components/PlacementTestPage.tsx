@@ -1,8 +1,6 @@
 
-
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Language, PlacementTestResult } from '../types';
+import { Language, PlacementTestResult } from '../../types';
 import { GoogleGenAI, LiveServerMessage, Modality, Blob } from "@google/genai";
 import { evaluateLiveConversation } from '../services/geminiService';
 import Loader from './Loader';
@@ -136,11 +134,12 @@ const LivePlacementTestPage: React.FC<LivePlacementTestPageProps> = ({ language,
     const sessionPromiseRef = useRef<any>(null);
 
     // Audio processing refs
-    const inputAudioContextRef = useRef<AudioContext>();
-    const outputAudioContextRef = useRef<AudioContext>();
-    const scriptProcessorRef = useRef<ScriptProcessorNode>();
-    const mediaStreamSourceRef = useRef<MediaStreamAudioSourceNode>();
-    const outputNodeRef = useRef<GainNode>();
+    const streamRef = useRef<MediaStream | null>(null);
+    const inputAudioContextRef = useRef<AudioContext | null>(null);
+    const outputAudioContextRef = useRef<AudioContext | null>(null);
+    const scriptProcessorRef = useRef<ScriptProcessorNode | null>(null);
+    const mediaStreamSourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
+    const outputNodeRef = useRef<GainNode | null>(null);
     const nextStartTimeRef = useRef(0);
     const audioSourcesRef = useRef(new Set<AudioBufferSourceNode>());
 
@@ -151,20 +150,39 @@ const LivePlacementTestPage: React.FC<LivePlacementTestPageProps> = ({ language,
 
     const disconnect = useCallback(() => {
         sessionPromiseRef.current?.then((session: any) => session.close());
-        // FIX: The disconnect method on AudioNode was being called without arguments. This has been fixed by providing the correct destination nodes to disconnect from.
-        if (mediaStreamSourceRef.current && scriptProcessorRef.current) {
-            mediaStreamSourceRef.current.disconnect(scriptProcessorRef.current);
+
+        if (streamRef.current) {
+            streamRef.current.getTracks().forEach(track => track.stop());
         }
+        
         if (scriptProcessorRef.current) {
             scriptProcessorRef.current.onaudioprocess = null;
-            if (inputAudioContextRef.current) {
-                scriptProcessorRef.current.disconnect(inputAudioContextRef.current.destination);
-            }
+            scriptProcessorRef.current.disconnect();
         }
-        inputAudioContextRef.current?.close().catch(console.error);
-        outputAudioContextRef.current?.close().catch(console.error);
+        if (mediaStreamSourceRef.current) {
+            mediaStreamSourceRef.current.disconnect();
+        }
+        
+        inputAudioContextRef.current?.close().catch(e => console.error("Error closing input audio context:", e));
+        outputAudioContextRef.current?.close().catch(e => console.error("Error closing output audio context:", e));
+        
+        // Explicitly nullify all refs to prevent stale references
+        streamRef.current = null;
+        inputAudioContextRef.current = null;
+        outputAudioContextRef.current = null;
+        scriptProcessorRef.current = null;
+        mediaStreamSourceRef.current = null;
+        outputNodeRef.current = null;
+        sessionPromiseRef.current = null;
+
         setConnectionState('disconnected');
     }, []);
+
+    useEffect(() => {
+        return () => {
+            disconnect();
+        };
+    }, [disconnect]);
 
     const endTestAndEvaluate = useCallback(async () => {
         disconnect();
@@ -183,17 +201,39 @@ const LivePlacementTestPage: React.FC<LivePlacementTestPageProps> = ({ language,
     }, [disconnect, transcript, language, onSkip]);
 
     const connect = useCallback(async () => {
+        let stream: MediaStream;
         try {
             if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                throw new Error('Your browser does not support the necessary audio APIs.');
+                throw new Error('Your browser does not support the necessary audio APIs for this feature.');
             }
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            // Get microphone access first to ensure a stream is active.
+            stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            streamRef.current = stream;
 
+        } catch (error) {
+            console.error('Microphone access error:', error);
+            let errorMessage = "Could not access the microphone. Please check your browser and system settings.";
+            if (error instanceof DOMException) {
+                if (error.name === 'NotAllowedError') {
+                    errorMessage = "Microphone permission was denied. Please enable it in your browser settings.";
+                } else if (error.name === 'NotFoundError') {
+                    errorMessage = "No microphone was found. Please ensure one is connected.";
+                }
+            }
+            if (window.self !== window.top) {
+                errorMessage += " Note: Microphone may not work in preview panes or sandboxed environments.";
+            }
+            setStatusText(errorMessage);
+            setConnectionState('error');
+            return; // Stop execution if we can't get a stream
+        }
+
+        try {
+            // Then, create and resume AudioContexts.
             inputAudioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
             if (inputAudioContextRef.current.state === 'suspended') {
                 await inputAudioContextRef.current.resume();
             }
-
             outputAudioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
             if (outputAudioContextRef.current.state === 'suspended') {
                 await outputAudioContextRef.current.resume();
@@ -268,7 +308,6 @@ const LivePlacementTestPage: React.FC<LivePlacementTestPageProps> = ({ language,
                     },
                     onclose: (e: CloseEvent) => {
                         console.log('Live session closed');
-                        stream.getTracks().forEach(track => track.stop());
                     },
                 },
                 config: {
@@ -280,9 +319,10 @@ const LivePlacementTestPage: React.FC<LivePlacementTestPageProps> = ({ language,
                 },
             });
         } catch (error) {
-            console.error('Failed to initialize live conversation:', error);
-            setStatusText('Could not access microphone. Please check permissions.');
+            console.error('Failed to initialize audio contexts or live connection:', error);
+            setStatusText('Could not start audio source. Please try again.');
             setConnectionState('error');
+            disconnect();
         }
     }, [language, disconnect, endTestAndEvaluate]);
 

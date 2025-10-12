@@ -1,5 +1,3 @@
-
-
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import HomePage from './components/HomePage';
 import LanguageSelectionPage from './components/LanguageSelectionPage';
@@ -13,6 +11,7 @@ import QuestsPage from './components/QuestsPage';
 import AchievementsPage from './components/AchievementsPage';
 import SettingsPage from './components/SettingsPage';
 import HelpPage from './components/HelpPage';
+import AboutPage from './components/AboutPage';
 import AuthModal from './components/AuthModal';
 import AchievementToast from './components/AchievementToast';
 import LivePlacementTestPage from './components/PlacementTestPage';
@@ -23,7 +22,7 @@ import FlashcardDecksPage from './components/FlashcardDecksPage'; // New Import
 // FIX: Added missing type imports
 import { Page, User, Language, LessonTopic, UserProgress, MistakeItem, VocabularyItem, PracticeMode, Quest, LeagueTier, Achievement, RegisteredUser, AppSettings, Theme, Message, AchievementTier, FlashcardDeck } from './types';
 import { LANGUAGES, DAILY_QUESTS, ACHIEVEMENTS, MONTHLY_CHALLENGES } from './constants';
-import { HomeIcon, UserCircleIcon, ChartBarIcon, LogoutIcon, StarIcon, FireIcon, PracticeIcon, BookOpenIcon, TrophyIcon, QuestsIcon, SettingsIcon, HelpIcon, UsersIcon, ChatBubbleLeftRightIcon } from './components/icons';
+import { HomeIcon, UserCircleIcon, ChartBarIcon, LogoutIcon, StarIcon, FireIcon, PracticeIcon, BookOpenIcon, TrophyIcon, QuestsIcon, SettingsIcon, HelpIcon, UsersIcon, ChatBubbleLeftRightIcon, InfoIcon } from './components/icons';
 import ProfilePage from './components/ProfilePage';
 
 const QUESTS_MAP = new Map(DAILY_QUESTS.map(q => [q.id, q]));
@@ -32,16 +31,14 @@ const DUMMY_REGISTERED_USERS: RegisteredUser[] = [
   {
     user: {
       name: "Alice",
-      email: "alice@groweasy.com",
+      email: "alice@wordvine.com",
       avatarUrl: "https://api.dicebear.com/8.x/initials/svg?seed=Alice",
       bio: "Learning Spanish for my trip to Colombia!"
     },
-    password: "password123",
     progress: {
       "es": {
         xp: 125,
         streak: 3,
-        // FIX: Removed trailing quote from property key `completedTopics"`
         completedTopics: [
           "greetings",
           "numbers"
@@ -49,7 +46,6 @@ const DUMMY_REGISTERED_USERS: RegisteredUser[] = [
         mistakes: [],
         learnedVocabulary: [],
         league: LeagueTier.Bronze,
-        // FIX: Removed trailing quote from property key `unlockedAchievements"`
         unlockedAchievements: [
           "xp_100",
           "streak_3",
@@ -58,48 +54,41 @@ const DUMMY_REGISTERED_USERS: RegisteredUser[] = [
         practiceSessions: 2,
         perfectLessons: 1,
         activityLog: [],
-        // FIX: Removed trailing quote from property key `flashcardDecks"`
         flashcardDecks: []
       }
     },
     friends: [
-      "bob@groweasy.com"
+      "bob@wordvine.com"
     ],
-    // FIX: Removed trailing quote from property key `friendRequests"`
     friendRequests: []
   },
   {
     user: {
       name: "Bob",
-      email: "bob@groweasy.com",
+      email: "bob@wordvine.com",
       avatarUrl: "https://api.dicebear.com/8.x/initials/svg?seed=Bob",
       bio: "Trying to learn French."
     },
-    password: "password123",
     progress: {
       "fr": {
         xp: 80,
         streak: 1,
-        // FIX: Removed trailing quote from property key `completedTopics"`
         completedTopics: [
           "greetings"
         ],
         mistakes: [],
         learnedVocabulary: [],
         league: LeagueTier.Bronze,
-        // FIX: Removed trailing quote from property key `unlockedAchievements"`
         unlockedAchievements: [],
         practiceSessions: 0,
         perfectLessons: 0,
         activityLog: [],
-        // FIX: Removed trailing quote from property key `flashcardDecks"`
         flashcardDecks: []
       }
     },
     friends: [
-      "alice@groweasy.com"
+      "alice@wordvine.com"
     ],
-    // FIX: Removed trailing quote from property key `friendRequests"`
     friendRequests: []
   },
   {
@@ -109,34 +98,29 @@ const DUMMY_REGISTERED_USERS: RegisteredUser[] = [
       avatarUrl: "https://api.dicebear.com/8.x/initials/svg?seed=Neil",
       bio: ""
     },
-    password: "neil9212",
     progress: {
       "de": {
         xp: 0,
         streak: 0,
-        // FIX: Removed trailing quote from property key `completedTopics"`
         completedTopics: [],
         mistakes: [],
         learnedVocabulary: [],
         league: LeagueTier.Bronze,
-        // FIX: Removed trailing quote from property key `unlockedAchievements"`
         unlockedAchievements: [],
         practiceSessions: 0,
         perfectLessons: 0,
         activityLog: [],
-        // FIX: Removed trailing quote from property key `flashcardDecks"`
         flashcardDecks: []
       }
     },
     friends: [],
-    // FIX: Removed trailing quote from property key `friendRequests"`
     friendRequests: []
   }
 ];
 
 const DUMMY_MESSAGES: Message[] = [
-    { id: '1', from: 'alice@groeasy.com', to: 'bob@groweasy.com', content: 'Hey Bob, ready for the weekly leaderboard race?', timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), read: true },
-    { id: '2', from: 'bob@groweasy.com', to: 'alice@groweasy.com', content: 'You bet! I\'ve been practicing my Spanish. Watch out!', timestamp: new Date(Date.now() - 1000 * 60 * 60 * 1).toISOString(), read: false },
+    { id: '1', from: 'alice@wordvine.com', to: 'bob@wordvine.com', content: 'Hey Bob, ready for the weekly leaderboard race?', timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), read: true },
+    { id: '2', from: 'bob@wordvine.com', to: 'alice@wordvine.com', content: 'You bet! I\'ve been practicing my Spanish. Watch out!', timestamp: new Date(Date.now() - 1000 * 60 * 60 * 1).toISOString(), read: false },
 ];
 
 const MISTAKE_LIMIT = 100;
@@ -167,6 +151,7 @@ const Sidebar: React.FC<{
         { page: Page.Profile, icon: UserCircleIcon, label: 'PROFILE' },
         { page: Page.Settings, icon: SettingsIcon, label: 'SETTINGS' },
         { page: Page.Help, icon: HelpIcon, label: 'HELP' },
+        { page: Page.About, icon: InfoIcon, label: 'ABOUT' },
     ];
 
     const NavButton: React.FC<{item: {page: Page; icon: React.ElementType; label: string; count?: number}; isActive: boolean;}> = ({ item, isActive }) => (
@@ -193,7 +178,7 @@ const Sidebar: React.FC<{
     return (
         <aside className="w-64 bg-slate-900/70 backdrop-blur-sm flex-shrink-0 p-4 hidden lg:flex flex-col border-r border-slate-800">
             <h1 className="text-3xl font-extrabold gradient-text mb-10 px-2 pt-2">
-                GrowEasy
+                WordVine
             </h1>
             <nav className="flex-grow">
                 <ul className="space-y-2">
@@ -254,6 +239,7 @@ const Header: React.FC<{
         [Page.Profile]: "Profile",
         [Page.Settings]: "Settings",
         [Page.Help]: "Help",
+        [Page.About]: "About WordVine",
         [Page.FlashcardDecks]: "Flashcard Decks",
         [Page.Home]: "",
         [Page.LanguageSelection]: "",
@@ -324,7 +310,7 @@ const App: React.FC = () => {
     const [toasts, setToasts] = useState<{ id: number; achievement: Achievement }[]>([]);
     const [appSettings, setAppSettings] = useState<AppSettings>(() => {
         try {
-            const savedSettings = localStorage.getItem('growEasySettings');
+            const savedSettings = localStorage.getItem('wordVineSettings');
             return savedSettings ? JSON.parse(savedSettings) : { theme: 'system', soundEffectsEnabled: true };
         } catch {
             return { theme: 'system', soundEffectsEnabled: true };
@@ -335,7 +321,7 @@ const App: React.FC = () => {
     
     const [registeredUsers, setRegisteredUsers] = useState<RegisteredUser[]>(() => {
         try {
-            const savedUsers = localStorage.getItem('growEasyUsers');
+            const savedUsers = localStorage.getItem('wordVineUsers');
             if (savedUsers) {
                 return JSON.parse(savedUsers);
             }
@@ -347,7 +333,7 @@ const App: React.FC = () => {
 
     const [messages, setMessages] = useState<Message[]>(() => {
         try {
-            const savedMessages = localStorage.getItem('growEasyMessages');
+            const savedMessages = localStorage.getItem('wordVineMessages');
             return savedMessages ? JSON.parse(savedMessages) : DUMMY_MESSAGES;
         } catch {
             return DUMMY_MESSAGES;
@@ -385,7 +371,7 @@ const App: React.FC = () => {
 
 
     useEffect(() => {
-        const savedData = localStorage.getItem('growEasySession');
+        const savedData = localStorage.getItem('wordVineSession');
         if (savedData) {
             try {
                 const { user: savedUser, selectedLanguageId, userProgress: savedProgress } = JSON.parse(savedData);
@@ -400,7 +386,7 @@ const App: React.FC = () => {
                 }
             } catch (error) {
                 console.error("Failed to parse saved session data", error);
-                localStorage.removeItem('growEasySession');
+                localStorage.removeItem('wordVineSession');
             }
         } else {
             setPage(Page.Home);
@@ -415,7 +401,7 @@ const App: React.FC = () => {
                     selectedLanguageId: selectedLanguage?.id,
                     userProgress,
                 };
-                localStorage.setItem('growEasySession', JSON.stringify(dataToSave));
+                localStorage.setItem('wordVineSession', JSON.stringify(dataToSave));
             } catch (error) {
                 console.error("Failed to save session to localStorage", error);
             }
@@ -424,14 +410,14 @@ const App: React.FC = () => {
     
     // Persist settings
     useEffect(() => {
-        localStorage.setItem('growEasySettings', JSON.stringify(appSettings));
+        localStorage.setItem('wordVineSettings', JSON.stringify(appSettings));
     }, [appSettings]);
 
 
     // Persist the entire registered users database whenever it changes
     useEffect(() => {
         try {
-            localStorage.setItem('growEasyUsers', JSON.stringify(registeredUsers));
+            localStorage.setItem('wordVineUsers', JSON.stringify(registeredUsers));
         } catch (error) {
             console.error("Failed to save registered users to localStorage", error);
         }
@@ -439,7 +425,7 @@ const App: React.FC = () => {
 
     // Persist messages
     useEffect(() => {
-        localStorage.setItem('growEasyMessages', JSON.stringify(messages));
+        localStorage.setItem('wordVineMessages', JSON.stringify(messages));
     }, [messages]);
 
 
@@ -614,68 +600,38 @@ const App: React.FC = () => {
         setPage(Page.LanguageSelection);
     }, []);
     
-    const handleAuthSuccess = (authedUser: User, isNewUser: boolean, newUserDetails?: { user: User; password?: string }) => {
-        let finalUser: User;
-        let finalProgress: Record<string, UserProgress>;
-
-        if (isNewUser && newUserDetails) {
-            // New user registration
-            const newRegisteredUser: RegisteredUser = {
-                user: newUserDetails.user,
-                password: newUserDetails.password,
-                progress: {},
-                friends: [],
-                friendRequests: [],
-            };
-            setRegisteredUsers(prev => [...prev, newRegisteredUser]);
-            finalUser = newRegisteredUser.user;
-            finalProgress = newRegisteredUser.progress;
-        } else {
-            // Existing user login
-            const existingRegisteredUser = registeredUsers.find(ru => ru.user.email === authedUser.email);
-            if (existingRegisteredUser) {
-                finalUser = existingRegisteredUser.user;
-                finalProgress = existingRegisteredUser.progress;
-            } else {
-                // This case should not be reached with email/pass login but is a safe fallback
-                finalUser = authedUser;
-                finalProgress = {};
-                const fallbackUser: RegisteredUser = { user: authedUser, progress: {}, friends: [], friendRequests: [] };
-                setRegisteredUsers(prev => [...prev, fallbackUser]);
-            }
+    const handleAuthSuccess = (authedUser: RegisteredUser, isNewUser: boolean) => {
+        if (isNewUser) {
+            setRegisteredUsers(prev => [...prev, authedUser]);
         }
-    
-        setIsAuthModalOpen(false);
-        setUser(finalUser);
-        setUserProgress(finalProgress);
 
-        // Continue the onboarding flow after successful authentication
+        setIsAuthModalOpen(false);
+        setUser(authedUser.user);
+        setUserProgress(authedUser.progress);
+
         if (languageChoiceForOnboarding) {
             const language = languageChoiceForOnboarding;
             setSelectedLanguage(language);
-            setLanguageChoiceForOnboarding(null); // Clear temporary state
+            setLanguageChoiceForOnboarding(null); 
 
-            const langProgress = finalProgress[language.id];
+            const langProgress = authedUser.progress[language.id];
 
             if (!langProgress) {
-                // User doesn't have progress for this language yet, create it and go to onboarding
                 setUserProgress(prev => ({
                     ...prev,
                     [language.id]: { xp: 0, streak: 0, completedTopics: [], mistakes: [], learnedVocabulary: [], league: LeagueTier.Bronze, unlockedAchievements: [], practiceSessions: 0, perfectLessons: 0, activityLog: [], flashcardDecks: [] }
                 }));
                 setPage(Page.Onboarding);
             } else if (langProgress.completedTopics.length === 0) {
-                // Progress exists but is empty, go to onboarding
                 setPage(Page.Onboarding);
             } else {
-                // User has existing progress, go to dashboard
                 setPage(Page.Dashboard);
             }
         }
     };
 
     const handleLogout = useCallback(() => {
-        localStorage.removeItem('growEasySession');
+        localStorage.removeItem('wordVineSession');
         setUser(null);
         setUserProgress({});
         setSelectedLanguage(null);
@@ -848,7 +804,7 @@ const App: React.FC = () => {
         if (!user && (page !== Page.LanguageSelection)) {
              // If user is logged out, but not on the language selection page, force them there.
              // This avoids getting stuck on a page that requires a user.
-            if(page !== Page.Home) { // HomePage is the initial entry point, so allow it.
+            if(page !== Page.Home && page !== Page.About) { // Allow Home and About pages
                  setPage(Page.LanguageSelection);
                  return null;
             }
@@ -918,6 +874,8 @@ const App: React.FC = () => {
                 return <SettingsPage appSettings={appSettings} onUpdateSettings={handleUpdateSettings} onLogout={handleLogout} registeredUsers={registeredUsers} />;
             case Page.Help:
                 return <HelpPage />;
+            case Page.About:
+                return <AboutPage />;
             default:
                  // Fallback for any unhandled page state
                 break;
@@ -931,10 +889,10 @@ const App: React.FC = () => {
     };
     
     if (page === Page.Home) {
-        return <HomePage onGetStarted={() => setPage(Page.LanguageSelection)} />;
+        return <HomePage onGetStarted={() => setPage(Page.LanguageSelection)} onNavigateToAbout={() => setPage(Page.About)} />;
     }
 
-    const isMainView = [Page.Dashboard, Page.PracticeHub, Page.PracticeSession, Page.Profile, Page.Leaderboard, Page.Dictionary, Page.Quests, Page.Achievements, Page.Settings, Page.Help, Page.Friends, Page.Messages, Page.FlashcardDecks].includes(page);
+    const isMainView = [Page.Dashboard, Page.PracticeHub, Page.PracticeSession, Page.Profile, Page.Leaderboard, Page.Dictionary, Page.Quests, Page.Achievements, Page.Settings, Page.Help, Page.About, Page.Friends, Page.Messages, Page.FlashcardDecks].includes(page);
     const currentProgress = selectedLanguage ? userProgress[selectedLanguage.id] : null;
 
     return (

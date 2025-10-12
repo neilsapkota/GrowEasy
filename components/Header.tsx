@@ -13,7 +13,7 @@ const Header: React.FC<HeaderProps> = ({ user, progress, onLogout }) => {
         <header className="flex justify-between items-center mb-8 p-4 bg-white dark:bg-slate-800 rounded-xl shadow-md">
             <div>
                 <h1 className="text-2xl sm:text-3xl font-extrabold text-teal-600 dark:text-teal-400">
-                    GrowEasy
+                    WordVine
                 </h1>
                 {user && <p className="text-slate-500 dark:text-slate-400">Welcome back, {user.name}!</p>}
             </div>

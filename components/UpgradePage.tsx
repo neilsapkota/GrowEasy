@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { SparklesIcon, CheckCircleIcon, UsersIcon, LockIcon } from './icons';
 
@@ -31,7 +30,7 @@ const UpgradePage: React.FC<UpgradePageProps> = ({ onUpgrade, onBack }) => {
                 <div className="p-8 bg-gradient-to-br from-amber-400 to-orange-600 text-white text-center">
                     <SparklesIcon className="w-16 h-16 mx-auto mb-4" />
                     <h2 className="text-4xl font-extrabold">Go Pro</h2>
-                    <p className="mt-2 text-lg text-white/80">Unlock your full learning potential with GrowEasy Pro.</p>
+                    <p className="mt-2 text-lg text-white/80">Unlock your full learning potential with WordVine Pro.</p>
                 </div>
                 <div className="p-8">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">

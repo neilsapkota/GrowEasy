@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { NewHomePageIllustrations } from './NewHomePageIllustrations';
 import { GlobeAltIcon, StarIcon } from './icons'; // Assuming StarIcon is available for ratings
@@ -42,7 +41,7 @@ const TestimonialCard: React.FC<{ quote: string; name: string; country: string; 
 );
 
 
-const HomePage: React.FC<{ onGetStarted: () => void }> = ({ onGetStarted }) => {
+const HomePage: React.FC<{ onGetStarted: () => void; onNavigateToAbout: () => void; }> = ({ onGetStarted, onNavigateToAbout }) => {
     return (
         <div className="bg-[#1e293b] text-white font-sans">
             {/* --- Navbar --- */}
@@ -50,7 +49,7 @@ const HomePage: React.FC<{ onGetStarted: () => void }> = ({ onGetStarted }) => {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex items-center justify-between h-20">
                         <div className="flex-shrink-0">
-                            <h1 className="text-3xl font-extrabold text-emerald-400">GrowEasy</h1>
+                            <h1 className="text-3xl font-extrabold text-emerald-400">WordVine</h1>
                         </div>
                         <div className="hidden md:block">
                             <div className="ml-10 flex items-baseline space-x-4">
@@ -114,7 +113,7 @@ const HomePage: React.FC<{ onGetStarted: () => void }> = ({ onGetStarted }) => {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="text-center mb-12">
                          <h2 className="text-4xl lg:text-5xl font-extrabold text-slate-100">Loved by learners worldwide</h2>
-                         <p className="mt-4 text-lg text-slate-400">See what our community is saying about GrowEasy.</p>
+                         <p className="mt-4 text-lg text-slate-400">See what our community is saying about WordVine.</p>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                         <TestimonialCard
@@ -148,15 +147,20 @@ const HomePage: React.FC<{ onGetStarted: () => void }> = ({ onGetStarted }) => {
                         onClick={onGetStarted}
                         className="px-10 py-5 text-xl font-bold text-slate-900 bg-[#FFD700] rounded-xl hover:bg-yellow-400 focus:outline-none focus:ring-4 focus:ring-yellow-700 transition-all duration-200 transform hover:-translate-y-1 active:translate-y-0 active:scale-95 shadow-2xl hover:shadow-yellow-400/40"
                     >
-                        Try GrowEasy for Free
+                        Try WordVine for Free
                     </button>
                  </div>
             </section>
 
              {/* --- Footer --- */}
              <footer className="bg-slate-900 border-t border-slate-800">
-                <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8 text-center text-slate-400">
-                    <p>&copy; {new Date().getFullYear()} GrowEasy. All rights reserved.</p>
+                <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8 text-slate-400 text-center">
+                    <div className="flex justify-center items-center gap-4 text-sm">
+                        <p>&copy; {new Date().getFullYear()} WordVine. All rights reserved.</p>
+                        <button onClick={onNavigateToAbout} className="hover:text-white hover:underline transition-colors">
+                            About
+                        </button>
+                    </div>
                 </div>
              </footer>
         </div>

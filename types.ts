@@ -28,7 +28,7 @@ export enum AchievementTier {
 }
 
 export interface Achievement {
-    id: string;
+    id:string;
     title: string;
     description: string;
     tier: AchievementTier;
@@ -86,6 +86,7 @@ export enum Page {
     Achievements = 'achievements',
     Settings = 'settings',
     Help = 'help',
+    About = 'about',
     LivePlacementTest = 'live-placement-test',
     Friends = 'friends',
     Messages = 'messages',
@@ -170,7 +171,6 @@ export interface UserProgress {
 
 export interface RegisteredUser {
     user: User;
-    password?: string;
     progress: Record<string, UserProgress>;
     friends: string[]; // array of emails
     friendRequests: { from: string; status: 'pending' }[];

@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Language, PlacementTestResult } from '../types';
 import { GoogleGenAI, LiveServerMessage, Modality, Blob } from "@google/genai";
@@ -150,16 +151,15 @@ const LivePlacementTestPage: React.FC<LivePlacementTestPageProps> = ({ language,
 
     const disconnect = useCallback(() => {
         sessionPromiseRef.current?.then((session: any) => session.close());
+        // FIX: The disconnect method on AudioNode was being called without arguments. This has been fixed by providing the correct destination nodes to disconnect from.
+        if (mediaStreamSourceRef.current && scriptProcessorRef.current) {
+            mediaStreamSourceRef.current.disconnect(scriptProcessorRef.current);
+        }
         if (scriptProcessorRef.current) {
             scriptProcessorRef.current.onaudioprocess = null;
-            // FIX: The disconnect method on AudioNode was being called without arguments, but the type definitions expect one.
             if (inputAudioContextRef.current) {
                 scriptProcessorRef.current.disconnect(inputAudioContextRef.current.destination);
             }
-        }
-        // FIX: The disconnect method on AudioNode was being called without arguments.
-        if (mediaStreamSourceRef.current && scriptProcessorRef.current) {
-            mediaStreamSourceRef.current.disconnect(scriptProcessorRef.current);
         }
         inputAudioContextRef.current?.close().catch(console.error);
         outputAudioContextRef.current?.close().catch(console.error);

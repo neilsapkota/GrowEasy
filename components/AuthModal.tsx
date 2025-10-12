@@ -1,6 +1,21 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { RegisteredUser } from '../types';
 import { SpinnerIcon } from './icons';
+
+// Helper function to decode the JWT credential from Google
+function parseJwt(token: string) {
+    try {
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join(''));
+        return JSON.parse(jsonPayload);
+    } catch (e) {
+        console.error("Error decoding JWT", e);
+        return null;
+    }
+}
 
 interface AuthModalProps {
     isOpen: boolean;
@@ -9,63 +24,102 @@ interface AuthModalProps {
     registeredUsers: RegisteredUser[];
 }
 
-const GoogleLogo = () => (
-    <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-        <g fill="none" fillRule="evenodd">
-            <path d="M20.64 12.2045c0-.6382-.0573-1.2518-.1636-1.8409H12v3.4818h4.8445c-.209 1.125-.8455 2.0782-1.7772 2.7164v2.2582h2.9082c1.7018-1.5664 2.6836-3.8736 2.6836-6.6155z" fill="#4285F4"/>
-            <path d="M12 21c2.43 0 4.4673-.8064 5.9564-2.1809l-2.9082-2.2582c-.8064.5427-1.8409.8618-3.0482.8618-2.3455 0-4.329-1.5836-5.0363-3.7109H3.957v2.3318C5.4382 18.9836 8.4818 21 12 21z" fill="#34A853"/>
-            <path d="M6.9637 14.71c-.181-.5427-.2828-1.1164-.2828-1.71s.1018-1.1673.2828-1.71V8.9582H3.957C3.3473 10.1473 3 11.5355 3 13s.3473 2.8527.957 4.0418L6.9637 14.71z" fill="#FBBC05"/>
-            <path d="M12 6.2836c1.3227 0 2.509.4555 3.4409 1.3464l2.5855-2.5855C16.4636 3.8236 14.43 3 12 3 8.4818 3 5.4382 5.0164 3.957 7.9582L6.9637 10.29C7.671 8.1636 9.6545 6.2836 12 6.2836z" fill="#EA4335"/>
-        </g>
-    </svg>
-);
+// TypeScript declaration for the global 'google' object from the GSI script
+declare const google: any;
 
 const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onAuthSuccess, registeredUsers }) => {
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState('');
+    const signInButtonRef = React.useRef<HTMLDivElement>(null);
+    const [isLoading, setIsLoading] = React.useState(false);
+    const [initError, setInitError] = React.useState<string | null>(null);
+
+    // This callback will be attached to the window object for Google's library to call
+    const handleCredentialResponse = React.useCallback((response: any) => {
+        setIsLoading(true);
+        const userObject = parseJwt(response.credential);
+        
+        if (!userObject) {
+            console.error("Failed to parse user credentials.");
+            setIsLoading(false);
+            return;
+        }
+
+        const googleUserData = {
+            name: userObject.name,
+            email: userObject.email,
+            avatarUrl: userObject.picture,
+        };
+
+        const existingUser = registeredUsers.find(ru => ru.user.email.toLowerCase() === googleUserData.email.toLowerCase());
+
+        if (existingUser) {
+            onAuthSuccess(existingUser, false);
+        } else {
+            const newUser: RegisteredUser = {
+                user: {
+                    name: googleUserData.name,
+                    email: googleUserData.email,
+                    avatarUrl: googleUserData.avatarUrl,
+                    bio: 'Just started my language journey!',
+                },
+                progress: {},
+                friends: [],
+                friendRequests: [],
+            };
+            onAuthSuccess(newUser, true);
+        }
+        setIsLoading(false);
+    }, [onAuthSuccess, registeredUsers]);
+
+    React.useEffect(() => {
+        if (!isOpen) return;
+        
+        // Make the callback globally accessible for the GSI library
+        (window as any).handleCredentialResponse = handleCredentialResponse;
+        
+        // Periodically check if the Google script has loaded
+        const checkGoogle = setInterval(() => {
+            if (typeof google !== 'undefined' && google.accounts && google.accounts.id && signInButtonRef.current) {
+                clearInterval(checkGoogle);
+                
+                const clientId = document.querySelector('meta[name="google-signin-client_id"]')?.getAttribute('content');
+                if (!clientId || clientId.startsWith('YOUR_CLIENT_ID')) {
+                    const errorMsg = "Google Client ID is not configured. Please add it to the meta tag in index.html.";
+                    console.error(errorMsg);
+                    setInitError(errorMsg);
+                    return;
+                }
+
+                try {
+                    // Initialize the GSI client
+                    google.accounts.id.initialize({
+                        client_id: clientId,
+                        callback: (window as any).handleCredentialResponse
+                    });
+
+                    // Render the sign-in button into our target div
+                    google.accounts.id.renderButton(
+                        signInButtonRef.current,
+                        { theme: "outline", size: "large", type: "standard", text: "signin_with", shape: "rectangular", width: "280" }
+                    );
+                } catch (error) {
+                    console.error("Google Sign-In initialization error:", error);
+                    setInitError("Failed to initialize Google Sign-In. Check console for details.");
+                }
+            }
+        }, 100);
+
+        // Cleanup function to remove the global callback on component unmount
+        return () => {
+            clearInterval(checkGoogle);
+            if ((window as any).handleCredentialResponse) {
+                delete (window as any).handleCredentialResponse;
+            }
+        };
+
+    }, [isOpen, handleCredentialResponse]);
+
 
     if (!isOpen) return null;
-
-    // This function simulates a Google Sign-In flow.
-    // In a real app, you'd use a library like @react-oauth/google
-    // to get the user's profile information.
-    const handleGoogleSignIn = () => {
-        setIsLoading(true);
-        setError('');
-
-        // Simulate network delay
-        setTimeout(() => {
-            // Simulate receiving user data from Google
-            const googleUserData = {
-                name: 'Alex Johnson',
-                email: 'alex.j@example.com',
-                avatarUrl: `https://api.dicebear.com/8.x/initials/svg?seed=Alex`,
-            };
-
-            // Check if user already exists
-            const existingUser = registeredUsers.find(ru => ru.user.email.toLowerCase() === googleUserData.email.toLowerCase());
-
-            if (existingUser) {
-                // User exists, log them in
-                onAuthSuccess(existingUser, false);
-            } else {
-                // User is new, create an account
-                const newUser: RegisteredUser = {
-                    user: {
-                        name: googleUserData.name,
-                        email: googleUserData.email,
-                        avatarUrl: googleUserData.avatarUrl,
-                        bio: 'Just started my language journey!',
-                    },
-                    progress: {},
-                    friends: [],
-                    friendRequests: [],
-                };
-                onAuthSuccess(newUser, true);
-            }
-            setIsLoading(false);
-        }, 1000);
-    };
 
     return (
         <div 
@@ -87,24 +141,21 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onAuthSuccess, r
                 </button>
                 
                 <div className="text-center">
-                     <h2 className="text-2xl font-bold text-slate-800 dark:text-white mb-2">Welcome to WordVine</h2>
+                    <h2 className="text-2xl font-bold text-slate-800 dark:text-white mb-2">Welcome to WordVine</h2>
                     <p className="text-slate-500 dark:text-slate-400 mb-8">Sign in to save your progress and learn from any device.</p>
                     
-                    <button
-                        onClick={handleGoogleSignIn}
-                        disabled={isLoading}
-                        className="w-full flex items-center justify-center gap-3 p-3 font-bold rounded-lg bg-white text-slate-700 hover:bg-slate-100 border border-slate-300 shadow-sm transition-colors disabled:bg-slate-200 disabled:cursor-not-allowed"
-                    >
-                        {isLoading ? (
-                            <SpinnerIcon className="w-6 h-6 animate-spin"/>
-                        ) : (
-                           <>
-                                <GoogleLogo />
-                                <span>Sign in with Google</span>
-                           </>
-                        )}
-                    </button>
-                    {error && <p className="mt-4 text-sm text-center text-red-500">{error}</p>}
+                    {isLoading ? (
+                         <div className="flex justify-center items-center h-[50px]">
+                            <SpinnerIcon className="w-8 h-8 animate-spin"/>
+                         </div>
+                    ) : initError ? (
+                        <div className="p-3 bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300 rounded-lg text-sm">
+                            {initError}
+                        </div>
+                    ) : (
+                        // This div will be populated by the Google script
+                        <div ref={signInButtonRef} className="flex justify-center h-[50px]"></div>
+                    )}
                 </div>
             </div>
         </div>

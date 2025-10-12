@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { NewHomePageIllustrations } from './NewHomePageIllustrations';
 import { GlobeAltIcon, StarIcon } from './icons'; // Assuming StarIcon is available for ratings
 
@@ -42,10 +42,32 @@ const TestimonialCard: React.FC<{ quote: string; name: string; country: string; 
 
 
 const HomePage: React.FC<{ onGetStarted: () => void; onNavigateToAbout: () => void; }> = ({ onGetStarted, onNavigateToAbout }) => {
+    const [originUrl, setOriginUrl] = useState('');
+
+    useEffect(() => {
+        // This code runs when the page loads and gets the URL from the browser window itself.
+        if (typeof window !== 'undefined') {
+            setOriginUrl(window.location.origin);
+        }
+    }, []);
+
     return (
         <div className="bg-[#1e293b] text-white font-sans">
+            {/* --- TEMPORARY BOX TO SHOW THE URL --- */}
+            {originUrl && (
+                <div className="fixed top-0 left-0 right-0 bg-yellow-400 text-black p-4 z-[100] text-center shadow-lg">
+                    <h2 className="font-extrabold text-lg">COPY THIS URL FOR GOOGLE SIGN-IN:</h2>
+                    <p 
+                        className="font-mono text-xl bg-white p-2 rounded mt-2 select-all"
+                    >
+                        {originUrl}
+                    </p>
+                    <p className="text-sm mt-2">Paste this into your Google Cloud Console's "Authorized JavaScript origins".</p>
+                </div>
+            )}
+            
             {/* --- Navbar --- */}
-            <nav className="sticky top-0 z-50 bg-[#1e293b]/80 backdrop-blur-lg border-b border-slate-700">
+            <nav className="sticky top-0 z-50 bg-[#1e293b]/80 backdrop-blur-lg border-b border-slate-700 mt-[115px]">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex items-center justify-between h-20">
                         <div className="flex-shrink-0">

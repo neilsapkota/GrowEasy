@@ -25,6 +25,8 @@ import { LANGUAGES, DAILY_QUESTS, ACHIEVEMENTS, MONTHLY_CHALLENGES } from './con
 import { HomeIcon, UserCircleIcon, ChartBarIcon, LogoutIcon, StarIcon, FireIcon, PracticeIcon, BookOpenIcon, TrophyIcon, QuestsIcon, SettingsIcon, HelpIcon, UsersIcon, ChatBubbleLeftRightIcon, InfoIcon } from './components/icons';
 import ProfilePage from './components/ProfilePage';
 
+declare const google: any; // Add this to inform TypeScript about the global 'google' object from the GSI library
+
 const QUESTS_MAP = new Map(DAILY_QUESTS.map(q => [q.id, q]));
 
 const DUMMY_REGISTERED_USERS: RegisteredUser[] = [
@@ -636,6 +638,10 @@ const App: React.FC = () => {
         setUserProgress({});
         setSelectedLanguage(null);
         setPage(Page.Home);
+        // Add Google Sign-Out logic to prevent auto-relogin
+        if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
+            google.accounts.id.disableAutoSelect();
+        }
     }, []);
     
     const handleUpdateMistakes = (mistakes: MistakeItem[]) => {

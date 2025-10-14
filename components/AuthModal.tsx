@@ -141,7 +141,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onAuthSuccess, r
                 </button>
                 
                 <div className="text-center">
-                    <h2 className="text-2xl font-bold text-slate-800 dark:text-white mb-2">Welcome to WordVine</h2>
+                    <h2 className="text-2xl font-bold text-slate-800 dark:text-white mb-2">Welcome to Fluentli</h2>
                     <p className="text-slate-500 dark:text-slate-400 mb-8">Sign in to save your progress and learn from any device.</p>
                     
                     {isLoading ? (

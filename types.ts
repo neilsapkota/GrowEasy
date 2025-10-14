@@ -93,6 +93,8 @@ export enum Page {
     Leaderboard = 'leaderboard',
     Profile = 'profile',
     FlashcardDecks = 'flashcard-decks',
+    Features = 'features',
+    Testimonials = 'testimonials',
 }
 
 export type PracticeMode = 'conversation' | 'listening' | 'mistakes' | 'vocabulary' | 'stories' | 'pronunciation' | 'roleplay' | 'writing' | 'flashcards';

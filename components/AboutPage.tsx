@@ -1,5 +1,5 @@
 import React from 'react';
-import { SparklesIcon, MicrophoneIcon, BookOpenIcon, UsersIcon } from './icons';
+import { SparklesIcon, MicrophoneIcon, BookOpenIcon, UsersIcon, BackIcon } from './icons';
 import Mascot from './Mascot';
 
 const FeatureHighlight: React.FC<{ icon: React.ElementType, title: string, children: React.ReactNode }> = ({ icon: Icon, title, children }) => (
@@ -14,13 +14,17 @@ const FeatureHighlight: React.FC<{ icon: React.ElementType, title: string, child
     </div>
 );
 
-const AboutPage: React.FC = () => {
+const AboutPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     return (
         <div className="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8 animate-fade-in">
+            <button onClick={onBack} className="flex items-center gap-2 font-bold text-sky-400 mb-6 hover:underline">
+                <BackIcon className="w-5 h-5" />
+                Back to Home
+            </button>
             <header className="text-center mb-12">
                 <Mascot className="w-24 h-24 mx-auto mb-4" />
                 <h1 className="text-4xl sm:text-5xl font-extrabold text-slate-800 dark:text-slate-100">
-                    About <span className="gradient-text">WordVine</span>
+                    About <span className="gradient-text">Fluentli</span>
                 </h1>
                 <p className="mt-4 text-lg text-slate-500 dark:text-slate-400">
                     More than an app. It's your personal path to fluency.
@@ -53,8 +57,8 @@ const AboutPage: React.FC = () => {
             </section>
             
              <footer className="mt-12 text-center text-sm text-slate-400 dark:text-slate-500">
-                <p>WordVine is powered by Google's Gemini models.</p>
-                <p>&copy; {new Date().getFullYear()} WordVine. Happy learning!</p>
+                <p>Fluentli is powered by Google's Gemini models.</p>
+                <p>&copy; {new Date().getFullYear()} Fluentli. Happy learning!</p>
             </footer>
 
         </div>

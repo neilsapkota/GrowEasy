@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { NewHomePageIllustrations } from './NewHomePageIllustrations';
 import { GlobeAltIcon, StarIcon } from './icons'; // Assuming StarIcon is available for ratings
+import { Page } from '../types';
 
 // Re-usable component for feature sections
 const FeatureSection: React.FC<{
@@ -41,7 +42,7 @@ const TestimonialCard: React.FC<{ quote: string; name: string; country: string; 
 );
 
 
-const HomePage: React.FC<{ onGetStarted: () => void; onNavigateToAbout: () => void; }> = ({ onGetStarted, onNavigateToAbout }) => {
+const HomePage: React.FC<{ onGetStarted: () => void; onNavigate: (page: Page) => void; }> = ({ onGetStarted, onNavigate }) => {
     const [originUrl, setOriginUrl] = useState('');
 
     useEffect(() => {
@@ -71,12 +72,12 @@ const HomePage: React.FC<{ onGetStarted: () => void; onNavigateToAbout: () => vo
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex items-center justify-between h-20">
                         <div className="flex-shrink-0">
-                            <h1 className="text-3xl font-extrabold text-emerald-400">WordVine</h1>
+                            <h1 className="text-3xl font-extrabold text-emerald-400">Fluentli</h1>
                         </div>
                         <div className="hidden md:block">
                             <div className="ml-10 flex items-baseline space-x-4">
-                                <a href="#features" className="text-slate-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Features</a>
-                                <a href="#testimonials" className="text-slate-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Testimonials</a>
+                                <button onClick={() => onNavigate(Page.Features)} className="text-slate-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Features</button>
+                                <button onClick={() => onNavigate(Page.Testimonials)} className="text-slate-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Testimonials</button>
                             </div>
                         </div>
                     </div>
@@ -135,7 +136,7 @@ const HomePage: React.FC<{ onGetStarted: () => void; onNavigateToAbout: () => vo
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="text-center mb-12">
                          <h2 className="text-4xl lg:text-5xl font-extrabold text-slate-100">Loved by learners worldwide</h2>
-                         <p className="mt-4 text-lg text-slate-400">See what our community is saying about WordVine.</p>
+                         <p className="mt-4 text-lg text-slate-400">See what our community is saying about Fluentli.</p>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                         <TestimonialCard
@@ -169,7 +170,7 @@ const HomePage: React.FC<{ onGetStarted: () => void; onNavigateToAbout: () => vo
                         onClick={onGetStarted}
                         className="px-10 py-5 text-xl font-bold text-slate-900 bg-[#FFD700] rounded-xl hover:bg-yellow-400 focus:outline-none focus:ring-4 focus:ring-yellow-700 transition-all duration-200 transform hover:-translate-y-1 active:translate-y-0 active:scale-95 shadow-2xl hover:shadow-yellow-400/40"
                     >
-                        Try WordVine for Free
+                        Try Fluentli for Free
                     </button>
                  </div>
             </section>
@@ -178,8 +179,8 @@ const HomePage: React.FC<{ onGetStarted: () => void; onNavigateToAbout: () => vo
              <footer className="bg-slate-900 border-t border-slate-800">
                 <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8 text-slate-400 text-center">
                     <div className="flex justify-center items-center gap-4 text-sm">
-                        <p>&copy; {new Date().getFullYear()} WordVine. All rights reserved.</p>
-                        <button onClick={onNavigateToAbout} className="hover:text-white hover:underline transition-colors">
+                        <p>&copy; {new Date().getFullYear()} Fluentli. All rights reserved.</p>
+                        <button onClick={() => onNavigate(Page.About)} className="hover:text-white hover:underline transition-colors">
                             About
                         </button>
                     </div>

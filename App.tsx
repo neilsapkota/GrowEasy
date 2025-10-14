@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import HomePage from './components/HomePage';
 import LanguageSelectionPage from './components/LanguageSelectionPage';
@@ -20,6 +19,9 @@ import FriendsPage from './components/FriendsPage';
 import MessagesPage from './components/MessagesPage';
 import LeaderboardPage from './components/LeaderboardPage';
 import FlashcardDecksPage from './components/FlashcardDecksPage'; // New Import
+import FeaturesPage from './components/FeaturesPage';
+import TestimonialsPage from './components/TestimonialsPage';
+import Logo from './components/Logo';
 // FIX: Added missing type imports
 import { Page, User, Language, LessonTopic, UserProgress, MistakeItem, VocabularyItem, PracticeMode, Quest, LeagueTier, Achievement, RegisteredUser, AppSettings, Theme, Message, AchievementTier, FlashcardDeck } from './types';
 import { LANGUAGES, DAILY_QUESTS, ACHIEVEMENTS, MONTHLY_CHALLENGES } from './constants';
@@ -154,7 +156,6 @@ const Sidebar: React.FC<{
         { page: Page.Profile, icon: UserCircleIcon, label: 'PROFILE' },
         { page: Page.Settings, icon: SettingsIcon, label: 'SETTINGS' },
         { page: Page.Help, icon: HelpIcon, label: 'HELP' },
-        { page: Page.About, icon: InfoIcon, label: 'ABOUT' },
     ];
 
     const NavButton: React.FC<{item: {page: Page; icon: React.ElementType; label: string; count?: number}; isActive: boolean;}> = ({ item, isActive }) => (
@@ -180,9 +181,9 @@ const Sidebar: React.FC<{
 
     return (
         <aside className="w-64 bg-slate-900/70 backdrop-blur-sm flex-shrink-0 p-4 hidden lg:flex flex-col border-r border-slate-800">
-            <h1 className="text-3xl font-extrabold gradient-text mb-10 px-2 pt-2">
-                WordVine
-            </h1>
+            <div className="mb-10 px-2 pt-2">
+                <Logo />
+            </div>
             <nav className="flex-grow">
                 <ul className="space-y-2">
                     {mainNavItems.map(item => (
@@ -242,7 +243,7 @@ const Header: React.FC<{
         [Page.Profile]: "Profile",
         [Page.Settings]: "Settings",
         [Page.Help]: "Help",
-        [Page.About]: "About WordVine",
+        [Page.About]: "About Fluentli",
         [Page.FlashcardDecks]: "Flashcard Decks",
         [Page.Home]: "",
         [Page.LanguageSelection]: "",
@@ -250,6 +251,8 @@ const Header: React.FC<{
         [Page.LivePlacementTest]: "",
         [Page.Lesson]: "",
         [Page.PracticeSession]: "",
+        [Page.Features]: "Features",
+        [Page.Testimonials]: "Testimonials",
     };
     
     return (
@@ -313,7 +316,7 @@ const App: React.FC = () => {
     const [toasts, setToasts] = useState<{ id: number; achievement: Achievement }[]>([]);
     const [appSettings, setAppSettings] = useState<AppSettings>(() => {
         try {
-            const savedSettings = localStorage.getItem('wordVineSettings');
+            const savedSettings = localStorage.getItem('fluentliSettings');
             return savedSettings ? JSON.parse(savedSettings) : { theme: 'system', soundEffectsEnabled: true };
         } catch {
             return { theme: 'system', soundEffectsEnabled: true };
@@ -324,7 +327,7 @@ const App: React.FC = () => {
     
     const [registeredUsers, setRegisteredUsers] = useState<RegisteredUser[]>(() => {
         try {
-            const savedUsers = localStorage.getItem('wordVineUsers');
+            const savedUsers = localStorage.getItem('fluentliUsers');
             if (savedUsers) {
                 return JSON.parse(savedUsers);
             }
@@ -336,7 +339,7 @@ const App: React.FC = () => {
 
     const [messages, setMessages] = useState<Message[]>(() => {
         try {
-            const savedMessages = localStorage.getItem('wordVineMessages');
+            const savedMessages = localStorage.getItem('fluentliMessages');
             return savedMessages ? JSON.parse(savedMessages) : DUMMY_MESSAGES;
         } catch {
             return DUMMY_MESSAGES;
@@ -374,7 +377,7 @@ const App: React.FC = () => {
 
 
     useEffect(() => {
-        const savedData = localStorage.getItem('wordVineSession');
+        const savedData = localStorage.getItem('fluentliSession');
         if (savedData) {
             try {
                 const { user: savedUser, selectedLanguageId, userProgress: savedProgress } = JSON.parse(savedData);
@@ -389,7 +392,7 @@ const App: React.FC = () => {
                 }
             } catch (error) {
                 console.error("Failed to parse saved session data", error);
-                localStorage.removeItem('wordVineSession');
+                localStorage.removeItem('fluentliSession');
             }
         } else {
             setPage(Page.Home);
@@ -404,7 +407,7 @@ const App: React.FC = () => {
                     selectedLanguageId: selectedLanguage?.id,
                     userProgress,
                 };
-                localStorage.setItem('wordVineSession', JSON.stringify(dataToSave));
+                localStorage.setItem('fluentliSession', JSON.stringify(dataToSave));
             } catch (error) {
                 console.error("Failed to save session to localStorage", error);
             }
@@ -413,14 +416,14 @@ const App: React.FC = () => {
     
     // Persist settings
     useEffect(() => {
-        localStorage.setItem('wordVineSettings', JSON.stringify(appSettings));
+        localStorage.setItem('fluentliSettings', JSON.stringify(appSettings));
     }, [appSettings]);
 
 
     // Persist the entire registered users database whenever it changes
     useEffect(() => {
         try {
-            localStorage.setItem('wordVineUsers', JSON.stringify(registeredUsers));
+            localStorage.setItem('fluentliUsers', JSON.stringify(registeredUsers));
         } catch (error) {
             console.error("Failed to save registered users to localStorage", error);
         }
@@ -428,7 +431,7 @@ const App: React.FC = () => {
 
     // Persist messages
     useEffect(() => {
-        localStorage.setItem('wordVineMessages', JSON.stringify(messages));
+        localStorage.setItem('fluentliMessages', JSON.stringify(messages));
     }, [messages]);
 
 
@@ -629,7 +632,7 @@ const App: React.FC = () => {
     };
 
     const handleLogout = useCallback(() => {
-        localStorage.removeItem('wordVineSession');
+        localStorage.removeItem('fluentliSession');
         setUser(null);
         setUserProgress({});
         setSelectedLanguage(null);
@@ -806,7 +809,7 @@ const App: React.FC = () => {
         if (!user && (page !== Page.LanguageSelection)) {
              // If user is logged out, but not on the language selection page, force them there.
              // This avoids getting stuck on a page that requires a user.
-            if(page !== Page.Home && page !== Page.About) { // Allow Home and About pages
+            if(![Page.Home, Page.About, Page.Features, Page.Testimonials].includes(page)) {
                  setPage(Page.LanguageSelection);
                  return null;
             }
@@ -877,7 +880,11 @@ const App: React.FC = () => {
             case Page.Help:
                 return <HelpPage />;
             case Page.About:
-                return <AboutPage />;
+                return <AboutPage onBack={() => setPage(Page.Home)} />;
+            case Page.Features:
+                return <FeaturesPage onBack={() => setPage(Page.Home)} />;
+            case Page.Testimonials:
+                return <TestimonialsPage onBack={() => setPage(Page.Home)} />;
             default:
                  // Fallback for any unhandled page state
                 break;
@@ -891,10 +898,10 @@ const App: React.FC = () => {
     };
     
     if (page === Page.Home) {
-        return <HomePage onGetStarted={() => setPage(Page.LanguageSelection)} onNavigateToAbout={() => setPage(Page.About)} />;
+        return <HomePage onGetStarted={() => setPage(Page.LanguageSelection)} onNavigate={(p) => setPage(p)} />;
     }
 
-    const isMainView = [Page.Dashboard, Page.PracticeHub, Page.PracticeSession, Page.Profile, Page.Leaderboard, Page.Dictionary, Page.Quests, Page.Achievements, Page.Settings, Page.Help, Page.About, Page.Friends, Page.Messages, Page.FlashcardDecks].includes(page);
+    const isMainView = [Page.Dashboard, Page.PracticeHub, Page.PracticeSession, Page.Profile, Page.Leaderboard, Page.Dictionary, Page.Quests, Page.Achievements, Page.Settings, Page.Help, Page.Friends, Page.Messages, Page.FlashcardDecks].includes(page);
     const currentProgress = selectedLanguage ? userProgress[selectedLanguage.id] : null;
 
     return (
@@ -904,7 +911,7 @@ const App: React.FC = () => {
                 
                 <div className="flex-1 flex flex-col">
                     {isMainView && <Header page={page} user={user} progress={currentProgress} selectedLanguage={selectedLanguage} onChangeLanguage={handleChangeLanguage} />}
-                    <main className={isMainView ? "flex-grow p-4 sm:p-6 pb-24 lg:pb-6" : "container mx-auto max-w-5xl p-4 sm:p-6 lg:p-8"}>
+                    <main className={isMainView ? "flex-grow p-4 sm:p-6 pb-24 lg:pb-6" : "container mx-auto max-w-7xl"}>
                         <div key={`${page}-${practiceMode}`} className="animate-fade-in">
                             {renderPageContent()}
                         </div>

@@ -41,7 +41,7 @@ const LessonHeader: React.FC<{ progress: number; onExit: () => void }> = ({ prog
         <button onClick={onExit} className="text-slate-400 hover:text-slate-200 p-1 rounded-full"><XIcon className="w-6 h-6" /></button>
         <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-4">
             <div
-                className="bg-green-500 h-4 rounded-full transition-all duration-300 ease-linear"
+                className="bg-sky-500 h-4 rounded-full transition-all duration-300 ease-linear"
                 style={{ width: `${progress}%` }}
             />
         </div>
@@ -77,15 +77,15 @@ const LearningView: React.FC<{
                     onClick={() => speak(item.word, language.id, soundEffectsEnabled)}
                     className="flex items-center justify-center gap-4 mx-auto mb-2 group"
                 >
-                    <h2 className="text-4xl sm:text-5xl font-extrabold text-teal-600 dark:text-teal-400">{item.word}</h2>
-                    <VolumeUpIcon className="w-8 h-8 text-slate-400 group-hover:text-teal-500 transition-colors" />
+                    <h2 className="text-4xl sm:text-5xl font-extrabold text-sky-600 dark:text-sky-400">{item.word}</h2>
+                    <VolumeUpIcon className="w-8 h-8 text-slate-400 group-hover:text-sky-500 transition-colors" />
                 </button>
                 <p className="font-mono text-slate-500 dark:text-slate-400 mb-6">/{item.pronunciation}/</p>
                 <p className="text-2xl font-semibold text-slate-700 dark:text-slate-200">{item.translation}</p>
             </div>
             <button
                 onClick={handleNext}
-                className="mt-12 w-full max-w-xs px-6 py-4 text-xl font-bold text-white uppercase bg-green-500 rounded-2xl border-b-4 border-green-700 hover:bg-green-600 transition-all duration-200 active:translate-y-0.5"
+                className="mt-12 w-full max-w-xs px-6 py-4 text-xl font-bold text-white uppercase bg-sky-500 rounded-2xl border-b-4 border-sky-700 hover:bg-sky-600 transition-all duration-200 active:translate-y-0.5"
             >
                 {currentIndex < vocabulary.length - 1 ? 'Next' : 'Got it! Start Practice'}
             </button>
@@ -193,7 +193,7 @@ const LessonCompletionSummary: React.FC<{ xpGained: number, onFinish: () => void
             </div>
             <button
                 onClick={onFinish}
-                className="mt-12 w-full max-w-xs px-6 py-4 text-xl font-bold text-white uppercase bg-teal-500 rounded-2xl border-b-4 border-teal-700 hover:bg-teal-600 transition-all duration-200 active:translate-y-0.5"
+                className="mt-12 w-full max-w-xs px-6 py-4 text-xl font-bold text-white uppercase bg-indigo-500 rounded-2xl border-b-4 border-indigo-700 hover:bg-indigo-600 transition-all duration-200 active:translate-y-0.5"
             >
                 Continue
             </button>

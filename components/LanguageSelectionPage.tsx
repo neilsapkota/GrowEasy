@@ -18,7 +18,7 @@ const LanguageSelectionPage: React.FC<LanguageSelectionPageProps> = ({ languages
                         <button
                             key={lang.id}
                             onClick={() => onSelectLanguage(lang)}
-                            className="flex flex-col items-center justify-center p-4 sm:p-6 bg-white dark:bg-slate-800 rounded-2xl shadow-lg hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 ease-in-out cursor-pointer focus:outline-none focus:ring-4 focus:ring-teal-500 focus:ring-opacity-50 animate-fade-in-up"
+                            className="flex flex-col items-center justify-center p-4 sm:p-6 bg-white dark:bg-slate-800 rounded-2xl shadow-lg hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 ease-in-out cursor-pointer focus:outline-none focus:ring-4 focus:ring-indigo-500 focus:ring-opacity-50 animate-fade-in-up"
                             style={{ animationDelay: `${index * 50}ms` }}
                         >
                             <span className="text-4xl sm:text-5xl mb-3">{lang.flag}</span>

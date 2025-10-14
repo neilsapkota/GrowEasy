@@ -26,12 +26,12 @@ const LessonNode: React.FC<{
 
     const nodeColorClasses = {
         active: {
-            base: 'bg-green-700',
-            top: 'bg-green-500',
+            base: 'bg-sky-700',
+            top: 'bg-sky-500',
         },
         completed: {
-            base: 'bg-teal-700',
-            top: 'bg-teal-500',
+            base: 'bg-indigo-700',
+            top: 'bg-indigo-500',
         },
     };
 
@@ -58,7 +58,7 @@ const LessonNode: React.FC<{
                  <p className="font-bold">{topic.title}</p>
                  <button 
                     onClick={onStart} 
-                    className={`mt-2 w-full py-2 rounded-lg font-bold text-white uppercase text-sm ${status === 'completed' ? 'bg-teal-500 hover:bg-teal-600' : 'bg-green-500 hover:bg-green-600 border-b-4 border-green-700'}`}
+                    className={`mt-2 w-full py-2 rounded-lg font-bold text-white uppercase text-sm ${status === 'completed' ? 'bg-indigo-500 hover:bg-indigo-600' : 'bg-sky-500 hover:bg-sky-600 border-b-4 border-sky-700'}`}
                 >
                     {buttonLabel}
                 </button>

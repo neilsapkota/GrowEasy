@@ -12,8 +12,8 @@ const Header: React.FC<HeaderProps> = ({ user, progress, onLogout }) => {
     return (
         <header className="flex justify-between items-center mb-8 p-4 bg-white dark:bg-slate-800 rounded-xl shadow-md">
             <div>
-                <h1 className="text-2xl sm:text-3xl font-extrabold text-teal-600 dark:text-teal-400">
-                    WordVine
+                <h1 className="text-2xl sm:text-3xl font-extrabold text-indigo-600 dark:text-indigo-400">
+                    NovaLingo
                 </h1>
                 {user && <p className="text-slate-500 dark:text-slate-400">Welcome back, {user.name}!</p>}
             </div>
@@ -27,7 +27,7 @@ const Header: React.FC<HeaderProps> = ({ user, progress, onLogout }) => {
                         <FireIcon className="w-6 h-6 sm:w-8 sm:h-8" />
                         <span className="text-lg sm:text-xl font-bold">{progress.streak}</span>
                     </div>
-                    <img src={user.avatarUrl} alt={user.name} className="w-10 h-10 sm:w-12 sm:h-12 rounded-full border-2 border-teal-500" />
+                    <img src={user.avatarUrl} alt={user.name} className="w-10 h-10 sm:w-12 sm:h-12 rounded-full border-2 border-indigo-500" />
                      <button
                         onClick={onLogout}
                         className="p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full transition-colors"

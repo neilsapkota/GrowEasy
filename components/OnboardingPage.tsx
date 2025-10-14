@@ -15,9 +15,9 @@ const OnboardingPage: React.FC<OnboardingPageProps> = ({ onComplete }) => {
         // Step 1: Welcome
         <div key={0} className="text-center animate-fade-in-up">
             <Mascot className="w-32 h-32 mx-auto mb-4" />
-            <h2 className="text-3xl font-extrabold text-slate-800 dark:text-white">Welcome to Fluentli!</h2>
+            <h2 className="text-3xl font-extrabold text-slate-800 dark:text-white">Welcome to NovaLingo!</h2>
             <p className="text-slate-500 dark:text-slate-400 mt-2 text-lg">We're excited to help you on your language learning journey.</p>
-            <button onClick={nextStep} className="mt-8 w-full max-w-xs px-6 py-3 bg-teal-600 text-white font-bold rounded-lg hover:bg-teal-700 transition-colors">Let's Go!</button>
+            <button onClick={nextStep} className="mt-8 w-full max-w-xs px-6 py-3 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 transition-colors">Let's Go!</button>
         </div>,
         
         // Step 2: Goal Setting
@@ -35,7 +35,7 @@ const OnboardingPage: React.FC<OnboardingPageProps> = ({ onComplete }) => {
 
         // Step 3: Feature Intro
         <div key={2} className="text-center animate-fade-in-up">
-            <h2 className="text-3xl font-extrabold text-slate-800 dark:text-white mb-8">How Fluentli works</h2>
+            <h2 className="text-3xl font-extrabold text-slate-800 dark:text-white mb-8">How NovaLingo works</h2>
             <div className="space-y-6 max-w-md mx-auto">
                 <div className="flex items-center gap-4 text-left p-4 bg-slate-100 dark:bg-slate-800 rounded-lg">
                     <HomeIcon className="w-10 h-10 text-rose-500 flex-shrink-0" />
@@ -59,17 +59,17 @@ const OnboardingPage: React.FC<OnboardingPageProps> = ({ onComplete }) => {
                     </div>
                 </div>
             </div>
-            <button onClick={nextStep} className="mt-8 w-full max-w-xs px-6 py-3 bg-teal-600 text-white font-bold rounded-lg hover:bg-teal-700 transition-colors">Continue</button>
+            <button onClick={nextStep} className="mt-8 w-full max-w-xs px-6 py-3 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 transition-colors">Continue</button>
         </div>,
 
         // Step 4: Placement Test offer
         <div key={3} className="text-center animate-fade-in-up">
-            <ShieldCheckIcon className="w-20 h-20 text-teal-500 mx-auto mb-4" />
+            <ShieldCheckIcon className="w-20 h-20 text-sky-500 mx-auto mb-4" />
             <h2 className="text-3xl font-extrabold text-slate-800 dark:text-white">Know some already?</h2>
             <p className="text-slate-500 dark:text-slate-400 mt-2 mb-8 max-w-md mx-auto">Take our quick placement test to find your level and potentially skip ahead.</p>
             <div className="space-y-4 max-w-sm mx-auto">
-                <button onClick={() => onComplete(true)} className="w-full px-6 py-4 bg-teal-600 text-white font-bold rounded-lg hover:bg-teal-700 transition-colors">Take Placement Test</button>
-                <button onClick={() => onComplete(false)} className="w-full px-6 py-3 font-bold text-teal-600 dark:text-teal-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors">Start from scratch</button>
+                <button onClick={() => onComplete(true)} className="w-full px-6 py-4 bg-sky-600 text-white font-bold rounded-lg hover:bg-sky-700 transition-colors">Take Placement Test</button>
+                <button onClick={() => onComplete(false)} className="w-full px-6 py-3 font-bold text-sky-600 dark:text-sky-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors">Start from scratch</button>
             </div>
         </div>,
     ];

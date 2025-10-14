@@ -71,12 +71,12 @@ const Sidebar: React.FC<{
             onClick={() => onNavigate(item.page)}
             className={`w-full flex items-center space-x-4 py-3 px-4 rounded-lg transition-all duration-200 text-md font-bold uppercase relative group ${
                 isActive 
-                ? 'bg-gradient-to-r from-sky-500/20 to-teal-500/20 text-sky-300 shadow-lg' 
+                ? 'bg-gradient-to-r from-sky-500/20 to-indigo-500/20 text-sky-300 shadow-lg' 
                 : 'text-slate-400 hover:bg-slate-800/50'
             }`}
         >
-            <span className={`absolute inset-0 bg-gradient-to-r from-sky-500 to-teal-500 rounded-lg opacity-0 group-hover:opacity-10 transition-opacity duration-300 ${isActive ? 'opacity-100' : ''}`}></span>
-             <span className={`absolute left-0 top-0 h-full w-1 bg-gradient-to-b from-sky-400 to-teal-400 transition-transform duration-300 scale-y-0 group-hover:scale-y-50 ${isActive ? 'scale-y-100' : ''}`}></span>
+            <span className={`absolute inset-0 bg-gradient-to-r from-sky-500 to-indigo-500 rounded-lg opacity-0 group-hover:opacity-10 transition-opacity duration-300 ${isActive ? 'opacity-100' : ''}`}></span>
+             <span className={`absolute left-0 top-0 h-full w-1 bg-gradient-to-b from-sky-400 to-indigo-400 transition-transform duration-300 scale-y-0 group-hover:scale-y-50 ${isActive ? 'scale-y-100' : ''}`}></span>
             <item.icon className={`w-8 h-8 z-10 ${isActive ? 'text-sky-300' : 'text-slate-400'}`} />
             <span className="z-10">{item.label}</span>
             {item.count !== undefined && item.count > 0 && (
@@ -155,7 +155,7 @@ const Header: React.FC<{
         [Page.Profile]: "Profile",
         [Page.Settings]: "Settings",
         [Page.Help]: "Help",
-        [Page.About]: "About Fluentli",
+        [Page.About]: "About NovaLingo",
         [Page.FlashcardDecks]: "Flashcard Decks",
         [Page.Home]: "",
         [Page.LanguageSelection]: "",
@@ -210,7 +210,7 @@ const App: React.FC = () => {
     const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
     const [appSettings, setAppSettings] = useState<AppSettings>(() => {
         try {
-            const savedSettings = localStorage.getItem('fluentliSettings');
+            const savedSettings = localStorage.getItem('novaLingoSettings');
             return savedSettings ? JSON.parse(savedSettings) : { theme: 'system', soundEffectsEnabled: true };
         } catch {
             return { theme: 'system', soundEffectsEnabled: true };
@@ -257,7 +257,7 @@ const App: React.FC = () => {
 
 
     useEffect(() => {
-        const savedData = localStorage.getItem('fluentliSession');
+        const savedData = localStorage.getItem('novaLingoSession');
         if (savedData) {
             try {
                 const { user: savedUser, selectedLanguageId, userProgress: savedProgress } = JSON.parse(savedData);
@@ -272,7 +272,7 @@ const App: React.FC = () => {
                 }
             } catch (error) {
                 console.error("Failed to parse saved session data", error);
-                localStorage.removeItem('fluentliSession');
+                localStorage.removeItem('novaLingoSession');
             }
         } else {
             setPage(Page.Home);
@@ -287,7 +287,7 @@ const App: React.FC = () => {
                     selectedLanguageId: selectedLanguage?.id,
                     userProgress,
                 };
-                localStorage.setItem('fluentliSession', JSON.stringify(dataToSave));
+                localStorage.setItem('novaLingoSession', JSON.stringify(dataToSave));
             } catch (error) {
                 console.error("Failed to save session to localStorage", error);
             }
@@ -296,7 +296,7 @@ const App: React.FC = () => {
     
     // Persist settings
     useEffect(() => {
-        localStorage.setItem('fluentliSettings', JSON.stringify(appSettings));
+        localStorage.setItem('novaLingoSettings', JSON.stringify(appSettings));
     }, [appSettings]);
 
 
@@ -507,7 +507,7 @@ const App: React.FC = () => {
     };
 
     const handleLogout = useCallback(() => {
-        localStorage.removeItem('fluentliSession');
+        localStorage.removeItem('novaLingoSession');
         setUser(null);
         setUserProgress({});
         setSelectedLanguage(null);

@@ -1,6 +1,6 @@
 {
-  "name": "Fluentli",
-  "description": "Fluentli is a top-tier language learning app that serves as a competitor to Duolingo and Busuu, offering cutting-edge features for immersive learning, deep personalization, and vibrant community engagement, designed to make language acquisition intuitive, fun, and highly effective.",
+  "name": "NovaLingo",
+  "description": "NovaLingo is a top-tier language learning app that serves as a competitor to Duolingo and Busuu, offering cutting-edge features for immersive learning, deep personalization, and vibrant community engagement, designed to make language acquisition intuitive, fun, and highly effective.",
   "requestFramePermissions": [
     "microphone"
   ]

@@ -11,25 +11,33 @@ const Mascot: React.FC<{ className?: string }> = ({ className }) => {
                 <filter id="mascot-shadow" x="-20%" y="-20%" width="140%" height="140%">
                     <feDropShadow dx="2" dy="4" stdDeviation="3" floodColor="#000" floodOpacity="0.2" />
                 </filter>
+                 <linearGradient id="robot-body" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stopColor="#94a3b8" />
+                    <stop offset="100%" stopColor="#64748b" />
+                </linearGradient>
             </defs>
             <g filter="url(#mascot-shadow)" transform="translate(0, -5)">
-                {/* Pot */}
-                <path d="M 25,80 L 30,95 L 70,95 L 75,80 Z" fill="#d2a679" />
-                <path d="M 22,75 L 78,75 L 75,80 L 25,80 Z" fill="#b98c5d" />
+                {/* Antenna */}
+                <line x1="50" y1="15" x2="50" y2="5" stroke="#94a3b8" strokeWidth="2" />
+                <circle cx="50" cy="5" r="3" fill="#38bdf8" />
+                
+                {/* Head */}
+                <rect x="30" y="15" width="40" height="35" rx="8" fill="url(#robot-body)" />
+                
+                {/* Face Plate */}
+                <rect x="35" y="20" width="30" height="25" rx="4" fill="#1e293b" />
+                
+                 {/* Eyes */}
+                <circle cx="43" cy="33" r="4" fill="#38bdf8" />
+                <circle cx="57" cy="33" r="4" fill="#38bdf8" />
 
-                {/* Stem */}
-                <path d="M 50,75 C 55,60 45,40 50,25" stroke="#6a994e" strokeWidth="8" fill="none" strokeLinecap="round" />
+                {/* Body */}
+                <rect x="20" y="50" width="60" height="40" rx="10" fill="url(#robot-body)" />
+                
+                {/* Center Circle on Body */}
+                 <circle cx="50" cy="70" r="10" fill="#1e293b"/>
+                 <circle cx="50" cy="70" r="6" fill="#38bdf8" className="animate-pulse" />
 
-                {/* Leaf Head */}
-                <path d="M 50,25 C 20,25 30,5 50,5 C 70,5 80,25 50,25" fill="#a7c957" />
-                <path d="M 50,25 C 50,15 55,10 50,5" stroke="#6a994e" strokeWidth="2" fill="none" strokeLinecap="round" />
-
-                {/* Eyes */}
-                <circle cx="42" cy="18" r="5" fill="black" />
-                <circle cx="58" cy="18" r="5" fill="black" />
-                 {/* Eye highlights */}
-                <circle cx="44" cy="17" r="1.5" fill="white" />
-                <circle cx="60" cy="17" r="1.5" fill="white" />
             </g>
         </svg>
     );

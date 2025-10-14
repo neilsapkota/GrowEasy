@@ -49,12 +49,12 @@ const DictionaryPage: React.FC<DictionaryPageProps> = ({ language }) => {
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     placeholder={`Search in ${language.name}...`}
-                    className="flex-grow px-4 py-3 text-lg bg-white dark:bg-slate-800 border-2 border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 transition"
+                    className="flex-grow px-4 py-3 text-lg bg-white dark:bg-slate-800 border-2 border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
                 />
                 <button
                     type="submit"
                     disabled={isLoading || !searchTerm.trim()}
-                    className="px-6 py-3 font-bold text-white bg-teal-600 rounded-lg hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 disabled:bg-slate-400 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
+                    className="px-6 py-3 font-bold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-slate-400 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
                 >
                     {isLoading ? <SpinnerIcon className="w-6 h-6 animate-spin" /> : 'Search'}
                 </button>
@@ -77,7 +77,7 @@ const DictionaryPage: React.FC<DictionaryPageProps> = ({ language }) => {
                 <div className="p-8 bg-white dark:bg-slate-800 rounded-2xl shadow-lg animate-fade-in-up">
                     <div className="flex justify-between items-baseline">
                         <div>
-                            <h3 className="text-4xl font-extrabold text-teal-600 dark:text-teal-400">{entry.word}</h3>
+                            <h3 className="text-4xl font-extrabold text-indigo-600 dark:text-indigo-400">{entry.word}</h3>
                             {entry.pronunciation && (
                                 <p className="text-lg text-slate-500 dark:text-slate-400 font-mono">/{entry.pronunciation}/</p>
                             )}

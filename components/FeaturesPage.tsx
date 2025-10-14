@@ -52,7 +52,7 @@ const FeaturesPage: React.FC<FeaturesPageProps> = ({ onBack }) => {
         {
             icon: SparklesIcon,
             title: "Personalized For You",
-            description: "WordVine adapts to your learning style. From the placement test that finds your level to the practice sessions that focus on your mistakes, your journey is unique.",
+            description: "NovaLingo adapts to your learning style. From the placement test that finds your level to the practice sessions that focus on your mistakes, your journey is unique.",
         },
     ];
 
@@ -69,7 +69,7 @@ const FeaturesPage: React.FC<FeaturesPageProps> = ({ onBack }) => {
                         Features
                     </h1>
                     <p className="mt-4 text-lg text-slate-300 max-w-2xl mx-auto">
-                        Discover the powerful, AI-driven tools that make WordVine the most effective way to learn a language.
+                        Discover the powerful, AI-driven tools that make NovaLingo the most effective way to learn a language.
                     </p>
                 </header>
                 

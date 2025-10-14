@@ -1,10 +1,12 @@
 
+
 import React, { useState, useEffect } from 'react';
 import { Language, LessonTopic, LessonContent, MistakeItem, VocabularyItem, Challenge } from '../types';
 import { XP_PER_CORRECT_ANSWER } from '../constants';
 import { generateLesson } from '../services/geminiService';
 import Loader from './Loader';
-import { CheckCircleIcon, XCircleIcon, StarIcon, VolumeUpIcon } from './icons';
+import { CheckCircleIcon, XCircleIcon, StarIcon, VolumeUpIcon, XIcon } from './icons';
+import Logo from './Logo';
 
 const SOUND_URLS = {
     CORRECT: 'https://cdn.pixabay.com/download/audio/2023/10/05/audio_d121714e8b.mp3',
@@ -36,12 +38,15 @@ const speak = (text: string, lang: string, enabled: boolean) => {
 
 const LessonHeader: React.FC<{ progress: number; onExit: () => void }> = ({ progress, onExit }) => (
     <div className="flex items-center gap-4 mb-8">
-        <button onClick={onExit} className="text-2xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">&times;</button>
+        <button onClick={onExit} className="text-slate-400 hover:text-slate-200 p-1 rounded-full"><XIcon className="w-6 h-6" /></button>
         <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-4">
             <div
                 className="bg-green-500 h-4 rounded-full transition-all duration-300 ease-linear"
                 style={{ width: `${progress}%` }}
             />
+        </div>
+        <div className="hidden sm:block flex-shrink-0">
+             <Logo />
         </div>
     </div>
 );

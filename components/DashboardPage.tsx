@@ -13,46 +13,7 @@ interface DashboardPageProps {
     onStartLesson: (topic: LessonTopic) => void;
 }
 
-interface SkipConfirmModalProps {
-    isOpen: boolean;
-    sectionTitle: string;
-    onConfirm: () => void;
-    onClose: () => void;
-}
-
-const SkipConfirmModal: React.FC<SkipConfirmModalProps> = ({ isOpen, sectionTitle, onConfirm, onClose }) => {
-    if (!isOpen) return null;
-
-    return (
-        <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex justify-center items-center animate-fade-in">
-            <div
-                className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl p-8 w-full max-w-md m-4 text-center transform transition-all animate-fade-in-up"
-                onClick={(e) => e.stopPropagation()}
-            >
-                <h2 className="text-2xl font-bold text-slate-800 dark:text-white mb-2">Skip Ahead?</h2>
-                <p className="text-slate-500 dark:text-slate-400 mb-6">
-                    You're about to jump to <strong>{`"${sectionTitle}"`}</strong>. We recommend completing sections in order, but you can skip ahead if you're ready.
-                </p>
-                <div className="flex justify-center gap-4">
-                    <button
-                        onClick={onClose}
-                        className="px-6 py-3 font-bold text-slate-700 dark:text-slate-200 bg-slate-200 dark:bg-slate-600 hover:bg-slate-300 dark:hover:bg-slate-500 rounded-lg transition-colors"
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        onClick={onConfirm}
-                        className="px-6 py-3 font-bold text-white bg-teal-600 hover:bg-teal-700 rounded-lg transition-colors"
-                    >
-                        Yes, Skip Ahead
-                    </button>
-                </div>
-            </div>
-        </div>
-    );
-};
-
-type NodeStatus = 'locked' | 'active' | 'completed';
+type NodeStatus = 'active' | 'completed';
 
 const LessonNode: React.FC<{
     topic: LessonTopic;
@@ -60,14 +21,10 @@ const LessonNode: React.FC<{
     onStart: () => void;
     color: Unit['color'];
     isLast: boolean;
-}> = ({ topic, status, onStart, isLast }) => {
-    const isLocked = status === 'locked';
+    isNext: boolean;
+}> = ({ topic, status, onStart, isLast, isNext }) => {
 
     const nodeColorClasses = {
-        locked: {
-            base: 'bg-slate-700',
-            top: 'bg-slate-500',
-        },
         active: {
             base: 'bg-green-700',
             top: 'bg-green-500',
@@ -86,8 +43,7 @@ const LessonNode: React.FC<{
             
             <button
                 onClick={onStart}
-                disabled={isLocked}
-                className={`w-24 h-24 rounded-full relative transition-transform duration-200 ${isLocked ? 'cursor-not-allowed' : 'transform group-hover:-translate-y-1'}`}
+                className={`w-24 h-24 rounded-full relative transition-transform duration-200 transform group-hover:-translate-y-1`}
                 aria-label={`${buttonLabel} lesson: ${topic.title}`}
             >
                 <div className={`absolute inset-0 rounded-full ${nodeColorClasses[status].base}`}></div>
@@ -96,9 +52,9 @@ const LessonNode: React.FC<{
                         {status === 'completed' ? <CheckCircleIcon className="w-10 h-10" /> : <span className="text-4xl">{topic.icon}</span>}
                     </div>
                 </div>
-                {status === 'active' && <div className="absolute inset-0 rounded-full animate-pulse-glow"></div>}
+                {isNext && status === 'active' && <div className="absolute inset-0 rounded-full animate-pulse-glow"></div>}
             </button>
-            <div className={`absolute -bottom-20 w-48 text-center p-2 rounded-lg bg-slate-800 shadow-lg border border-slate-700 opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${isLocked ? 'hidden' : ''} z-10`}>
+            <div className={`absolute -bottom-20 w-48 text-center p-2 rounded-lg bg-slate-800 shadow-lg border border-slate-700 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10`}>
                  <p className="font-bold">{topic.title}</p>
                  <button 
                     onClick={onStart} 
@@ -128,15 +84,10 @@ const PathView: React.FC<PathViewProps> = ({ progress, onStartLesson, selectedSe
     }, [allLessons, completedTopics]);
 
     const getTopicStatus = (topicId: string): NodeStatus => {
-        if (completedTopics.includes(topicId)) return 'completed';
-        
-        const topicIndex = allLessons.findIndex(l => l.id === topicId);
-        
-        if (activeLessonIndex === -1) return 'completed'; // All lessons are done
-        if (topicIndex < activeLessonIndex) return 'completed'; // Should be covered by the first check, but good for safety
-        if (topicIndex === activeLessonIndex) return 'active';
-        
-        return 'locked';
+        if (completedTopics.includes(topicId)) {
+            return 'completed';
+        }
+        return 'active';
     };
 
     if (!section) {
@@ -176,6 +127,7 @@ const PathView: React.FC<PathViewProps> = ({ progress, onStartLesson, selectedSe
                                             key={topic.id}
                                             topic={topic}
                                             status={getTopicStatus(topic.id)}
+                                            isNext={allLessons.findIndex(l => l.id === topic.id) === activeLessonIndex}
                                             onStart={() => onStartLesson(topic)}
                                             color={unit.color}
                                             isLast={index === unit.lessons.length - 1}
@@ -271,8 +223,6 @@ const SectionsView: React.FC<SectionsViewProps> = ({ language, sectionProgress, 
 const DashboardPage: React.FC<DashboardPageProps> = (props) => {
     const [viewMode, setViewMode] = useState<'sections' | 'path'>('sections');
     const [selectedSectionNumber, setSelectedSectionNumber] = useState<number | null>(null);
-    const [showSkipConfirm, setShowSkipConfirm] = useState(false);
-    const [targetSection, setTargetSection] = useState<Section | null>(null);
 
     const completedTopics = useMemo(() => new Set(props.progress?.completedTopics ?? []), [props.progress]);
     
@@ -289,30 +239,8 @@ const DashboardPage: React.FC<DashboardPageProps> = (props) => {
     const activeSectionIndex = sectionProgress.findIndex(s => s.completedUnits < s.totalUnits);
 
     const handleSelectSection = (section: Section) => {
-        const sectionIndex = LEARNING_PATH.sections.findIndex(s => s.sectionNumber === section.sectionNumber);
-        const isUpcoming = activeSectionIndex !== -1 && sectionIndex > activeSectionIndex;
-        
-        if (isUpcoming) {
-            setTargetSection(section);
-            setShowSkipConfirm(true);
-        } else {
-            setSelectedSectionNumber(section.sectionNumber);
-            setViewMode('path');
-        }
-    };
-
-    const handleConfirmSkip = () => {
-        if (targetSection) {
-            setSelectedSectionNumber(targetSection.sectionNumber);
-            setViewMode('path');
-        }
-        setShowSkipConfirm(false);
-        setTargetSection(null);
-    };
-
-    const handleCloseSkipModal = () => {
-        setShowSkipConfirm(false);
-        setTargetSection(null);
+        setSelectedSectionNumber(section.sectionNumber);
+        setViewMode('path');
     };
 
     const handleBackToSections = () => {
@@ -332,12 +260,6 @@ const DashboardPage: React.FC<DashboardPageProps> = (props) => {
                     activeSectionIndex={activeSectionIndex}
                 />
             )}
-             <SkipConfirmModal
-                isOpen={showSkipConfirm}
-                onClose={handleCloseSkipModal}
-                onConfirm={handleConfirmSkip}
-                sectionTitle={targetSection?.title || ''}
-            />
         </>
     );
 };

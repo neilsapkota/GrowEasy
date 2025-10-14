@@ -25,7 +25,7 @@ import Logo from './components/Logo';
 // FIX: Added missing type imports
 import { Page, User, Language, LessonTopic, UserProgress, MistakeItem, VocabularyItem, PracticeMode, Quest, LeagueTier, Achievement, RegisteredUser, AppSettings, Theme, Message, AchievementTier, FlashcardDeck } from './types';
 import { LANGUAGES, DAILY_QUESTS, ACHIEVEMENTS, MONTHLY_CHALLENGES } from './constants';
-import { HomeIcon, UserCircleIcon, ChartBarIcon, LogoutIcon, StarIcon, FireIcon, PracticeIcon, BookOpenIcon, TrophyIcon, QuestsIcon, SettingsIcon, HelpIcon, UsersIcon, ChatBubbleLeftRightIcon, InfoIcon } from './components/icons';
+import { HomeIcon, UserCircleIcon, ChartBarIcon, LogoutIcon, StarIcon, FireIcon, PracticeIcon, BookOpenIcon, TrophyIcon, QuestsIcon, SettingsIcon, HelpIcon, UsersIcon, ChatBubbleLeftRightIcon, InfoIcon, MenuIcon } from './components/icons';
 import ProfilePage from './components/ProfilePage';
 
 declare const google: any; // Add this to inform TypeScript about the global 'google' object from the GSI library
@@ -139,7 +139,9 @@ const Sidebar: React.FC<{
     onLogout: () => void;
     friendRequestCount: number;
     unreadMessageCount: number;
-}> = ({ user, currentPage, onNavigate, onChangeLanguage, onLogout, friendRequestCount, unreadMessageCount }) => {
+    isOpen: boolean;
+    onClose: () => void;
+}> = ({ user, currentPage, onNavigate, onChangeLanguage, onLogout, friendRequestCount, unreadMessageCount, isOpen, onClose }) => {
     
     const mainNavItems = [
         { page: Page.Dashboard, icon: HomeIcon, label: 'LEARN' },
@@ -180,7 +182,9 @@ const Sidebar: React.FC<{
     );
 
     return (
-        <aside className="w-64 bg-slate-900/70 backdrop-blur-sm flex-shrink-0 p-4 hidden lg:flex flex-col border-r border-slate-800">
+        <>
+        {isOpen && <div onClick={onClose} className="fixed inset-0 bg-black/50 z-40 lg:hidden" />}
+        <aside className={`fixed inset-y-0 left-0 w-64 bg-slate-900/70 backdrop-blur-sm flex-shrink-0 p-4 flex flex-col border-r border-slate-800 z-50 transform transition-transform duration-300 ease-in-out lg:static lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
             <div className="mb-10 px-2 pt-2">
                 <Logo />
             </div>
@@ -221,6 +225,7 @@ const Sidebar: React.FC<{
                  )}
             </div>
         </aside>
+        </>
     );
 };
 
@@ -230,7 +235,8 @@ const Header: React.FC<{
     progress: UserProgress | null;
     selectedLanguage: Language | null;
     onChangeLanguage: () => void;
-}> = ({ page, user, progress, selectedLanguage, onChangeLanguage }) => {
+    onOpenMobileNav: () => void;
+}> = ({ page, user, progress, selectedLanguage, onChangeLanguage, onOpenMobileNav }) => {
     const pageTitles: Record<Page, string> = {
         [Page.Dashboard]: "Learn",
         [Page.PracticeHub]: "Practice",
@@ -256,19 +262,27 @@ const Header: React.FC<{
     };
     
     return (
-        <header className="flex justify-between items-center p-4">
-             <h2 className="text-2xl font-bold text-slate-100 hidden lg:block">{pageTitles[page]}</h2>
-             <div className="flex-grow flex items-center justify-end lg:hidden gap-4">
+        <header className="flex justify-between items-center p-4 border-b border-slate-800 lg:border-none">
+            {/* Left Section */}
+            <div className="flex items-center gap-4">
+                 <button onClick={onOpenMobileNav} className="lg:hidden p-1 text-slate-300">
+                    <MenuIcon className="w-6 h-6" />
+                 </button>
+                 <h2 className="text-2xl font-bold text-slate-100 hidden lg:block">{pageTitles[page]}</h2>
+            </div>
+            
+            {/* Right Section (User Stats) */}
+            <div className="flex items-center space-x-2 sm:space-x-4">
                  <div className="flex items-center space-x-2 text-amber-400">
-                    <StarIcon className="w-6 h-6" />
-                    <span className="text-lg font-bold">{progress?.xp ?? 0}</span>
+                    <StarIcon className="w-5 h-5 sm:w-6 sm:h-6" />
+                    <span className="text-sm sm:text-lg font-bold">{progress?.xp ?? 0}</span>
                 </div>
                  <div className="flex items-center space-x-2 text-orange-400">
-                    <FireIcon className="w-6 h-6" />
-                    <span className="text-lg font-bold">{progress?.streak ?? 0}</span>
+                    <FireIcon className="w-5 h-5 sm:w-6 sm:h-6" />
+                    <span className="text-sm sm:text-lg font-bold">{progress?.streak ?? 0}</span>
                 </div>
                  {selectedLanguage && (
-                    <button onClick={onChangeLanguage} className="text-3xl">
+                    <button onClick={onChangeLanguage} className="text-2xl sm:text-3xl">
                         {selectedLanguage.flag}
                     </button>
                  )}
@@ -276,33 +290,6 @@ const Header: React.FC<{
         </header>
     );
 }
-
-const BottomNavBar: React.FC<{ currentPage: Page; onNavigate: (page: Page) => void }> = ({ currentPage, onNavigate }) => {
-    const navItems = [
-        { page: Page.Dashboard, icon: HomeIcon, label: 'Learn' },
-        { page: Page.PracticeHub, icon: PracticeIcon, label: 'Practice' },
-        { page: Page.Quests, icon: QuestsIcon, label: 'Quests' },
-        { page: Page.Profile, icon: UserCircleIcon, label: 'Profile' },
-    ];
-    
-    return (
-        <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-slate-900/80 backdrop-blur-sm border-t border-slate-800 flex justify-around z-50">
-            {navItems.map(item => (
-                <button
-                    key={item.label}
-                    onClick={() => onNavigate(item.page)}
-                    className={`flex flex-col items-center justify-center pt-2 pb-1 w-full transition-colors ${
-                        currentPage === item.page ? 'text-sky-400' : 'text-slate-400'
-                    }`}
-                >
-                    <item.icon className="w-7 h-7" />
-                    <span className="text-xs font-bold mt-1">{item.label}</span>
-                </button>
-            ))}
-        </nav>
-    );
-};
-
 
 const App: React.FC = () => {
     const [page, setPage] = useState<Page>(Page.Home);
@@ -314,6 +301,7 @@ const App: React.FC = () => {
     const [selectedFlashcardDeck, setSelectedFlashcardDeck] = useState<FlashcardDeck | null>(null);
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
     const [toasts, setToasts] = useState<{ id: number; achievement: Achievement }[]>([]);
+    const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
     const [appSettings, setAppSettings] = useState<AppSettings>(() => {
         try {
             const savedSettings = localStorage.getItem('fluentliSettings');
@@ -435,20 +423,6 @@ const App: React.FC = () => {
     }, [messages]);
 
 
-    // Syncs user progress changes (like completing a lesson) to the master user list.
-    useEffect(() => {
-        if (user) {
-            setRegisteredUsers(prev => {
-                return prev.map(ru => {
-                    if (ru.user.email === user.email) {
-                        return { ...ru, progress: userProgress };
-                    }
-                    return ru;
-                });
-            });
-        }
-    }, [userProgress, user]);
-
     const updateQuestProgress = useCallback((updates: { type: 'xp' | 'lesson' | 'practice' | 'perfect_lesson', amount: number }[]) => {
         // ... existing quest logic
     }, [user, selectedLanguage]);
@@ -491,6 +465,7 @@ const App: React.FC = () => {
 
 
     const handleNavigate = useCallback((targetPage: Page) => {
+        setIsMobileNavOpen(false); // Close nav on navigation
         if (!user && [Page.Profile, Page.Leaderboard, Page.Quests, Page.Achievements, Page.Settings, Page.Friends, Page.Messages, Page.FlashcardDecks].includes(targetPage)) {
             setIsAuthModalOpen(true);
         } else {
@@ -547,44 +522,56 @@ const App: React.FC = () => {
 
     const handleCompleteLesson = useCallback((xpGained: number, newMistakes: MistakeItem[], newVocabulary: Omit<VocabularyItem, 'nextReview' | 'interval'>[], isPerfect: boolean) => {
         if (!user || !selectedLanguage || !selectedTopic) return;
-
         const langId = selectedLanguage.id;
-        const currentProgress = userProgress[langId];
-
-        // Update mistakes: add new ones, but don't duplicate
-        const existingMistakeQuestions = new Set(currentProgress.mistakes.map(m => m.question));
-        const uniqueNewMistakes = newMistakes.filter(m => !existingMistakeQuestions.has(m.question));
-        
-        const combinedMistakes = [...currentProgress.mistakes, ...uniqueNewMistakes];
-        const prunedMistakes = combinedMistakes.slice(-MISTAKE_LIMIT);
-
-        // Update vocabulary: add new ones with spaced repetition initial values
-        const existingVocabularyWords = new Set(currentProgress.learnedVocabulary.map(v => v.word));
-        const uniqueNewVocabulary = newVocabulary
-            .filter(v => !existingVocabularyWords.has(v.word))
-            .map(v => ({
-                ...v,
-                nextReview: new Date().toISOString(),
-                interval: 1,
-            }));
+    
+        // Use functional updates to ensure atomicity and avoid stale state.
+        setUserProgress(prevUserProgress => {
+            const currentProgress = prevUserProgress[langId];
+    
+            // Update mistakes
+            const existingMistakeQuestions = new Set(currentProgress.mistakes.map(m => m.question));
+            const uniqueNewMistakes = newMistakes.filter(m => !existingMistakeQuestions.has(m.question));
+            const combinedMistakes = [...currentProgress.mistakes, ...uniqueNewMistakes];
+            const prunedMistakes = combinedMistakes.slice(-MISTAKE_LIMIT);
+    
+            // Update vocabulary
+            const existingVocabularyWords = new Set(currentProgress.learnedVocabulary.map(v => v.word));
+            const uniqueNewVocabulary = newVocabulary
+                .filter(v => !existingVocabularyWords.has(v.word))
+                .map(v => ({
+                    ...v,
+                    nextReview: new Date().toISOString(),
+                    interval: 1,
+                }));
+                
+            const perfectLessonCount = (currentProgress.perfectLessons ?? 0) + (isPerfect ? 1 : 0);
+    
+            const updatedLangProgress: UserProgress = {
+                ...currentProgress,
+                xp: currentProgress.xp + xpGained,
+                completedTopics: [...new Set([...currentProgress.completedTopics, selectedTopic.id])],
+                mistakes: prunedMistakes,
+                learnedVocabulary: [...currentProgress.learnedVocabulary, ...uniqueNewVocabulary],
+                perfectLessons: perfectLessonCount,
+            };
+    
+            const newTotalProgress = { ...prevUserProgress, [langId]: updatedLangProgress };
+    
+            // Sync with registeredUsers immediately within the same state update cycle.
+            setRegisteredUsers(prevRegisteredUsers => 
+                prevRegisteredUsers.map(ru => {
+                    if (ru.user.email === user.email) {
+                        return { ...ru, progress: newTotalProgress };
+                    }
+                    return ru;
+                })
+            );
             
-        let perfectLessonCount = currentProgress.perfectLessons ?? 0;
-        if (isPerfect) {
-            perfectLessonCount += 1;
-        }
-
-        const updatedProgress: UserProgress = {
-            ...currentProgress,
-            xp: currentProgress.xp + xpGained,
-            completedTopics: [...new Set([...currentProgress.completedTopics, selectedTopic.id])],
-            mistakes: prunedMistakes,
-            learnedVocabulary: [...currentProgress.learnedVocabulary, ...uniqueNewVocabulary],
-            perfectLessons: perfectLessonCount,
-        };
-
-        setUserProgress(prev => ({ ...prev, [langId]: updatedProgress }));
+            return newTotalProgress; // Return the new state for setUserProgress
+        });
+    
         setPage(Page.Dashboard);
-
+    
         const questUpdates: { type: 'xp' | 'lesson' | 'practice' | 'perfect_lesson', amount: number }[] = [
             { type: 'xp', amount: xpGained },
             { type: 'lesson', amount: 1 },
@@ -593,12 +580,13 @@ const App: React.FC = () => {
             questUpdates.push({ type: 'perfect_lesson', amount: 1 });
         }
         updateQuestProgress(questUpdates);
-
-    }, [user, selectedLanguage, selectedTopic, userProgress, updateQuestProgress]);
+    
+    }, [user, selectedLanguage, selectedTopic, updateQuestProgress]);
     
     const handleChangeLanguage = useCallback(() => {
         setSelectedLanguage(null);
         setPage(Page.LanguageSelection);
+        setIsMobileNavOpen(false);
     }, []);
     
     const handleAuthSuccess = (authedUser: RegisteredUser, isNewUser: boolean) => {
@@ -637,6 +625,7 @@ const App: React.FC = () => {
         setUserProgress({});
         setSelectedLanguage(null);
         setPage(Page.Home);
+        setIsMobileNavOpen(false);
         // Add Google Sign-Out logic to prevent auto-relogin
         if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
             google.accounts.id.disableAutoSelect();
@@ -687,22 +676,24 @@ const App: React.FC = () => {
     }, []);
 
     const handleUpdateUser = useCallback((updatedUser: Partial<User>) => {
-        if (!user) return; // Can't update if no user is logged in
+        const currentUserEmail = user?.email;
+        if (!currentUserEmail) return;
     
-        const newUser = { ...user, ...updatedUser };
-        
-        // 1. Update the main 'user' state for the active session.
-        setUser(newUser);
+        // Update the session user state using a functional update
+        setUser(prevUser => ({ ...prevUser!, ...updatedUser }));
     
-        // 2. Update the 'registeredUsers' array, which is the master list.
+        // Update the master list of users using a functional update to prevent stale state
         setRegisteredUsers(prevRegisteredUsers => 
-            prevRegisteredUsers.map(ru => 
-                ru.user.email === user.email 
-                    ? { ...ru, user: newUser } // Replace the user object for the matching user
-                    : ru
-            )
+            prevRegisteredUsers.map(ru => {
+                if (ru.user.email === currentUserEmail) {
+                    // Merge with the user object from the PREVIOUS state (`ru.user`), not a stale closure.
+                    const updatedRuUser = { ...ru.user, ...updatedUser };
+                    return { ...ru, user: updatedRuUser };
+                }
+                return ru;
+            })
         );
-    }, [user]); // Dependency on user is needed to have the correct starting point for the update
+    }, [user?.email]);
 
     // --- Social Handlers ---
     const handleSendFriendRequest = useCallback((toEmail: string) => {
@@ -907,19 +898,17 @@ const App: React.FC = () => {
     return (
         <div className="min-h-screen transition-colors duration-500">
             <div className={isMainView ? "lg:flex" : ""}>
-                {isMainView && <Sidebar user={user} currentPage={page} onNavigate={handleNavigate} onChangeLanguage={handleChangeLanguage} onLogout={handleLogout} friendRequestCount={friendRequestCount} unreadMessageCount={unreadMessageCount} />}
+                {isMainView && <Sidebar user={user} currentPage={page} onNavigate={handleNavigate} onChangeLanguage={handleChangeLanguage} onLogout={handleLogout} friendRequestCount={friendRequestCount} unreadMessageCount={unreadMessageCount} isOpen={isMobileNavOpen} onClose={() => setIsMobileNavOpen(false)} />}
                 
-                <div className="flex-1 flex flex-col">
-                    {isMainView && <Header page={page} user={user} progress={currentProgress} selectedLanguage={selectedLanguage} onChangeLanguage={handleChangeLanguage} />}
-                    <main className={isMainView ? "flex-grow p-4 sm:p-6 pb-24 lg:pb-6" : "container mx-auto max-w-7xl"}>
+                <div className="flex-1 flex flex-col min-w-0">
+                    {isMainView && <Header page={page} user={user} progress={currentProgress} selectedLanguage={selectedLanguage} onChangeLanguage={handleChangeLanguage} onOpenMobileNav={() => setIsMobileNavOpen(true)}/>}
+                    <main className={isMainView ? "flex-grow p-4 sm:p-6" : "container mx-auto max-w-7xl"}>
                         <div key={`${page}-${practiceMode}`} className="animate-fade-in">
                             {renderPageContent()}
                         </div>
                     </main>
                 </div>
             </div>
-            
-             {isMainView && <BottomNavBar currentPage={page} onNavigate={handleNavigate} />}
             
             <AuthModal
                 isOpen={isAuthModalOpen}

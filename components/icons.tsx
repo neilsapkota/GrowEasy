@@ -298,3 +298,15 @@ export const GlobeAltIcon: React.FC<{ className?: string }> = ({ className }) =>
         <path fillRule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zM8.25 7.5a.75.75 0 000 1.5h7.5a.75.75 0 000-1.5H8.25zM8.25 11.25a.75.75 0 000 1.5h7.5a.75.75 0 000-1.5H8.25zM8.25 15a.75.75 0 000 1.5h4.5a.75.75 0 000-1.5H8.25z" clipRule="evenodd" />
     </svg>
 );
+
+export const MenuIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+    </svg>
+);
+
+export const XIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+    </svg>
+);

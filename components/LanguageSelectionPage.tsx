@@ -13,7 +13,7 @@ const LanguageSelectionPage: React.FC<LanguageSelectionPageProps> = ({ languages
                 <h2 className="text-3xl md:text-4xl font-extrabold my-8 text-slate-800 dark:text-white">
                     I want to learn...
                 </h2>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
                     {languages.map((lang, index) => (
                         <button
                             key={lang.id}

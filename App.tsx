@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import HomePage from './components/HomePage';
 import LanguageSelectionPage from './components/LanguageSelectionPage';
@@ -22,6 +23,7 @@ import FlashcardDecksPage from './components/FlashcardDecksPage'; // New Import
 import FeaturesPage from './components/FeaturesPage';
 import TestimonialsPage from './components/TestimonialsPage';
 import Logo from './components/Logo';
+import { getRegisteredUsers, saveRegisteredUsers, getMessages, saveMessages, ensureTestUserExists } from './components/mockDatabase';
 // FIX: Added missing type imports
 import { Page, User, Language, LessonTopic, UserProgress, MistakeItem, VocabularyItem, PracticeMode, Quest, LeagueTier, Achievement, RegisteredUser, AppSettings, Theme, Message, AchievementTier, FlashcardDeck } from './types';
 import { LANGUAGES, DAILY_QUESTS, ACHIEVEMENTS, MONTHLY_CHALLENGES } from './constants';
@@ -31,102 +33,6 @@ import ProfilePage from './components/ProfilePage';
 declare const google: any; // Add this to inform TypeScript about the global 'google' object from the GSI library
 
 const QUESTS_MAP = new Map(DAILY_QUESTS.map(q => [q.id, q]));
-
-const DUMMY_REGISTERED_USERS: RegisteredUser[] = [
-  {
-    user: {
-      name: "Alice",
-      email: "alice@wordvine.com",
-      avatarUrl: "https://api.dicebear.com/8.x/initials/svg?seed=Alice",
-      bio: "Learning Spanish for my trip to Colombia!"
-    },
-    progress: {
-      "es": {
-        xp: 125,
-        streak: 3,
-        completedTopics: [
-          "greetings",
-          "numbers"
-        ],
-        mistakes: [],
-        learnedVocabulary: [],
-        league: LeagueTier.Bronze,
-        unlockedAchievements: [
-          "xp_100",
-          "streak_3",
-          "lessons_1"
-        ],
-        practiceSessions: 2,
-        perfectLessons: 1,
-        activityLog: [],
-        flashcardDecks: []
-      }
-    },
-    friends: [
-      "bob@wordvine.com"
-    ],
-    friendRequests: []
-  },
-  {
-    user: {
-      name: "Bob",
-      email: "bob@wordvine.com",
-      avatarUrl: "https://api.dicebear.com/8.x/initials/svg?seed=Bob",
-      bio: "Trying to learn French."
-    },
-    progress: {
-      "fr": {
-        xp: 80,
-        streak: 1,
-        completedTopics: [
-          "greetings"
-        ],
-        mistakes: [],
-        learnedVocabulary: [],
-        league: LeagueTier.Bronze,
-        unlockedAchievements: [],
-        practiceSessions: 0,
-        perfectLessons: 0,
-        activityLog: [],
-        flashcardDecks: []
-      }
-    },
-    friends: [
-      "alice@wordvine.com"
-    ],
-    friendRequests: []
-  },
-  {
-    user: {
-      name: "Neil",
-      email: "neilsapkota@gmail.com",
-      avatarUrl: "https://api.dicebear.com/8.x/initials/svg?seed=Neil",
-      bio: ""
-    },
-    progress: {
-      "de": {
-        xp: 0,
-        streak: 0,
-        completedTopics: [],
-        mistakes: [],
-        learnedVocabulary: [],
-        league: LeagueTier.Bronze,
-        unlockedAchievements: [],
-        practiceSessions: 0,
-        perfectLessons: 0,
-        activityLog: [],
-        flashcardDecks: []
-      }
-    },
-    friends: [],
-    friendRequests: []
-  }
-];
-
-const DUMMY_MESSAGES: Message[] = [
-    { id: '1', from: 'alice@wordvine.com', to: 'bob@wordvine.com', content: 'Hey Bob, ready for the weekly leaderboard race?', timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), read: true },
-    { id: '2', from: 'bob@wordvine.com', to: 'alice@wordvine.com', content: 'You bet! I\'ve been practicing my Spanish. Watch out!', timestamp: new Date(Date.now() - 1000 * 60 * 60 * 1).toISOString(), read: false },
-];
 
 const MISTAKE_LIMIT = 100;
 
@@ -313,26 +219,12 @@ const App: React.FC = () => {
 
     const [languageChoiceForOnboarding, setLanguageChoiceForOnboarding] = useState<Language | null>(null);
     
+    // Use the new mockDatabase functions for state initialization
     const [registeredUsers, setRegisteredUsers] = useState<RegisteredUser[]>(() => {
-        try {
-            const savedUsers = localStorage.getItem('fluentliUsers');
-            if (savedUsers) {
-                return JSON.parse(savedUsers);
-            }
-        } catch (error) {
-            console.error("Failed to parse registered users from localStorage", error);
-        }
-        return DUMMY_REGISTERED_USERS;
+        const users = getRegisteredUsers();
+        return ensureTestUserExists(users); // Ensure our test user is always there
     });
-
-    const [messages, setMessages] = useState<Message[]>(() => {
-        try {
-            const savedMessages = localStorage.getItem('fluentliMessages');
-            return savedMessages ? JSON.parse(savedMessages) : DUMMY_MESSAGES;
-        } catch {
-            return DUMMY_MESSAGES;
-        }
-    });
+    const [messages, setMessages] = useState<Message[]>(getMessages);
 
     // Theme handler
     useEffect(() => {
@@ -408,18 +300,13 @@ const App: React.FC = () => {
     }, [appSettings]);
 
 
-    // Persist the entire registered users database whenever it changes
+    // Persist registered users and messages using the new service functions
     useEffect(() => {
-        try {
-            localStorage.setItem('fluentliUsers', JSON.stringify(registeredUsers));
-        } catch (error) {
-            console.error("Failed to save registered users to localStorage", error);
-        }
+        saveRegisteredUsers(registeredUsers);
     }, [registeredUsers]);
 
-    // Persist messages
     useEffect(() => {
-        localStorage.setItem('fluentliMessages', JSON.stringify(messages));
+        saveMessages(messages);
     }, [messages]);
 
 

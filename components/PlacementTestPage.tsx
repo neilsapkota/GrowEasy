@@ -1,15 +1,16 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Language, PlacementTestResult } from '../../types';
+import { Language, PlacementTestResult } from '../types';
 import { GoogleGenAI, LiveServerMessage, Modality, Blob } from "@google/genai";
 import { evaluateLiveConversation } from '../services/geminiService';
 import Loader from './Loader';
 import { CheckCircleIcon, StarIcon, ShieldCheckIcon, SpinnerIcon, MicrophoneIcon } from './icons';
 
-if (!process.env.API_KEY) {
-    throw new Error("API_KEY environment variable not set");
+const API_KEY = (import.meta as any).env?.VITE_API_KEY as string | undefined;
+if (!API_KEY) {
+    throw new Error("VITE_API_KEY environment variable not set");
 }
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const ai = new GoogleGenAI({ apiKey: API_KEY });
 
 // --- Audio Helper Functions ---
 function encode(bytes: Uint8Array) {

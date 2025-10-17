@@ -1,11 +1,12 @@
 import { GoogleGenAI, Type, Chat } from "@google/genai";
 import { Language, LessonContent, Feedback, Story, DictionaryEntry, ChatResponse, PronunciationFeedback, PlacementTestResult, WritingFeedback, Flashcard, VisionFeedback, GrammarTip, MistakeItem } from '../types';
 
-if (!process.env.API_KEY) {
-    throw new Error("API_KEY environment variable not set");
+const API_KEY = (import.meta as any).env?.VITE_API_KEY as string | undefined;
+if (!API_KEY) {
+    throw new Error("VITE_API_KEY environment variable not set");
 }
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const ai = new GoogleGenAI({ apiKey: API_KEY });
 
 const lessonSchema = {
     type: Type.OBJECT,

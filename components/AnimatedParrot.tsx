@@ -4,31 +4,39 @@ interface AnimatedParrotProps {
   onHoverTarget?: boolean;
 }
 
+interface Position {
+  x: number;
+  y: number;
+  rotation: number;
+}
+
 const AnimatedParrot: React.FC<AnimatedParrotProps> = ({ onHoverTarget = false }) => {
-  const [position, setPosition] = useState({ x: -100, y: 20 });
+  const [position, setPosition] = useState<Position>({ x: -15, y: 50, rotation: 0 });
   const [isFlying, setIsFlying] = useState(false);
-  const [wingRotation, setWingRotation] = useState(0);
+  const [wingPhase, setWingPhase] = useState(0);
   const [feathers, setFeathers] = useState<Array<{ id: number; x: number; y: number; opacity: number }>>([]);
   const parrotRef = useRef<HTMLDivElement>(null);
   const featherIdRef = useRef(0);
+  const flightTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const enterAnimation = setTimeout(() => {
       setIsFlying(true);
-      setPosition({ x: 10, y: 20 });
+      setPosition({ x: 15, y: 25, rotation: -5 });
 
       setTimeout(() => {
         setIsFlying(false);
-      }, 2000);
-    }, 500);
+        setPosition(prev => ({ ...prev, rotation: 0 }));
+      }, 2500);
+    }, 800);
 
     return () => clearTimeout(enterAnimation);
   }, []);
 
   useEffect(() => {
     const wingInterval = setInterval(() => {
-      setWingRotation(prev => (prev + 15) % 360);
-    }, 100);
+      setWingPhase(prev => (prev + 1) % 360);
+    }, 50);
 
     return () => clearInterval(wingInterval);
   }, []);
@@ -38,71 +46,96 @@ const AnimatedParrot: React.FC<AnimatedParrotProps> = ({ onHoverTarget = false }
       const featherInterval = setInterval(() => {
         const newFeather = {
           id: featherIdRef.current++,
-          x: position.x + Math.random() * 30 - 15,
-          y: position.y + Math.random() * 30 - 15,
-          opacity: 0.8
+          x: position.x + Math.random() * 8 - 4,
+          y: position.y + Math.random() * 8 - 4,
+          opacity: 0.7
         };
         setFeathers(prev => [...prev, newFeather]);
 
         setTimeout(() => {
           setFeathers(prev => prev.filter(f => f.id !== newFeather.id));
-        }, 2000);
-      }, 200);
+        }, 2500);
+      }, 300);
 
       return () => clearInterval(featherInterval);
     }
   }, [isFlying, position]);
 
   useEffect(() => {
-    if (onHoverTarget) {
+    if (onHoverTarget && !isFlying) {
       setIsFlying(true);
-      setPosition({ x: 60, y: 50 });
+      setPosition({ x: 35, y: 55, rotation: 5 });
 
       const resetTimer = setTimeout(() => {
         setIsFlying(false);
-      }, 1000);
+        setPosition(prev => ({ ...prev, rotation: 0 }));
+      }, 1500);
 
       return () => clearTimeout(resetTimer);
     }
   }, [onHoverTarget]);
 
   useEffect(() => {
-    const randomMovement = setInterval(() => {
-      if (!isFlying && !onHoverTarget) {
-        const movements = [
-          { x: 10, y: 20 },
-          { x: 15, y: 25 },
-          { x: 5, y: 15 },
-          { x: 20, y: 30 }
-        ];
-        const randomMove = movements[Math.floor(Math.random() * movements.length)];
-        setPosition(randomMove);
-      }
-    }, 5000);
+    const scheduleRandomFlight = () => {
+      const delay = 7000 + Math.random() * 8000;
 
-    return () => clearInterval(randomMovement);
+      flightTimeoutRef.current = setTimeout(() => {
+        if (!isFlying && !onHoverTarget) {
+          setIsFlying(true);
+
+          const flightPaths: Position[] = [
+            { x: 80, y: 20, rotation: -8 },
+            { x: 70, y: 40, rotation: 5 },
+            { x: 25, y: 35, rotation: -3 },
+            { x: 60, y: 60, rotation: 7 },
+            { x: 15, y: 25, rotation: -5 }
+          ];
+
+          const randomPath = flightPaths[Math.floor(Math.random() * flightPaths.length)];
+          setPosition(randomPath);
+
+          setTimeout(() => {
+            setIsFlying(false);
+            setPosition(prev => ({ ...prev, rotation: 0 }));
+            scheduleRandomFlight();
+          }, 3000);
+        } else {
+          scheduleRandomFlight();
+        }
+      }, delay);
+    };
+
+    scheduleRandomFlight();
+
+    return () => {
+      if (flightTimeoutRef.current) {
+        clearTimeout(flightTimeoutRef.current);
+      }
+    };
   }, [isFlying, onHoverTarget]);
 
-  const wingFlap = isFlying ? Math.sin(wingRotation * Math.PI / 180) * 20 : 0;
+  const wingFlap = isFlying
+    ? Math.sin(wingPhase * Math.PI / 180) * 25
+    : Math.sin(wingPhase * Math.PI / 180) * 8;
 
   return (
     <>
       {feathers.map(feather => (
         <div
           key={feather.id}
-          className="absolute pointer-events-none"
+          className="absolute pointer-events-none z-10"
           style={{
             left: `${feather.x}%`,
             top: `${feather.y}%`,
             opacity: feather.opacity,
-            animation: 'featherFall 2s ease-out forwards'
+            animation: 'featherDrift 2.5s ease-out forwards'
           }}
         >
-          <svg width="20" height="20" viewBox="0 0 20 20">
+          <svg width="16" height="16" viewBox="0 0 20 20">
             <path
-              d="M10 2 Q 15 10, 10 18 Q 5 10, 10 2 Z"
-              fill="#38bdf8"
-              opacity="0.6"
+              d="M10 2 Q 14 10, 10 18 Q 6 10, 10 2 Z"
+              fill="#6366f1"
+              opacity="0.5"
             />
           </svg>
         </div>
@@ -114,30 +147,37 @@ const AnimatedParrot: React.FC<AnimatedParrotProps> = ({ onHoverTarget = false }
         style={{
           left: `${position.x}%`,
           top: `${position.y}%`,
-          transition: isFlying ? 'all 2s cubic-bezier(0.4, 0, 0.2, 1)' : 'all 0.5s ease-in-out',
-          transform: `translate(-50%, -50%) ${isFlying ? 'rotate(-5deg)' : 'rotate(0deg)'}`
+          transition: isFlying
+            ? 'all 3s cubic-bezier(0.34, 1.56, 0.64, 1)'
+            : 'all 0.8s ease-out',
+          transform: `translate(-50%, -50%) rotate(${position.rotation}deg)`
         }}
       >
         <svg
-          width="120"
-          height="120"
+          width="100"
+          height="100"
           viewBox="0 0 200 200"
           xmlns="http://www.w3.org/2000/svg"
           style={{
-            filter: 'drop-shadow(2px 4px 6px rgba(0, 0, 0, 0.3))'
+            filter: 'drop-shadow(3px 5px 8px rgba(0, 0, 0, 0.4))'
           }}
         >
           <defs>
             <linearGradient id="parrot-body-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stopColor="#38bdf8" />
+              <stop offset="50%" stopColor="#6366f1" />
               <stop offset="100%" stopColor="#34d399" />
+            </linearGradient>
+            <linearGradient id="parrot-head-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#8b5cf6" />
+              <stop offset="100%" stopColor="#6366f1" />
             </linearGradient>
           </defs>
 
           <g>
             <ellipse cx="100" cy="110" rx="45" ry="60" fill="url(#parrot-body-gradient)" />
 
-            <circle cx="100" cy="60" r="35" fill="#6366f1" />
+            <circle cx="100" cy="60" r="35" fill="url(#parrot-head-gradient)" />
 
             <path d="M 75 60 C 50 60, 60 85, 75 75 Z" fill="#facc15" />
 
@@ -146,7 +186,7 @@ const AnimatedParrot: React.FC<AnimatedParrotProps> = ({ onHoverTarget = false }
               <animate
                 attributeName="cy"
                 values="55;57;55"
-                dur="3s"
+                dur="4s"
                 repeatCount="indefinite"
               />
             </circle>
@@ -154,25 +194,44 @@ const AnimatedParrot: React.FC<AnimatedParrotProps> = ({ onHoverTarget = false }
             <path d="M 95 25 Q 100 10, 105 25" stroke="#f472b6" strokeWidth="6" fill="none" strokeLinecap="round" />
             <path d="M 100 25 Q 105 10, 110 25" stroke="#ec4899" strokeWidth="6" fill="none" strokeLinecap="round" />
 
-            <g transform={`rotate(${wingFlap}, 110, 100)`}>
-              <path d="M 110 100 A 40 40 0 0 1 140 140 L 120 130 Z" fill="#10b981" />
+            <g
+              transform={`rotate(${wingFlap}, 110, 100)`}
+              style={{
+                transition: 'transform 0.05s ease-out'
+              }}
+            >
+              <path d="M 110 100 A 40 40 0 0 1 140 140 L 120 130 Z" fill="#10b981" opacity="0.9" />
+              <path d="M 112 105 A 35 35 0 0 1 135 135 L 118 128 Z" fill="#34d399" opacity="0.7" />
             </g>
 
             <path d="M 80 165 L 60 195 L 70 190 Z" fill="#ef4444" />
             <path d="M 90 168 L 80 198 L 90 195 Z" fill="#f97316" />
+            <path d="M 85 166 L 70 196 L 80 193 Z" fill="#fb923c" />
           </g>
         </svg>
       </div>
 
       <style>{`
-        @keyframes featherFall {
+        @keyframes featherDrift {
           0% {
-            transform: translateY(0) rotate(0deg);
-            opacity: 0.8;
+            transform: translateY(0) translateX(0) rotate(0deg) scale(1);
+            opacity: 0.7;
+          }
+          50% {
+            transform: translateY(50px) translateX(20px) rotate(180deg) scale(0.8);
+            opacity: 0.4;
           }
           100% {
-            transform: translateY(100px) rotate(360deg);
+            transform: translateY(120px) translateX(-10px) rotate(360deg) scale(0.5);
             opacity: 0;
+          }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          @keyframes featherDrift {
+            0%, 100% {
+              opacity: 0;
+            }
           }
         }
       `}</style>

@@ -7,6 +7,7 @@ import { NewHomePageIllustrations } from './NewHomePageIllustrations';
 import { GlobeAltIcon, StarIcon } from './icons';
 import { Page } from '../types';
 import AnimatedParrot from './AnimatedParrot';
+import AuroraBackground from './AuroraBackground';
 
 // === START ANIMATED GLOBE BACKGROUND ===
 
@@ -126,8 +127,10 @@ const HomePage: React.FC<{ onGetStarted: () => void; onNavigate: (page: Page) =>
 
     return (
         <div className="bg-slate-900 text-white font-sans">
-            {/* New animated globe background, fixed behind everything */}
-            <div className="fixed top-0 left-0 w-full h-full -z-10 opacity-40">
+            <AuroraBackground />
+
+            {/* Globe overlay for depth */}
+            <div className="fixed top-0 left-0 w-full h-full -z-10 opacity-20">
                 <GlobeBackground />
             </div>
 

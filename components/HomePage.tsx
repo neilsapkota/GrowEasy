@@ -4,8 +4,9 @@ import * as THREE from 'three';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Line } from '@react-three/drei';
 import { NewHomePageIllustrations } from './NewHomePageIllustrations';
-import { GlobeAltIcon, StarIcon } from './icons'; // Assuming StarIcon is available for ratings
+import { GlobeAltIcon, StarIcon } from './icons';
 import { Page } from '../types';
+import AnimatedParrot from './AnimatedParrot';
 
 // === START ANIMATED GLOBE BACKGROUND ===
 
@@ -115,9 +116,9 @@ const TestimonialCard: React.FC<{ quote: string; name: string; country: string; 
 
 const HomePage: React.FC<{ onGetStarted: () => void; onNavigate: (page: Page) => void; }> = ({ onGetStarted, onNavigate }) => {
     const [originUrl, setOriginUrl] = useState('');
+    const [isHoveringButton, setIsHoveringButton] = useState(false);
 
     useEffect(() => {
-        // This code runs when the page loads and gets the URL from the browser window itself.
         if (typeof window !== 'undefined') {
             setOriginUrl(window.location.origin);
         }
@@ -164,6 +165,8 @@ const HomePage: React.FC<{ onGetStarted: () => void; onNavigate: (page: Page) =>
 
                 {/* --- Hero Section --- */}
                 <header className="relative min-h-[90vh] flex items-center justify-center overflow-hidden p-4 pt-10 pb-20">
+                    <AnimatedParrot onHoverTarget={isHoveringButton} />
+
                     <div className="relative z-10 max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center px-4 sm:px-6 lg:px-8">
                         <div className="text-center lg:text-left space-y-8 animate-fade-in-up">
                             <h1 className="text-5xl md:text-7xl font-extrabold leading-tight">
@@ -174,6 +177,8 @@ const HomePage: React.FC<{ onGetStarted: () => void; onNavigate: (page: Page) =>
                             </p>
                             <button
                                 onClick={onGetStarted}
+                                onMouseEnter={() => setIsHoveringButton(true)}
+                                onMouseLeave={() => setIsHoveringButton(false)}
                                 className="px-8 py-4 text-lg font-bold text-white bg-indigo-500 rounded-xl hover:bg-indigo-600 focus:outline-none focus:ring-4 focus:ring-indigo-800 transition-all duration-200 transform hover:-translate-y-1 active:translate-y-0 active:scale-95 shadow-2xl hover:shadow-indigo-500/40"
                             >
                                 Start Learning Now

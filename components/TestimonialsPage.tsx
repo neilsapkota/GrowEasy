@@ -75,7 +75,7 @@ const TestimonialsPage: React.FC<TestimonialsPageProps> = ({ onBack }) => {
                         Loved by learners worldwide
                     </h1>
                     <p className="mt-4 text-lg text-slate-300 max-w-2xl mx-auto">
-                        See what our community is saying about their journey with NovaLingo.
+                        See what our community is saying about their journey with Vocal AI.
                     </p>
                 </header>
 

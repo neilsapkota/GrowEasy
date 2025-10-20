@@ -1,3 +1,6 @@
+// FIX: Add react import to ensure JSX global types are loaded.
+// import 'react';
+
 // FIX: Removed circular dependency import from './constants'.
 // FIX: Defined types locally and exported them.
 

@@ -15,7 +15,7 @@ const OnboardingPage: React.FC<OnboardingPageProps> = ({ onComplete }) => {
         // Step 1: Welcome
         <div key={0} className="text-center animate-fade-in-up">
             <Mascot className="w-32 h-32 mx-auto mb-4" />
-            <h2 className="text-3xl font-extrabold text-slate-800 dark:text-white">Welcome to NovaLingo!</h2>
+            <h2 className="text-3xl font-extrabold text-slate-800 dark:text-white">Welcome to Vocal AI!</h2>
             <p className="text-slate-500 dark:text-slate-400 mt-2 text-lg">We're excited to help you on your language learning journey.</p>
             <button onClick={nextStep} className="mt-8 w-full max-w-xs px-6 py-3 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 transition-colors">Let's Go!</button>
         </div>,
@@ -35,7 +35,7 @@ const OnboardingPage: React.FC<OnboardingPageProps> = ({ onComplete }) => {
 
         // Step 3: Feature Intro
         <div key={2} className="text-center animate-fade-in-up">
-            <h2 className="text-3xl font-extrabold text-slate-800 dark:text-white mb-8">How NovaLingo works</h2>
+            <h2 className="text-3xl font-extrabold text-slate-800 dark:text-white mb-8">How Vocal AI works</h2>
             <div className="space-y-6 max-w-md mx-auto">
                 <div className="flex items-center gap-4 text-left p-4 bg-slate-100 dark:bg-slate-800 rounded-lg">
                     <HomeIcon className="w-10 h-10 text-rose-500 flex-shrink-0" />

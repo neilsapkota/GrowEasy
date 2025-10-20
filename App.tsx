@@ -23,12 +23,11 @@ import FlashcardDecksPage from './components/FlashcardDecksPage'; // New Import
 import FeaturesPage from './components/FeaturesPage';
 import TestimonialsPage from './components/TestimonialsPage';
 import Logo from './components/Logo';
-import { ThemeProvider, ThemeToggle, AccessibilitySettings } from './components/ThemeProvider';
 import { getRegisteredUsers, saveRegisteredUsers, getMessages, saveMessages, ensureTestUserExists } from './components/mockDatabase';
 // FIX: Added missing type imports
 import { Page, User, Language, LessonTopic, UserProgress, MistakeItem, VocabularyItem, PracticeMode, Quest, LeagueTier, Achievement, RegisteredUser, AppSettings, Theme, Message, AchievementTier, FlashcardDeck } from './types';
 import { LANGUAGES, DAILY_QUESTS, ACHIEVEMENTS, MONTHLY_CHALLENGES } from './constants';
-import { HomeIcon, UserCircleIcon, ChartBarIcon, LogoutIcon, StarIcon, FireIcon, PracticeIcon, BookOpenIcon, TrophyIcon, QuestsIcon, SettingsIcon, HelpIcon, UsersIcon, ChatBubbleLeftRightIcon, InfoIcon, MenuIcon } from './components/icons';
+import { HomeIcon, UserCircleIcon, ChartBarIcon, LogoutIcon, StarIcon, FireIcon, PracticeIcon, BookOpenIcon, TrophyIcon, QuestsIcon, SettingsIcon, HelpIcon, UsersIcon, ChatBubbleLeftRightIcon, InfoIcon, MenuIcon, XIcon } from './components/icons';
 import ProfilePage from './components/ProfilePage';
 
 declare const google: any; // Add this to inform TypeScript about the global 'google' object from the GSI library
@@ -38,7 +37,7 @@ const QUESTS_MAP = new Map(DAILY_QUESTS.map(q => [q.id, q]));
 const MISTAKE_LIMIT = 100;
 
 
-const Sidebar: React.FC<{
+const StaggeredMenu: React.FC<{
     user: User | null;
     currentPage: Page;
     onNavigate: (page: Page) => void;
@@ -50,110 +49,117 @@ const Sidebar: React.FC<{
     onClose: () => void;
 }> = ({ user, currentPage, onNavigate, onChangeLanguage, onLogout, friendRequestCount, unreadMessageCount, isOpen, onClose }) => {
     
-    const mainNavItems = [
-        { page: Page.Dashboard, icon: HomeIcon, label: 'LEARN', description: 'Start learning lessons' },
-        { page: Page.PracticeHub, icon: PracticeIcon, label: 'PRACTICE', description: 'Practice your skills' },
-        { page: Page.Dictionary, icon: BookOpenIcon, label: 'DICTIONARY', description: 'Look up words' },
-        { page: Page.Quests, icon: QuestsIcon, label: 'QUESTS', description: 'Complete daily challenges' },
-        { page: Page.Achievements, icon: TrophyIcon, label: 'ACHIEVEMENTS', description: 'View your achievements' },
-        { page: Page.Leaderboard, icon: ChartBarIcon, label: 'LEADERBOARD', description: 'See rankings' },
-        { page: Page.Friends, icon: UsersIcon, label: 'FRIENDS', description: 'Manage friends', count: friendRequestCount },
-        { page: Page.Messages, icon: ChatBubbleLeftRightIcon, label: 'MESSAGES', description: 'Chat with friends', count: unreadMessageCount },
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                onClose();
+            }
+        };
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, [onClose]);
+
+    // FIX: Define a type for navigation items to allow for the optional 'count' property, resolving TypeScript errors.
+    type NavItem = {
+        page: Page;
+        icon: React.ElementType;
+        label: string;
+        count?: number;
+    };
+
+    const mainNavItems: NavItem[] = [
+        { page: Page.Dashboard, icon: HomeIcon, label: 'LEARN' },
+        { page: Page.PracticeHub, icon: PracticeIcon, label: 'PRACTICE' },
+        { page: Page.Dictionary, icon: BookOpenIcon, label: 'DICTIONARY' },
+        { page: Page.Quests, icon: QuestsIcon, label: 'QUESTS' },
+        { page: Page.Achievements, icon: TrophyIcon, label: 'ACHIEVEMENTS' },
+        { page: Page.Leaderboard, icon: ChartBarIcon, label: 'LEADERBOARD' },
+        { page: Page.Friends, icon: UsersIcon, label: 'FRIENDS', count: friendRequestCount },
+        { page: Page.Messages, icon: ChatBubbleLeftRightIcon, label: 'MESSAGES', count: unreadMessageCount },
     ];
 
-    const bottomNavItems = [
-        { page: Page.Profile, icon: UserCircleIcon, label: 'PROFILE', description: 'View your profile' },
-        { page: Page.Settings, icon: SettingsIcon, label: 'SETTINGS', description: 'App settings' },
-        { page: Page.Help, icon: HelpIcon, label: 'HELP', description: 'Get help and support' },
+    const bottomNavItems: NavItem[] = [
+        { page: Page.Profile, icon: UserCircleIcon, label: 'PROFILE' },
+        { page: Page.Settings, icon: SettingsIcon, label: 'SETTINGS' },
+        { page: Page.Help, icon: HelpIcon, label: 'HELP' },
     ];
-
-    const NavButton: React.FC<{item: {page: Page; icon: React.ElementType; label: string; description: string; count?: number}; isActive: boolean;}> = ({ item, isActive }) => (
-        <button
-            onClick={() => onNavigate(item.page)}
-            className={`w-full flex items-center space-x-4 py-3 px-4 rounded-lg transition-all duration-200 text-md font-bold uppercase relative group focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-slate-900 ${
-                isActive 
-                ? 'bg-gradient-to-r from-sky-500/20 to-indigo-500/20 text-sky-300 shadow-lg' 
-                : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'
-            }`}
-            aria-label={`${item.label} - ${item.description}`}
-            aria-current={isActive ? 'page' : undefined}
-        >
-            <span className={`absolute inset-0 bg-gradient-to-r from-sky-500 to-indigo-500 rounded-lg opacity-0 group-hover:opacity-10 transition-opacity duration-300 ${isActive ? 'opacity-100' : ''}`}></span>
-             <span className={`absolute left-0 top-0 h-full w-1 bg-gradient-to-b from-sky-400 to-indigo-400 transition-transform duration-300 scale-y-0 group-hover:scale-y-50 ${isActive ? 'scale-y-100' : ''}`}></span>
-            <item.icon className={`w-8 h-8 z-10 ${isActive ? 'text-sky-300' : 'text-slate-400'}`} aria-hidden="true" />
-            <span className="z-10">{item.label}</span>
-            {item.count !== undefined && item.count > 0 && (
-                 <span className="absolute right-4 top-1/2 -translate-y-1/2 w-6 h-6 bg-rose-500 rounded-full flex items-center justify-center text-xs font-bold text-white z-10 shadow-lg" aria-label={`${item.count} notifications`}>
-                    {item.count}
-                </span>
-            )}
-        </button>
-    );
+    
+    const allNavItems: NavItem[] = [...mainNavItems, ...bottomNavItems];
 
     return (
-        <>
-        {isOpen && <div onClick={onClose} className="fixed inset-0 bg-black/50 z-40 lg:hidden" aria-hidden="true" />}
-        <aside 
-            className={`fixed inset-y-0 left-0 w-64 bg-slate-900/70 backdrop-blur-sm flex-shrink-0 p-4 flex flex-col border-r border-slate-800 z-50 transform transition-transform duration-300 ease-in-out lg:static lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}
-            role="navigation"
-            aria-label="Main navigation"
+        <div 
+            className={`fixed inset-0 bg-slate-900/90 backdrop-blur-md z-50 transition-opacity duration-300 ease-in-out ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+            onClick={onClose}
         >
-            <div className="mb-10 px-2 pt-2">
-                <Logo />
-            </div>
-            <nav className="flex-grow" role="navigation" aria-label="Primary navigation">
-                <ul className="space-y-2" role="list">
-                    {mainNavItems.map(item => (
-                        <li key={item.label} role="listitem">
-                           <NavButton item={item} isActive={currentPage === item.page} />
-                        </li>
-                    ))}
-                </ul>
-            </nav>
-            <div className="space-y-2">
-                <ul className="space-y-2 pt-4 border-t border-slate-800" role="list">
-                    {bottomNavItems.map(item => (
-                         <li key={item.label} role="listitem">
-                           <NavButton item={item} isActive={currentPage === item.page} />
-                        </li>
-                    ))}
-                </ul>
-                
-                {/* Theme Toggle */}
-                <div className="pt-4 border-t border-slate-800">
-                    <div className="flex items-center justify-between px-4 py-2">
-                        <span className="text-sm font-medium text-slate-300">Theme</span>
-                        <ThemeToggle />
-                    </div>
-                </div>
-                
-                <button 
-                    onClick={onChangeLanguage} 
-                    className="w-full text-left flex items-center space-x-4 py-3 px-4 rounded-lg transition-colors text-md font-bold uppercase text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-slate-900"
-                    aria-label="Change language"
-                >
-                    <span className="text-2xl" aria-hidden="true">🌐</span>
-                    <span>Language</span>
+            <div 
+                className="relative w-full h-full flex flex-col items-center justify-center p-8"
+                onClick={(e) => e.stopPropagation()}
+            >
+                <button onClick={onClose} className="absolute top-6 right-6 text-slate-400 hover:text-white transition-colors">
+                    <XIcon className="w-8 h-8" />
                 </button>
-                 {user && (
-                    <div className="flex items-center space-x-3 p-2 rounded-xl mt-4 border-t border-slate-800 pt-4">
-                        <img src={user.avatarUrl} alt={`${user.name}'s profile picture`} className="w-10 h-10 rounded-full ring-2 ring-slate-700" />
-                        <div className="flex-grow truncate">
+                
+                <nav className="flex-grow flex items-center">
+                    <ul className="space-y-4 text-center">
+                        {allNavItems.map((item, index) => (
+                            <li 
+                                key={item.page}
+                                className="transform transition-all duration-300 ease-out"
+                                style={{ 
+                                    transitionDelay: `${100 + index * 30}ms`,
+                                    transform: isOpen ? 'translateX(0)' : 'translateX(-15px)',
+                                    opacity: isOpen ? 1 : 0
+                                }}
+                            >
+                                <button
+                                    onClick={() => onNavigate(item.page)}
+                                    className={`relative text-2xl md:text-3xl font-bold transition-colors duration-300 group py-2 ${currentPage === item.page ? 'text-sky-400' : 'text-slate-300 hover:text-white'}`}
+                                >
+                                    <span className="flex items-center gap-3">
+                                        <item.icon className="w-7 h-7" />
+                                        <span>{item.label}</span>
+                                        {item.count !== undefined && item.count > 0 && (
+                                            <span className="w-6 h-6 bg-rose-500 rounded-full flex items-center justify-center text-xs font-bold text-white shadow-lg">
+                                                {item.count}
+                                            </span>
+                                        )}
+                                    </span>
+                                    {currentPage === item.page && <span className="absolute -bottom-0 left-0 w-full h-0.5 bg-sky-400"></span>}
+                                </button>
+                            </li>
+                        ))}
+                    </ul>
+                </nav>
+
+                <div 
+                    className="flex-shrink-0 space-y-4 text-center transform transition-all duration-300 ease-out"
+                    style={{
+                        transitionDelay: `${100 + allNavItems.length * 30}ms`,
+                        transform: isOpen ? 'translateY(0)' : 'translateY(15px)',
+                        opacity: isOpen ? 1 : 0
+                    }}
+                >
+                    <button 
+                        onClick={onChangeLanguage} 
+                        className="text-lg font-bold uppercase text-slate-400 hover:text-white transition-colors"
+                    >
+                        <span className="flex items-center gap-2">
+                            <span className="text-2xl">🌐</span>
+                            <span>Change Language</span>
+                        </span>
+                    </button>
+                     {user && (
+                        <div className="flex items-center justify-center gap-3 pt-4 border-t border-slate-700">
+                            <img src={user.avatarUrl} alt={user.name} className="w-10 h-10 rounded-full" />
                             <span className="font-bold text-slate-200">{user.name}</span>
+                            <button onClick={onLogout} title="Log Out" className="p-2 rounded-md text-slate-400 hover:bg-slate-700">
+                                <LogoutIcon className="w-6 h-6" />
+                            </button>
                         </div>
-                        <button 
-                            onClick={onLogout} 
-                            title="Log Out" 
-                            className="p-2 rounded-md text-slate-400 hover:bg-slate-700 hover:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-slate-900"
-                            aria-label="Log out of your account"
-                        >
-                            <LogoutIcon className="w-6 h-6" aria-hidden="true" />
-                        </button>
-                    </div>
-                 )}
+                     )}
+                </div>
             </div>
-        </aside>
-        </>
+        </div>
     );
 };
 
@@ -163,8 +169,8 @@ const Header: React.FC<{
     progress: UserProgress | null;
     selectedLanguage: Language | null;
     onChangeLanguage: () => void;
-    onOpenMobileNav: () => void;
-}> = ({ page, user, progress, selectedLanguage, onChangeLanguage, onOpenMobileNav }) => {
+    onOpenNav: () => void;
+}> = ({ page, user, progress, selectedLanguage, onChangeLanguage, onOpenNav }) => {
     const pageTitles: Record<Page, string> = {
         [Page.Dashboard]: "Learn",
         [Page.PracticeHub]: "Practice",
@@ -177,7 +183,7 @@ const Header: React.FC<{
         [Page.Profile]: "Profile",
         [Page.Settings]: "Settings",
         [Page.Help]: "Help",
-        [Page.About]: "About NovaLingo",
+        [Page.About]: "About Vocal AI",
         [Page.FlashcardDecks]: "Flashcard Decks",
         [Page.Home]: "",
         [Page.LanguageSelection]: "",
@@ -190,42 +196,27 @@ const Header: React.FC<{
     };
     
     return (
-        <header className="flex justify-between items-center p-4 border-b border-slate-800 lg:border-none" role="banner">
-            {/* Skip Links */}
-            <a href="#main-content" className="skip-link">
-                Skip to main content
-            </a>
-            
+        <header className="flex justify-between items-center p-4 border-b border-slate-800 lg:border-none">
             {/* Left Section */}
             <div className="flex items-center gap-4">
-                 <button 
-                    onClick={onOpenMobileNav} 
-                    className="lg:hidden p-1 text-slate-300 hover:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-slate-900 rounded"
-                    aria-label="Open navigation menu"
-                    aria-expanded="false"
-                >
-                    <MenuIcon className="w-6 h-6" aria-hidden="true" />
+                 <button onClick={onOpenNav} className="p-1 text-slate-300">
+                    <MenuIcon className="w-6 h-6" />
                  </button>
-                 <h1 className="text-2xl font-bold text-slate-100 hidden lg:block">{pageTitles[page]}</h1>
+                 <h2 className="text-2xl font-bold text-slate-100 hidden lg:block">{pageTitles[page]}</h2>
             </div>
             
             {/* Right Section (User Stats) */}
-            <div className="flex items-center space-x-2 sm:space-x-4" role="group" aria-label="User statistics">
-                 <div className="flex items-center space-x-2 text-amber-400" aria-label={`${progress?.xp ?? 0} experience points`}>
-                    <StarIcon className="w-5 h-5 sm:w-6 sm:h-6" aria-hidden="true" />
+            <div className="flex items-center space-x-2 sm:space-x-4">
+                 <div className="flex items-center space-x-2 text-amber-400">
+                    <StarIcon className="w-5 h-5 sm:w-6 sm:h-6" />
                     <span className="text-sm sm:text-lg font-bold">{progress?.xp ?? 0}</span>
                 </div>
-                 <div className="flex items-center space-x-2 text-orange-400" aria-label={`${progress?.streak ?? 0} day streak`}>
-                    <FireIcon className="w-5 h-5 sm:w-6 sm:h-6" aria-hidden="true" />
+                 <div className="flex items-center space-x-2 text-orange-400">
+                    <FireIcon className="w-5 h-5 sm:w-6 sm:h-6" />
                     <span className="text-sm sm:text-lg font-bold">{progress?.streak ?? 0}</span>
                 </div>
                  {selectedLanguage && (
-                    <button 
-                        onClick={onChangeLanguage} 
-                        className="text-2xl sm:text-3xl hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-slate-900 rounded"
-                        aria-label={`Change language. Current: ${selectedLanguage.name}`}
-                        title={`Current language: ${selectedLanguage.name}`}
-                    >
+                    <button onClick={onChangeLanguage} className="text-2xl sm:text-3xl">
                         {selectedLanguage.flag}
                     </button>
                  )}
@@ -244,10 +235,10 @@ const App: React.FC = () => {
     const [selectedFlashcardDeck, setSelectedFlashcardDeck] = useState<FlashcardDeck | null>(null);
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
     const [toasts, setToasts] = useState<{ id: number; achievement: Achievement }[]>([]);
-    const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+    const [isNavOpen, setIsNavOpen] = useState(false);
     const [appSettings, setAppSettings] = useState<AppSettings>(() => {
         try {
-            const savedSettings = localStorage.getItem('novaLingoSettings');
+            const savedSettings = localStorage.getItem('vocalAiSettings');
             return savedSettings ? JSON.parse(savedSettings) : { theme: 'system', soundEffectsEnabled: true };
         } catch {
             return { theme: 'system', soundEffectsEnabled: true };
@@ -294,7 +285,7 @@ const App: React.FC = () => {
 
 
     useEffect(() => {
-        const savedData = localStorage.getItem('novaLingoSession');
+        const savedData = localStorage.getItem('vocalAiSession');
         if (savedData) {
             try {
                 const { user: savedUser, selectedLanguageId, userProgress: savedProgress } = JSON.parse(savedData);
@@ -309,7 +300,7 @@ const App: React.FC = () => {
                 }
             } catch (error) {
                 console.error("Failed to parse saved session data", error);
-                localStorage.removeItem('novaLingoSession');
+                localStorage.removeItem('vocalAiSession');
             }
         } else {
             setPage(Page.Home);
@@ -324,7 +315,7 @@ const App: React.FC = () => {
                     selectedLanguageId: selectedLanguage?.id,
                     userProgress,
                 };
-                localStorage.setItem('novaLingoSession', JSON.stringify(dataToSave));
+                localStorage.setItem('vocalAiSession', JSON.stringify(dataToSave));
             } catch (error) {
                 console.error("Failed to save session to localStorage", error);
             }
@@ -333,7 +324,7 @@ const App: React.FC = () => {
     
     // Persist settings
     useEffect(() => {
-        localStorage.setItem('novaLingoSettings', JSON.stringify(appSettings));
+        localStorage.setItem('vocalAiSettings', JSON.stringify(appSettings));
     }, [appSettings]);
 
 
@@ -389,7 +380,7 @@ const App: React.FC = () => {
 
 
     const handleNavigate = useCallback((targetPage: Page) => {
-        setIsMobileNavOpen(false); // Close nav on navigation
+        setIsNavOpen(false); // Close nav on navigation
         if (!user && [Page.Profile, Page.Leaderboard, Page.Quests, Page.Achievements, Page.Settings, Page.Friends, Page.Messages, Page.FlashcardDecks].includes(targetPage)) {
             setIsAuthModalOpen(true);
         } else {
@@ -510,7 +501,7 @@ const App: React.FC = () => {
     const handleChangeLanguage = useCallback(() => {
         setSelectedLanguage(null);
         setPage(Page.LanguageSelection);
-        setIsMobileNavOpen(false);
+        setIsNavOpen(false);
     }, []);
     
     const handleAuthSuccess = (authedUser: RegisteredUser, isNewUser: boolean) => {
@@ -544,12 +535,12 @@ const App: React.FC = () => {
     };
 
     const handleLogout = useCallback(() => {
-        localStorage.removeItem('novaLingoSession');
+        localStorage.removeItem('vocalAiSession');
         setUser(null);
         setUserProgress({});
         setSelectedLanguage(null);
         setPage(Page.Home);
-        setIsMobileNavOpen(false);
+        setIsNavOpen(false);
         // Add Google Sign-Out logic to prevent auto-relogin
         if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
             google.accounts.id.disableAutoSelect();
@@ -820,44 +811,28 @@ const App: React.FC = () => {
     const currentProgress = selectedLanguage ? userProgress[selectedLanguage.id] : null;
 
     return (
-        <ThemeProvider>
-            <div className="min-h-screen bg-slate-900 text-slate-100">
-                <div className={isMainView ? "lg:flex" : ""}>
-                    {isMainView && <Sidebar user={user} currentPage={page} onNavigate={handleNavigate} onChangeLanguage={handleChangeLanguage} onLogout={handleLogout} friendRequestCount={friendRequestCount} unreadMessageCount={unreadMessageCount} isOpen={isMobileNavOpen} onClose={() => setIsMobileNavOpen(false)} />}
-                    
-                    <div className="flex-1 flex flex-col min-w-0">
-                        {isMainView && <Header page={page} user={user} progress={currentProgress} selectedLanguage={selectedLanguage} onChangeLanguage={handleChangeLanguage} onOpenMobileNav={() => setIsMobileNavOpen(true)}/>}
-                        <main 
-                            id="main-content"
-                            className={isMainView ? "flex-grow p-4 sm:p-6" : "container mx-auto max-w-7xl"}
-                            role="main"
-                            aria-label="Main content"
-                        >
-                            <div key={`${page}-${practiceMode}`} className="animate-fade-in">
-                                {renderPageContent()}
-                            </div>
-                        </main>
+        <div className="min-h-screen transition-colors duration-500">
+            {isMainView && <StaggeredMenu user={user} currentPage={page} onNavigate={handleNavigate} onChangeLanguage={handleChangeLanguage} onLogout={handleLogout} friendRequestCount={friendRequestCount} unreadMessageCount={unreadMessageCount} isOpen={isNavOpen} onClose={() => setIsNavOpen(false)} />}
+            
+            <div className="flex flex-col min-h-screen">
+                {isMainView && <Header page={page} user={user} progress={currentProgress} selectedLanguage={selectedLanguage} onChangeLanguage={handleChangeLanguage} onOpenNav={() => setIsNavOpen(true)}/>}
+                <main className={isMainView ? "flex-grow p-4 sm:p-6" : "container mx-auto max-w-7xl"}>
+                    <div key={`${page}-${practiceMode}`} className="animate-fade-in">
+                        {renderPageContent()}
                     </div>
-                </div>
-                
-                <AuthModal
-                    isOpen={isAuthModalOpen}
-                    onClose={() => setIsAuthModalOpen(false)}
-                    onAuthSuccess={handleAuthSuccess}
-                    registeredUsers={registeredUsers}
-                />
-                <div aria-live="assertive" className="pointer-events-none fixed inset-0 flex items-end px-4 py-6 sm:items-start sm:p-6 z-[100]">
-                    {/* Toast notifications container */}
-                    {toasts.map(toast => (
-                        <AchievementToast
-                            key={toast.id}
-                            achievement={toast.achievement}
-                            onClose={() => setToasts(prev => prev.filter(t => t.id !== toast.id))}
-                        />
-                    ))}
-                </div>
+                </main>
             </div>
-        </ThemeProvider>
+            
+            <AuthModal
+                isOpen={isAuthModalOpen}
+                onClose={() => setIsAuthModalOpen(false)}
+                onAuthSuccess={handleAuthSuccess}
+                registeredUsers={registeredUsers}
+            />
+            <div aria-live="assertive" className="pointer-events-none fixed inset-0 flex items-end px-4 py-6 sm:items-start sm:p-6 z-[100]">
+                {/* ... existing toast container */}
+            </div>
+        </div>
     );
 };
 

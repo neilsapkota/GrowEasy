@@ -26,7 +26,7 @@ const AboutPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 <header className="text-center mb-12">
                     <Mascot className="w-32 h-32 mx-auto mb-4" />
                     <h1 className="text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400">
-                        About NovaLingo
+                        About Vocal AI
                     </h1>
                     <p className="mt-4 text-lg text-slate-300 max-w-2xl mx-auto">
                         We're building the future of language learning, making fluency accessible, engaging, and effective for everyone.
@@ -36,13 +36,13 @@ const AboutPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 <div className="bg-slate-800 border border-slate-700 rounded-2xl p-8 space-y-8">
                     <h2 className="text-2xl font-bold text-white">Our Mission</h2>
                     <p className="text-slate-300">
-                        At NovaLingo, we believe that language is the ultimate bridge between cultures. Our mission is to break down communication barriers by creating a learning experience that is not only educational but also genuinely fun and immersive. We go beyond simple vocabulary drills to help you build real-world conversational skills and cultural understanding, empowering you to connect with people, not just words.
+                        At Vocal AI, we believe that language is the ultimate bridge between cultures. Our mission is to break down communication barriers by creating a learning experience that is not only educational but also genuinely fun and immersive. We go beyond simple vocabulary drills to help you build real-world conversational skills and cultural understanding, empowering you to connect with people, not just words.
                     </p>
                     
                     <h2 className="text-2xl font-bold text-white border-t border-slate-700 pt-8">What Makes Us Different</h2>
                     <div className="space-y-6">
                         <FeatureHighlight icon={SparklesIcon} title="AI at the Core">
-                            NovaLingo is built from the ground up with cutting-edge AI. From generating personalized lessons to providing real-time pronunciation feedback, our technology adapts to you, creating a learning path that's as unique as you are.
+                            Vocal AI is built from the ground up with cutting-edge AI. From generating personalized lessons to providing real-time pronunciation feedback, our technology adapts to you, creating a learning path that's as unique as you are.
                         </FeatureHighlight>
                          <FeatureHighlight icon={MicrophoneIcon} title="Focus on Conversation">
                             Fluency isn't about memorizing flashcards; it's about speaking with confidence. Our AI-powered conversation and role-play scenarios provide a safe, pressure-free environment to practice speaking from day one.
@@ -57,7 +57,7 @@ const AboutPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 </div>
 
                 <footer className="text-center mt-12 text-slate-500">
-                    <p>Thank you for being a part of the NovaLingo journey.</p>
+                    <p>Thank you for being a part of the Vocal AI journey.</p>
                 </footer>
             </div>
         </div>

@@ -4,12 +4,11 @@ import { Language } from '../../types';
 import { GoogleGenAI, LiveServerMessage, Modality, Blob } from "@google/genai";
 import { SpinnerIcon, MicrophoneIcon } from '../icons';
 
-const API_KEY = (import.meta as any).env?.VITE_API_KEY as string | undefined;
-if (!API_KEY) {
-    throw new Error("VITE_API_KEY environment variable not set");
+if (!process.env.API_KEY) {
+    throw new Error("API_KEY environment variable not set");
 }
 
-const ai = new GoogleGenAI({ apiKey: API_KEY });
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 // --- Audio Helper Functions ---
 function encode(bytes: Uint8Array) {

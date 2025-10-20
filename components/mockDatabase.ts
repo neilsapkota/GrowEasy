@@ -7,7 +7,7 @@ const initialRegisteredUsers: RegisteredUser[] = [
   {
     user: {
       name: "Alice",
-      email: "alice@novalingo.com",
+      email: "alice@example.com",
       avatarUrl: "https://api.dicebear.com/8.x/initials/svg?seed=Alice",
       bio: "Learning Spanish for my trip to Colombia!"
     },
@@ -26,13 +26,13 @@ const initialRegisteredUsers: RegisteredUser[] = [
         flashcardDecks: []
       }
     },
-    friends: ["bob@novalingo.com"],
+    friends: ["bob@example.com"],
     friendRequests: []
   },
   {
     user: {
       name: "Bob",
-      email: "bob@novalingo.com",
+      email: "bob@example.com",
       avatarUrl: "https://api.dicebear.com/8.x/initials/svg?seed=Bob",
       bio: "Trying to learn French."
     },
@@ -51,14 +51,14 @@ const initialRegisteredUsers: RegisteredUser[] = [
         flashcardDecks: []
       }
     },
-    friends: ["alice@novalingo.com"],
+    friends: ["alice@example.com"],
     friendRequests: []
   }
 ];
 
 const initialMessages: Message[] = [
-    { id: '1', from: 'alice@novalingo.com', to: 'bob@novalingo.com', content: 'Hey Bob, ready for the weekly leaderboard race?', timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), read: true },
-    { id: '2', from: 'bob@novalingo.com', to: 'alice@novalingo.com', content: 'You bet! I\'ve been practicing my Spanish. Watch out!', timestamp: new Date(Date.now() - 1000 * 60 * 60 * 1).toISOString(), read: false },
+    { id: '1', from: 'alice@example.com', to: 'bob@example.com', content: 'Hey Bob, ready for the weekly leaderboard race?', timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), read: true },
+    { id: '2', from: 'bob@example.com', to: 'alice@example.com', content: 'You bet! I\'ve been practicing my Spanish. Watch out!', timestamp: new Date(Date.now() - 1000 * 60 * 60 * 1).toISOString(), read: false },
 ];
 
 
@@ -90,12 +90,12 @@ export const ensureTestUserExists = (users: RegisteredUser[]): RegisteredUser[] 
 // For Registered Users
 export const getRegisteredUsers = (): RegisteredUser[] => {
     try {
-        const savedUsers = localStorage.getItem('novaLingoUsers');
+        const savedUsers = localStorage.getItem('vocalAiUsers');
         if (savedUsers) {
             return JSON.parse(savedUsers);
         } else {
             // If nothing in localStorage, seed it with initial data
-            localStorage.setItem('novaLingoUsers', JSON.stringify(initialRegisteredUsers));
+            localStorage.setItem('vocalAiUsers', JSON.stringify(initialRegisteredUsers));
             return initialRegisteredUsers;
         }
     } catch (error) {
@@ -106,7 +106,7 @@ export const getRegisteredUsers = (): RegisteredUser[] => {
 
 export const saveRegisteredUsers = (users: RegisteredUser[]): void => {
     try {
-        localStorage.setItem('novaLingoUsers', JSON.stringify(users));
+        localStorage.setItem('vocalAiUsers', JSON.stringify(users));
     } catch (error) {
         console.error("Failed to save registered users to localStorage", error);
     }
@@ -116,12 +116,12 @@ export const saveRegisteredUsers = (users: RegisteredUser[]): void => {
 // For Messages
 export const getMessages = (): Message[] => {
     try {
-        const savedMessages = localStorage.getItem('novaLingoMessages');
+        const savedMessages = localStorage.getItem('vocalAiMessages');
         if (savedMessages) {
             return JSON.parse(savedMessages);
         } else {
             // If nothing in localStorage, seed it with initial data
-            localStorage.setItem('novaLingoMessages', JSON.stringify(initialMessages));
+            localStorage.setItem('vocalAiMessages', JSON.stringify(initialMessages));
             return initialMessages;
         }
     } catch (error) {
@@ -132,7 +132,7 @@ export const getMessages = (): Message[] => {
 
 export const saveMessages = (messages: Message[]): void => {
     try {
-        localStorage.setItem('novaLingoMessages', JSON.stringify(messages));
+        localStorage.setItem('vocalAiMessages', JSON.stringify(messages));
     } catch (error) {
         console.error("Failed to save messages to localStorage", error);
     }

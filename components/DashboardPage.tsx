@@ -5,7 +5,6 @@ import Mascot from './Mascot';
 import { CheckCircleIcon, BackIcon } from './icons';
 import ProgressBar from './ProgressBar';
 import GrammarTipCard from './GrammarTipCard';
-import { Button, Card, Badge } from './ui/Button';
 
 interface DashboardPageProps {
     user: User | null;
@@ -27,12 +26,12 @@ const LessonNode: React.FC<{
 
     const nodeColorClasses = {
         active: {
-            base: 'bg-gradient-to-r from-sky-600 to-sky-700',
-            top: 'bg-gradient-to-r from-sky-400 to-sky-500',
+            base: 'bg-sky-700',
+            top: 'bg-sky-500',
         },
         completed: {
-            base: 'bg-gradient-to-r from-indigo-600 to-indigo-700',
-            top: 'bg-gradient-to-r from-indigo-400 to-indigo-500',
+            base: 'bg-indigo-700',
+            top: 'bg-indigo-500',
         },
     };
 
@@ -44,27 +43,25 @@ const LessonNode: React.FC<{
             
             <button
                 onClick={onStart}
-                className={`w-24 h-24 rounded-full relative transition-all duration-200 transform group-hover:-translate-y-1 focus:outline-none focus:ring-4 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-slate-900`}
+                className={`w-24 h-24 rounded-full relative transition-transform duration-200 transform group-hover:-translate-y-1`}
                 aria-label={`${buttonLabel} lesson: ${topic.title}`}
             >
                 <div className={`absolute inset-0 rounded-full ${nodeColorClasses[status].base}`}></div>
                 <div className={`absolute inset-0 -translate-y-2 rounded-full border-4 border-slate-900/50 ${nodeColorClasses[status].top} flex items-center justify-center`}>
                     <div className="text-white">
-                        {status === 'completed' ? <CheckCircleIcon className="w-10 h-10" aria-hidden="true" /> : <span className="text-4xl" aria-hidden="true">{topic.icon}</span>}
+                        {status === 'completed' ? <CheckCircleIcon className="w-10 h-10" /> : <span className="text-4xl">{topic.icon}</span>}
                     </div>
                 </div>
                 {isNext && status === 'active' && <div className="absolute inset-0 rounded-full animate-pulse-glow"></div>}
             </button>
-            <div className={`absolute -bottom-20 w-48 text-center p-2 rounded-lg bg-slate-800/90 backdrop-blur-sm shadow-lg border border-slate-700 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10`}>
-                 <p className="font-bold text-slate-100">{topic.title}</p>
-                 <Button 
+            <div className={`absolute -bottom-20 w-48 text-center p-2 rounded-lg bg-slate-800 shadow-lg border border-slate-700 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10`}>
+                 <p className="font-bold">{topic.title}</p>
+                 <button 
                     onClick={onStart} 
-                    variant={status === 'completed' ? 'secondary' : 'primary'}
-                    size="sm"
-                    className="mt-2 w-full"
+                    className={`mt-2 w-full py-2 rounded-lg font-bold text-white uppercase text-sm ${status === 'completed' ? 'bg-indigo-500 hover:bg-indigo-600' : 'bg-sky-500 hover:bg-sky-600 border-b-4 border-sky-700'}`}
                 >
                     {buttonLabel}
-                </Button>
+                </button>
             </div>
          </div>
     );
@@ -106,23 +103,24 @@ const PathView: React.FC<PathViewProps> = ({ progress, onStartLesson, selectedSe
     
     return (
         <div className="px-4">
-            <Button onClick={onBackToSections} variant="ghost" icon={<BackIcon className="w-5 h-5" />} className="mb-6">
+            <button onClick={onBackToSections} className="flex items-center gap-2 font-bold text-sky-400 mb-6 hover:underline">
+                <BackIcon className="w-5 h-5" />
                 Back to Sections
-            </Button>
+            </button>
             <div className="flex flex-col items-center space-y-12">
                 <div key={section.sectionNumber} className="w-full">
-                    <Card className="w-full max-w-2xl mx-auto mb-8 py-4 border-b-2 border-slate-700">
-                        <h2 className="text-responsive-3xl font-extrabold text-center text-slate-100">Section {section.sectionNumber}</h2>
-                        <p className="text-center text-responsive-xl font-bold text-teal-400">{section.title}</p>
-                    </Card>
+                    <div className="w-full max-w-2xl mx-auto mb-8 py-4 border-b-2 border-slate-700">
+                        <h2 className="text-3xl font-extrabold text-center text-slate-100">Section {section.sectionNumber}</h2>
+                        <p className="text-center text-xl font-bold text-teal-400">{section.title}</p>
+                    </div>
                     
                     <div className="flex flex-col items-center space-y-8">
                         {section.units.map((unit) => (
                             <section key={unit.unitNumber} className="w-full max-w-sm">
-                                <Card className={`p-4 mb-8 ${unit.color.bg} ${unit.color.shadow}`}>
-                                    <h3 className="text-responsive-xl font-extrabold text-white">Unit {unit.unitNumber}: {unit.title}</h3>
+                                <div className={`p-4 rounded-xl mb-8 ${unit.color.bg} ${unit.color.shadow}`}>
+                                    <h3 className="text-xl font-extrabold text-white">Unit {unit.unitNumber}: {unit.title}</h3>
                                     <p className="text-white/80">Learn the basics of {unit.title.toLowerCase()}.</p>
-                                </Card>
+                                </div>
                                 <div className="space-y-16 flex flex-col items-center">
                                     {unit.lessons.map((topic, index) => (
                                         <LessonNode
@@ -170,63 +168,50 @@ const SectionsView: React.FC<SectionsViewProps> = ({ language, sectionProgress, 
                     const isActive = status === 'active';
                     const isCompleted = status === 'completed';
                     
-                    const cardColor = isActive ? 'bg-gradient-to-r from-sky-900/50 to-indigo-900/50' : isCompleted ? 'bg-gradient-to-r from-emerald-900/30 to-green-900/30' : 'bg-slate-800/50';
-                    const buttonColor = isActive ? 'primary' : isCompleted ? 'secondary' : 'ghost';
+                    const cardColor = isActive ? 'bg-sky-900/50' : isCompleted ? 'bg-emerald-900/30' : 'bg-slate-800/50';
+                    const buttonColor = isActive ? 'bg-sky-500 border-sky-700 hover:bg-sky-600' : isCompleted ? 'bg-slate-500 border-slate-700 hover:bg-slate-600' : 'bg-slate-500 border-slate-700 hover:bg-slate-600';
                     const buttonText = isActive ? 'Continue' : isCompleted ? 'Review' : 'Start Here';
 
                     return (
-                        <Card 
+                        <button 
                             key={section.sectionNumber} 
-                            className={`w-full transition-all duration-300 hover:-translate-y-1 border border-slate-800 ${cardColor}`}
-                            hover
+                            onClick={() => onSelectSection(section)}
+                            className={`w-full p-4 rounded-2xl text-left transition-transform duration-300 hover:-translate-y-1 border border-slate-800 ${cardColor}`}
                         >
-                            <button 
-                                onClick={() => onSelectSection(section)}
-                                className="w-full text-left"
-                                aria-label={`${buttonText} section ${section.sectionNumber}: ${section.title}`}
-                            >
-                                <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-                                    <div className="flex-1 w-full">
-                                        <div className="flex items-center gap-2 text-sm font-bold uppercase text-sky-400 mb-2">
-                                            <Badge variant={isActive ? 'info' : isCompleted ? 'success' : 'default'} size="sm">
-                                                SECTION {section.sectionNumber}
-                                            </Badge>
-                                            <span>•</span>
-                                            <span>{section.cefrLevel}</span>
-                                        </div>
-                                        <h3 className={`text-responsive-2xl font-extrabold text-white mt-1`}>{section.title}</h3>
-                                        
-                                        <div className="mt-4">
-                                            <ProgressBar 
-                                                value={section.completedUnits} 
-                                                max={section.totalUnits} 
-                                                label="Units"
-                                                labelColor="text-white/80"
-                                                valueColor="text-white"
-                                            />
-                                        </div>
-                                        
-                                        <div className="mt-4 sm:hidden"> {/* Mobile Button */}
-                                            <Button 
-                                                variant={buttonColor as any}
-                                                size="md"
-                                                fullWidth
-                                                className="uppercase"
-                                            >
-                                                {buttonText}
-                                            </Button>
-                                        </div>
+                            <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+                                <div className="flex-1 w-full">
+                                    <div className="flex items-center gap-2 text-sm font-bold uppercase text-sky-400">
+                                        <span>SECTION {section.sectionNumber}</span>
+                                        <span>•</span>
+                                        <span>{section.cefrLevel}</span>
                                     </div>
-                                    <div className="relative w-32 h-32 flex-shrink-0">
-                                        <Mascot className="w-full h-full" />
-                                        <div className="absolute -top-4 -right-4 sm:-right-10 bg-slate-800/90 backdrop-blur-sm p-2 rounded-lg shadow-lg">
-                                            <p className="font-bold text-center text-white text-sm">{section.phrase}</p>
-                                            <div className="absolute left-2 -bottom-2 w-0 h-0 border-l-[10px] border-l-transparent border-t-[10px] border-t-slate-800"></div>
-                                        </div>
+                                    <h3 className={`text-2xl font-extrabold text-white mt-1`}>{section.title}</h3>
+                                    
+                                    <div className="mt-4">
+                                        <ProgressBar 
+                                            value={section.completedUnits} 
+                                            max={section.totalUnits} 
+                                            label="Units"
+                                            labelColor="text-white/80"
+                                            valueColor="text-white"
+                                        />
+                                    </div>
+                                    
+                                    <div className="mt-4 sm:hidden"> {/* Mobile Button */}
+                                        <span className={`w-full block text-center px-10 py-3 font-bold rounded-xl border-b-4 text-white transition-all uppercase ${buttonColor}`}>
+                                            {buttonText}
+                                        </span>
                                     </div>
                                 </div>
-                            </button>
-                        </Card>
+                                <div className="relative w-32 h-32 flex-shrink-0">
+                                    <Mascot className="w-full h-full" />
+                                    <div className="absolute -top-4 -right-4 sm:-right-10 bg-slate-800 p-2 rounded-lg shadow-lg">
+                                        <p className="font-bold text-center text-white text-sm">{section.phrase}</p>
+                                        <div className="absolute left-2 -bottom-2 w-0 h-0 border-l-[10px] border-l-transparent border-t-[10px] border-t-slate-800"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </button>
                     )
                 })}
             </div>

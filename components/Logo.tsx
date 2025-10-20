@@ -1,5 +1,4 @@
 import React from 'react';
-import NovaLingo from './NovaLingo';
 
 const Logo: React.FC<{ className?: string }> = ({ className }) => {
     return (
@@ -12,9 +11,9 @@ const Logo: React.FC<{ className?: string }> = ({ className }) => {
                     </linearGradient>
                 </defs>
                 <path d="M40 4H8C5.79086 4 4 5.79086 4 8V32C4 34.2091 5.79086 36 8 36H16L24 44L32 36H40C42.2091 36 44 34.2091 44 32V8C44 5.79086 42.2091 4 40 4Z" fill="url(#logo-gradient)"/>
-                <path d="M18 14C18 14 22 14 26 14C30 14 30 18 30 18C30 18 30 22 26 22C22 22 18 22 18 22M18 14V30" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M16 24q4-8 8 0t8 0" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
             </svg>
-            <NovaLingo />
+            <span className="text-3xl font-extrabold text-slate-100">Vocal AI</span>
         </div>
     );
 };

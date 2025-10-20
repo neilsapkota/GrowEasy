@@ -19,7 +19,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
             <div className="w-full max-w-md p-8 space-y-8 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl text-center">
                 <div className="space-y-2">
                      <h1 className="text-4xl font-extrabold text-indigo-600 dark:text-indigo-400">
-                        NovaLingo
+                        Vocal AI
                     </h1>
                     <p className="text-slate-500 dark:text-slate-400 text-lg">Your journey to fluency starts here.</p>
                 </div>

@@ -119,9 +119,11 @@ export interface FlashcardDeck {
 }
 
 export interface User {
+    id: string;
     name: string;
     email: string;
     avatarUrl: string;
+    joinDate: string;
     bio?: string;
     isPro?: boolean;
 }

@@ -1,12 +1,11 @@
-
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import * as THREE from 'three';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Line } from '@react-three/drei';
 import { NewHomePageIllustrations } from './NewHomePageIllustrations';
 import { GlobeAltIcon, StarIcon } from './icons';
-import { Page } from '../types';
-import AnimatedParrot from './AnimatedParrot';
+import { Page, User } from '../types';
+import { TestimonialCard } from './TestimonialCard';
 import AuroraBackground from './AuroraBackground';
 
 // === START ANIMATED GLOBE BACKGROUND ===
@@ -97,36 +96,38 @@ const FeatureSection: React.FC<{
     );
 };
 
-// Re-usable component for testimonial cards
-const TestimonialCard: React.FC<{ quote: string; name: string; country: string; avatar: string; }> = ({ quote, name, country, avatar }) => (
-    <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 h-full flex flex-col">
-        <div className="flex mb-2">
-            {[...Array(5)].map((_, i) => <StarIcon key={i} className="w-5 h-5 text-yellow-400" />)}
-        </div>
-        <p className="text-slate-300 italic flex-grow">"{quote}"</p>
-        <div className="flex items-center mt-4">
-            <img src={avatar} alt={name} className="w-12 h-12 rounded-full object-cover mr-4" />
-            <div>
-                <p className="font-bold text-slate-100">{name}</p>
-                <p className="text-sm text-slate-400">{country}</p>
-            </div>
-        </div>
-    </div>
-);
-
 
 const HomePage: React.FC<{ onGetStarted: () => void; onNavigate: (page: Page) => void; }> = ({ onGetStarted, onNavigate }) => {
-    const [originUrl, setOriginUrl] = useState('');
-    const [isHoveringButton, setIsHoveringButton] = useState(false);
+    const [originUrl, setOriginUrl] = useState('');    
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
             setOriginUrl(window.location.origin);
         }
+
+        const buttons = document.querySelectorAll('.smooth-button, .smooth-button-yellow'); // Select both button types
+        buttons.forEach(button => {
+            button.addEventListener('click', () => {
+                button.classList.add('active');
+                // Remove the active class after the animation to allow re-triggering
+                setTimeout(() => button.classList.remove('active'), 300);
+            });
+        });
+
     }, []);
 
     return (
         <div className="bg-slate-900 text-white font-sans">
+            <style>{` 
+                .smooth-button.active {
+                    transform: scale(1.05) translateY(-2px);
+                    box-shadow: 0 10px 20px -10px rgba(99, 102, 241, 0.5);
+                }
+                .smooth-button-yellow.active {
+                    transform: scale(1.05) translateY(-2px);
+                    box-shadow: 0 10px 20px -10px rgba(255, 215, 0, 0.5);
+                }
+            `}</style>
             <AuroraBackground />
 
             {/* Globe overlay for depth */}
@@ -168,8 +169,6 @@ const HomePage: React.FC<{ onGetStarted: () => void; onNavigate: (page: Page) =>
 
                 {/* --- Hero Section --- */}
                 <header className="relative min-h-[90vh] flex items-center justify-center overflow-hidden p-4 pt-10 pb-20">
-                    <AnimatedParrot onHoverTarget={isHoveringButton} />
-
                     <div className="relative z-10 max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center px-4 sm:px-6 lg:px-8">
                         <div className="text-center lg:text-left space-y-8 animate-fade-in-up">
                             <h1 className="text-5xl md:text-7xl font-extrabold leading-tight">
@@ -180,9 +179,7 @@ const HomePage: React.FC<{ onGetStarted: () => void; onNavigate: (page: Page) =>
                             </p>
                             <button
                                 onClick={onGetStarted}
-                                onMouseEnter={() => setIsHoveringButton(true)}
-                                onMouseLeave={() => setIsHoveringButton(false)}
-                                className="px-8 py-4 text-lg font-bold text-white bg-indigo-500 rounded-xl hover:bg-indigo-600 focus:outline-none focus:ring-4 focus:ring-indigo-800 transition-all duration-200 transform hover:-translate-y-1 active:translate-y-0 active:scale-95 shadow-2xl hover:shadow-indigo-500/40"
+                                className="smooth-button px-8 py-4 text-lg font-bold text-white bg-indigo-500 rounded-xl hover:bg-indigo-600 focus:outline-none focus:ring-4 focus:ring-indigo-800 transition-all duration-300 transform hover:-translate-y-1 hover:scale-105 active:translate-y-0 active:scale-100 shadow-lg hover:shadow-indigo-500/40"
                             >
                                 Start Learning Now
                             </button>
@@ -217,7 +214,7 @@ const HomePage: React.FC<{ onGetStarted: () => void; onNavigate: (page: Page) =>
                 <section id="testimonials" className="py-16 lg:py-24 bg-slate-900/50">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                         <div className="text-center mb-12">
-                            <h2 className="text-4xl lg:text-5xl font-extrabold text-slate-100">Loved by learners worldwide</h2>
+                            <h2 className="text-4xl lg:text-5xl font-extrabold text-slate-100 mb-4" style={{ color: '#6366f1' }}>Loved by learners worldwide</h2>
                             <p className="mt-4 text-lg text-slate-400">See what our community is saying about Vocal AI.</p>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -250,7 +247,7 @@ const HomePage: React.FC<{ onGetStarted: () => void; onNavigate: (page: Page) =>
                         <p className="text-lg text-slate-300 mb-10">Join millions of learners and take the first step towards fluency today. Your first lesson is just a click away.</p>
                         <button
                             onClick={onGetStarted}
-                            className="px-10 py-5 text-xl font-bold text-slate-900 bg-[#FFD700] rounded-xl hover:bg-yellow-400 focus:outline-none focus:ring-4 focus:ring-yellow-700 transition-all duration-200 transform hover:-translate-y-1 active:translate-y-0 active:scale-95 shadow-2xl hover:shadow-yellow-400/40"
+                            className="smooth-button-yellow px-10 py-5 text-xl font-bold text-slate-900 bg-[#FFD700] rounded-xl hover:bg-yellow-400 focus:outline-none focus:ring-4 focus:ring-yellow-700 transition-all duration-300 transform hover:-translate-y-1 hover:scale-105 active:translate-y-0 active:scale-100 shadow-lg hover:shadow-yellow-400/40"
                         >
                             Try Vocal AI for Free
                         </button>

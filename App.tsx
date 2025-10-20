@@ -1,4 +1,6 @@
 
+import { GoogleOAuthProvider, CredentialResponse } from '@react-oauth/google';
+import { jwtDecode } from "jwt-decode";
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import HomePage from './components/HomePage';
 import LanguageSelectionPage from './components/LanguageSelectionPage';
@@ -27,6 +29,14 @@ import { getRegisteredUsers, saveRegisteredUsers, getMessages, saveMessages, ens
 // FIX: Added missing type imports
 import { Page, User, Language, LessonTopic, UserProgress, MistakeItem, VocabularyItem, PracticeMode, Quest, LeagueTier, Achievement, RegisteredUser, AppSettings, Theme, Message, AchievementTier, FlashcardDeck } from './types';
 import { LANGUAGES, DAILY_QUESTS, ACHIEVEMENTS, MONTHLY_CHALLENGES } from './constants';
+
+// Define a type for the decoded Google token
+interface DecodedCredential {
+    name: string;
+    email: string;
+    picture: string;
+    sub: string;
+}
 import { HomeIcon, UserCircleIcon, ChartBarIcon, LogoutIcon, StarIcon, FireIcon, PracticeIcon, BookOpenIcon, TrophyIcon, QuestsIcon, SettingsIcon, HelpIcon, UsersIcon, ChatBubbleLeftRightIcon, InfoIcon, MenuIcon, XIcon } from './components/icons';
 import ProfilePage from './components/ProfilePage';
 
@@ -226,7 +236,20 @@ const Header: React.FC<{
 }
 
 const App: React.FC = () => {
+    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
     const [page, setPage] = useState<Page>(Page.Home);
+
+    if (!clientId) {
+        return (
+            <div className="bg-red-900 text-white min-h-screen flex flex-col items-center justify-center p-4 font-sans">
+                <h1 className="text-4xl font-bold mb-4">Configuration Error</h1>
+                <p className="text-xl mb-2">Google Client ID is missing.</p>
+                <p className="text-lg text-center">Please create a <code className="bg-red-700 p-1 rounded">.env.local</code> file in the root of your project and add the following line:</p>
+                <pre className="bg-slate-800 p-4 rounded-lg mt-4 text-left text-lg">VITE_GOOGLE_CLIENT_ID=your-google-client-id-goes-here</pre>
+            </div>
+        );
+    }
+
     const [user, setUser] = useState<User | null>(null);
     const [selectedLanguage, setSelectedLanguage] = useState<Language | null>(null);
     const [selectedTopic, setSelectedTopic] = useState<LessonTopic | null>(null);
@@ -504,8 +527,31 @@ const App: React.FC = () => {
         setIsNavOpen(false);
     }, []);
     
-    const handleAuthSuccess = (authedUser: RegisteredUser, isNewUser: boolean) => {
-        if (isNewUser) {
+    const handleSignInSuccess = (credentialResponse: CredentialResponse) => {
+        const decoded = jwtDecode<DecodedCredential>(credentialResponse.credential!);
+        
+        const existingUser = registeredUsers.find(u => u.user.email === decoded.email);
+
+        let authedUser: RegisteredUser;
+        let isNewUser = false;
+
+        if (existingUser) {
+            authedUser = existingUser;
+        } else {
+            isNewUser = true;
+            const newUser: User = {
+                id: decoded.sub,
+                name: decoded.name,
+                email: decoded.email,
+                avatarUrl: decoded.picture,
+                joinDate: new Date().toISOString(),
+            };
+            authedUser = {
+                user: newUser,
+                progress: {},
+                friends: [],
+                friendRequests: [],
+            };
             setRegisteredUsers(prev => [...prev, authedUser]);
         }
 
@@ -803,36 +849,36 @@ const App: React.FC = () => {
         return null;
     };
     
-    if (page === Page.Home) {
-        return <HomePage onGetStarted={() => setPage(Page.LanguageSelection)} onNavigate={(p) => setPage(p)} />;
+    if (page === Page.Home) { // This check is correct, but we need to stop the rest of the component from rendering.
+        return <HomePage onGetStarted={() => setPage(Page.LanguageSelection)} onNavigate={handleNavigate} />;
     }
 
-    const isMainView = [Page.Dashboard, Page.PracticeHub, Page.PracticeSession, Page.Profile, Page.Leaderboard, Page.Dictionary, Page.Quests, Page.Achievements, Page.Settings, Page.Help, Page.Friends, Page.Messages, Page.FlashcardDecks].includes(page);
+    const isMainView = ![Page.LanguageSelection, Page.Onboarding, Page.LivePlacementTest, Page.About, Page.Features, Page.Testimonials].includes(page);
     const currentProgress = selectedLanguage ? userProgress[selectedLanguage.id] : null;
 
     return (
-        <div className="min-h-screen transition-colors duration-500">
-            {isMainView && <StaggeredMenu user={user} currentPage={page} onNavigate={handleNavigate} onChangeLanguage={handleChangeLanguage} onLogout={handleLogout} friendRequestCount={friendRequestCount} unreadMessageCount={unreadMessageCount} isOpen={isNavOpen} onClose={() => setIsNavOpen(false)} />}
-            
-            <div className="flex flex-col min-h-screen">
-                {isMainView && <Header page={page} user={user} progress={currentProgress} selectedLanguage={selectedLanguage} onChangeLanguage={handleChangeLanguage} onOpenNav={() => setIsNavOpen(true)}/>}
-                <main className={isMainView ? "flex-grow p-4 sm:p-6" : "container mx-auto max-w-7xl"}>
-                    <div key={`${page}-${practiceMode}`} className="animate-fade-in">
-                        {renderPageContent()}
-                    </div>
-                </main>
+        <GoogleOAuthProvider clientId={clientId}>
+            <div className="min-h-screen transition-colors duration-500">
+                {isMainView && <StaggeredMenu user={user} currentPage={page} onNavigate={handleNavigate} onChangeLanguage={handleChangeLanguage} onLogout={handleLogout} friendRequestCount={friendRequestCount} unreadMessageCount={unreadMessageCount} isOpen={isNavOpen} onClose={() => setIsNavOpen(false)} />}
+                <div className="flex flex-col min-h-screen">
+                    {isMainView && <Header page={page} user={user} progress={currentProgress} selectedLanguage={selectedLanguage} onChangeLanguage={handleChangeLanguage} onOpenNav={() => setIsNavOpen(true)}/>}
+                    <main className={isMainView ? "flex-grow p-4 sm:p-6" : ""}>
+                        <div key={`${page}-${practiceMode}`} className="animate-fade-in">
+                            {renderPageContent()}
+                        </div>
+                    </main>
+                </div>
+                
+                <AuthModal
+                    isOpen={isAuthModalOpen}
+                    onClose={() => setIsAuthModalOpen(false)}
+                    onSignIn={handleSignInSuccess}
+                />
+                <div aria-live="assertive" className="pointer-events-none fixed inset-0 flex items-end px-4 py-6 sm:items-start sm:p-6 z-[100]">
+                    {/* ... existing toast container */}
+                </div>
             </div>
-            
-            <AuthModal
-                isOpen={isAuthModalOpen}
-                onClose={() => setIsAuthModalOpen(false)}
-                onAuthSuccess={handleAuthSuccess}
-                registeredUsers={registeredUsers}
-            />
-            <div aria-live="assertive" className="pointer-events-none fixed inset-0 flex items-end px-4 py-6 sm:items-start sm:p-6 z-[100]">
-                {/* ... existing toast container */}
-            </div>
-        </div>
+        </GoogleOAuthProvider>
     );
 };
 

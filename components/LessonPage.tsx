@@ -9,8 +9,8 @@ import { CheckCircleIcon, XCircleIcon, StarIcon, VolumeUpIcon, XIcon } from './i
 import Logo from './Logo';
 
 const SOUND_URLS = {
-    CORRECT: 'https://cdn.pixabay.com/download/audio/2023/10/05/audio_d121714e8b.mp3',
-    INCORRECT: 'https://cdn.pixabay.com/download/audio/2022/11/21/audio_a72c052971.mp3',
+    CORRECT: '/CORRECT ANSWER SOUND EFFECT - NO COPYRIGHT.mp4',
+    INCORRECT: '/Wrong Buzzer - Sound Effect.mp4',
     LESSON_COMPLETE: 'https://cdn.pixabay.com/audio/2022/01/18/audio_82c292a8b3.mp3',
 };
 
